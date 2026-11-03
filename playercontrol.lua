@@ -1,72 +1,5 @@
--- ============================================================
--- CHECK MAINTENANCE MODE + REAL-TIME AUTO REJOIN
--- ============================================================
-local HttpService = game:GetService("HttpService")
-local TeleportService = game:GetService("TeleportService")
-local Players = game:GetService("Players")
-
-local reqFunc = request or (syn and syn.request) or (http and http.request) or http_request
-
-local function triggerMaintenanceRejoin()
-	pcall(function()
-		game:GetService("StarterGui"):SetCore("SendNotification", {
-			Title = "ZorX Hub - Maintenance Mode",
-			Text = "Script dimatikan oleh Admin! Kamu akan di-rejoin otomatis dalam 3 detik...",
-			Duration = 5
-		})
-	end)
-	
-	task.wait(3)
-
-	pcall(function()
-		if #Players:GetPlayers() <= 1 then
-			TeleportService:Teleport(game.PlaceId, Players.LocalPlayer)
-		else
-			TeleportService:TeleportToPlaceInstance(game.PlaceId, game.JobId, Players.LocalPlayer)
-		end
-	end)
-end
-
--- 1. Pengecekan awal saat pertama kali execute
-if reqFunc then
-	local success, response = pcall(function()
-		return reqFunc({
-			Url = "https://zorx-broadcast-default-rtdb.firebaseio.com/info.json",
-			Method = "GET"
-		})
-	end)
-
-	if success and response and (response.StatusCode == 200 or response.Status == 200) then
-		local data = HttpService:JSONDecode(response.Body)
-		if data and data.Maintenance == true then
-			triggerMaintenanceRejoin()
-			return -- Menghentikan eksekusi script
-		end
-	end
-end
-
--- 2. Pengecekan otomatis tiap 4 detik (Untuk player yang sedang memakai UI)
-task.spawn(function()
-	while task.wait(4) do
-		if reqFunc then
-			pcall(function()
-				local response = reqFunc({
-					Url = "https://zorx-broadcast-default-rtdb.firebaseio.com/info/Maintenance.json",
-					Method = "GET"
-				})
-				if response and (response.StatusCode == 200 or response.Status == 200) then
-					local isMaint = HttpService:JSONDecode(response.Body)
-					if isMaint == true then
-						triggerMaintenanceRejoin()
-					end
-				end
-			end)
-		end
-	end
-end)
-
 --============================================================
--- ZORX HUB - FULL SERVICE (FIREBASE INFO, AUTO EXECUTOR & MAINTENANCE)
+-- ZORX HUB - FULL UI (MURNI UI & BROADCAST SAJA)
 --============================================================
 
 local Players = game:GetService("Players")
@@ -77,39 +10,13 @@ local HttpService = game:GetService("HttpService")
 
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
-
--- ============================================================
--- 1. SISTEM PENGECEKAN MAINTENANCE / KILL SWITCH DARI FIREBASE
--- ============================================================
 local reqFunc = request or (syn and syn.request) or (http and http.request) or http_request
 
-if reqFunc then
-	local success, response = pcall(function()
-		return reqFunc({
-			Url = "https://zorx-broadcast-default-rtdb.firebaseio.com/info.json",
-			Method = "GET"
-		})
-	end)
-
-	if success and response and (response.StatusCode == 200 or response.Status == 200) then
-		local data = HttpService:JSONDecode(response.Body)
-		if data and data.Maintenance == true then
-			pcall(function()
-				game:GetService("StarterGui"):SetCore("SendNotification", {
-					Title = "ZorX Hub - Maintenance",
-					Text = "Script sedang dalam perbaikan! Silakan coba lagi nanti.",
-					Duration = 10
-				})
-			end)
-			warn("[ZorX Hub] Eksekusi dihentikan: Maintenance Mode Aktif.")
-			return -- Menghentikan keseluruhan script agar tidak berjalan
-		end
-	end
-end
-
--- Bersihkan UI lama jika ada
+-- ============================================================
+-- BERSIHKAN UI LAMA
+-- ============================================================
 for _, gui in pairs(playerGui:GetChildren()) do
-	if gui.Name == "ZorXHub" then
+	if gui.Name == "ZorXHub" or gui.Name == "ZorxTopNotifContainer" then
 		gui:Destroy()
 	end
 end
@@ -126,6 +33,7 @@ local Colors = {
 	PillBg       = Color3.fromRGB(28, 28, 34),
 	PillStroke   = Color3.fromRGB(45, 45, 55),
 	PillText     = Color3.fromRGB(240, 240, 240),
+	Red          = Color3.fromRGB(220, 50, 60)
 }
 
 local DefaultPillBg = Color3.fromRGB(28, 28, 34)
@@ -152,41 +60,23 @@ local function getGameName()
 	return name
 end
 
--- ============================================================
--- FUNGSI DETEKSI OTOMATIS EXECUTOR
--- ============================================================
 local function getExecutorName()
 	if identifyexecutor then
 		local success, name = pcall(identifyexecutor)
-		if success and name then
-			return name
-		end
+		if success and name then return name end
 	elseif getexecutorname then
 		local success, name = pcall(getexecutorname)
-		if success and name then
-			return name
-		end
+		if success and name then return name end
 	end
-
-	if syn then
-		return "Synapse X"
-	elseif fluxus then
-		return "Fluxus"
-	elseif hydrogen then
-		return "Hydrogen"
-	elseif delta or (identifyexecutor and pcall(identifyexecutor) and string.find(string.lower(identifyexecutor()), "delta")) then
-		return "Delta"
-	elseif codex then
-		return "Codex"
-	elseif arceus then
-		return "Arceus X"
-	elseif solara then
-		return "Solara"
-	elseif wave then
-		return "Wave"
-	else
-		return "Unknown Executor"
-	end
+	if syn then return "Synapse X"
+	elseif fluxus then return "Fluxus"
+	elseif hydrogen then return "Hydrogen"
+	elseif delta or (identifyexecutor and pcall(identifyexecutor) and string.find(string.lower(identifyexecutor()), "delta")) then return "Delta"
+	elseif codex then return "Codex"
+	elseif arceus then return "Arceus X"
+	elseif solara then return "Solara"
+	elseif wave then return "Wave"
+	else return "Unknown Executor" end
 end
 
 local detectedExecutor = getExecutorName()
@@ -236,7 +126,152 @@ PopupLayer.ZIndex = 50
 PopupLayer.Parent = ScreenGui
 
 -- ============================================================
--- SYSTEM NOTIFIKASI CUSTOM BROADCAST
+-- VARIABEL ANNOUNCEMENT
+-- ============================================================
+local announcementHistory = {}
+local unreadAnnouncements = 0
+local UnreadDot 
+
+-- ============================================================
+-- NOTIF ATAS KANAN (BUAT COPY & REFRESH INFO)
+-- ============================================================
+local function createTopRightNotification(titleText, messageText, iconId, duration)
+	duration = duration or 6
+	local container = playerGui:FindFirstChild("ZorxTopNotifContainer")
+	if not container then
+		container = Instance.new("ScreenGui")
+		container.Name = "ZorxTopNotifContainer"
+		container.ResetOnSpawn = false
+		container.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+		container.IgnoreGuiInset = true
+		container.DisplayOrder = 999
+		container.Parent = playerGui
+	end
+	
+	local notif = Instance.new("Frame")
+	notif.Name = "TopNotif"
+	notif.Size = UDim2.new(0, 360, 0, 68) 
+	notif.Position = UDim2.new(1, -20, 0, -100) 
+	notif.AnchorPoint = Vector2.new(1, 0)
+	notif.BackgroundColor3 = Color3.fromRGB(15, 15, 18) 
+	notif.BorderSizePixel = 0
+	notif.ClipsDescendants = true
+	notif.ZIndex = 1000
+	notif.Parent = container
+
+	local nCorner = Instance.new("UICorner")
+	nCorner.CornerRadius = UDim.new(0, 8)
+	nCorner.Parent = notif
+
+	local nStroke = Instance.new("UIStroke")
+	nStroke.Color = Color3.fromRGB(45, 45, 55)
+	nStroke.Thickness = 1.5
+	nStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+	nStroke.Parent = notif
+
+	local nIcon = Instance.new("ImageLabel")
+	nIcon.Size = UDim2.new(0, 36, 0, 36)
+	nIcon.Position = UDim2.new(0, 8, 0, 8)
+	nIcon.BackgroundTransparency = 1
+	nIcon.Image = "rbxassetid://" .. tostring(iconId or "134572030759999")
+	nIcon.ScaleType = Enum.ScaleType.Fit
+	nIcon.ZIndex = 1002
+	nIcon.Parent = notif
+
+	local nTitle = Instance.new("TextLabel")
+	nTitle.Size = UDim2.new(1, -75, 0, 14)
+	nTitle.Position = UDim2.new(0, 52, 0, 8)
+	nTitle.BackgroundTransparency = 1
+	nTitle.Text = titleText or "System Announcement"
+	nTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
+	nTitle.Font = Enum.Font.GothamBold
+	nTitle.TextSize = 12
+	nTitle.TextXAlignment = Enum.TextXAlignment.Left
+	nTitle.ZIndex = 1001
+	nTitle.Parent = notif
+
+	local nDesc = Instance.new("TextLabel")
+	nDesc.Size = UDim2.new(1, -65, 0, 14)
+	nDesc.Position = UDim2.new(0, 52, 0, 26)
+	nDesc.BackgroundTransparency = 1
+	nDesc.Text = messageText or "Pesan..."
+	nDesc.TextColor3 = Color3.fromRGB(200, 200, 210)
+	nDesc.Font = Enum.Font.GothamMedium
+	nDesc.TextSize = 10
+	nDesc.TextXAlignment = Enum.TextXAlignment.Left
+	nDesc.TextYAlignment = Enum.TextYAlignment.Center
+	nDesc.TextWrapped = false
+	nDesc.TextTruncate = Enum.TextTruncate.AtEnd
+	nDesc.ZIndex = 1001
+	nDesc.Parent = notif
+
+	local closeBtn = Instance.new("TextButton")
+	closeBtn.Size = UDim2.new(0, 18, 0, 18)
+	closeBtn.Position = UDim2.new(1, -22, 0, 5)
+	closeBtn.BackgroundTransparency = 1
+	closeBtn.Text = ""
+	closeBtn.AutoButtonColor = false
+	closeBtn.ZIndex = 1002
+	closeBtn.Parent = notif
+
+	local closeIcon = Instance.new("ImageLabel")
+	closeIcon.Size = UDim2.new(0, 9, 0, 9)
+	closeIcon.Position = UDim2.new(0.5, 0, 0.5, 0)
+	closeIcon.AnchorPoint = Vector2.new(0.5, 0.5)
+	closeIcon.BackgroundTransparency = 1
+	closeIcon.Image = "rbxassetid://85435035697164"
+	closeIcon.ImageColor3 = Color3.fromRGB(170, 170, 180)
+	closeIcon.ScaleType = Enum.ScaleType.Fit
+	closeIcon.ZIndex = 1003
+	closeIcon.Parent = closeBtn
+
+	local barBg = Instance.new("Frame")
+	barBg.Size = UDim2.new(1, -16, 0, 3) 
+	barBg.Position = UDim2.new(0, 8, 1, -8)
+	barBg.BackgroundColor3 = Color3.fromRGB(28, 28, 34)
+	barBg.BorderSizePixel = 0
+	barBg.ZIndex = 1001
+	barBg.Parent = notif
+
+	local barCorner = Instance.new("UICorner")
+	barCorner.CornerRadius = UDim.new(1, 0)
+	barCorner.Parent = barBg
+
+	local barFill = Instance.new("Frame")
+	barFill.Size = UDim2.new(1, 0, 1, 0)
+	barFill.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+	barFill.BorderSizePixel = 0
+	barFill.ZIndex = 1002
+	barFill.Parent = barBg
+
+	local fillCorner = Instance.new("UICorner")
+	fillCorner.CornerRadius = UDim.new(1, 0)
+	fillCorner.Parent = barFill
+
+	TweenService:Create(notif, TweenInfo.new(0.5, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {
+		Position = UDim2.new(1, -20, 0, 20)
+	}):Play()
+
+	TweenService:Create(barFill, TweenInfo.new(duration, Enum.EasingStyle.Linear, Enum.EasingDirection.Out), {
+		Size = UDim2.new(0, 0, 1, 0)
+	}):Play()
+
+	local function dismiss()
+		local slideUp = TweenService:Create(notif, TweenInfo.new(0.3, Enum.EasingStyle.Quart, Enum.EasingDirection.In), {
+			Position = UDim2.new(1, -20, 0, -100)
+		})
+		slideUp:Play()
+		slideUp.Completed:Connect(function()
+			notif:Destroy()
+		end)
+	end
+
+	closeBtn.MouseButton1Click:Connect(dismiss)
+	task.delay(duration, function() if notif and notif.Parent then dismiss() end end)
+end
+
+-- ============================================================
+-- SYSTEM NOTIFIKASI CUSTOM BROADCAST (TENGAH)
 -- ============================================================
 local function sendNotification(titleText, messageText, iconId, duration)
 	duration = duration or 6
@@ -450,7 +485,7 @@ local function sendNotification(titleText, messageText, iconId, duration)
 end
 
 -- ============================================================
--- LIVE BROADCAST RECEIVER
+-- LIVE BROADCAST RECEIVER (TENGAH + BULATAN MERAH NYALA)
 -- ============================================================
 task.spawn(function()
 	local lastTimeChecked = 0
@@ -468,6 +503,14 @@ task.spawn(function()
 							if lastTimeChecked ~= 0 then
 								local fotoAsset = data.IconId or "134572030759999"
 								sendNotification("ZorX Announcements", data.Pesan, fotoAsset, 7)
+								
+								if UnreadDot then
+									UnreadDot.Visible = true
+									unreadAnnouncements = unreadAnnouncements + 1
+								end
+								if _G.AddAnnouncement then
+									_G.AddAnnouncement(data.Pesan)
+								end
 							end
 							lastTimeChecked = data.Waktu
 						end
@@ -490,6 +533,7 @@ Main.BackgroundColor3 = Colors.Background
 Main.BorderSizePixel = 0
 Main.Active = true
 Main.Draggable = true
+Main.ClipsDescendants = true
 Main.Parent = ScreenGui
 
 local MainCorner = Instance.new("UICorner")
@@ -576,7 +620,7 @@ local PillContainer = Instance.new("Frame")
 PillContainer.Name = "PillContainer"
 PillContainer.Size = UDim2.new(0, 0, 0, 22)
 PillContainer.AutomaticSize = Enum.AutomaticSize.X
-PillContainer.Position = UDim2.new(1, -72, 0.5, -11)
+PillContainer.Position = UDim2.new(1, -85, 0.5, -11)
 PillContainer.AnchorPoint = Vector2.new(1, 0)
 PillContainer.BackgroundTransparency = 1
 PillContainer.Parent = TopBar
@@ -656,9 +700,41 @@ task.spawn(function()
 	end
 end)
 
+-- ============================================================
+-- TOMBOL LONCENG & ANNOUNCEMENT (POSISI DIPERBAIKI)
+-- ============================================================
+local AnnouncBtn = Instance.new("TextButton")
+AnnouncBtn.Name = "AnnouncBtn"
+AnnouncBtn.Size = UDim2.new(0, 24, 0, 24)
+AnnouncBtn.Position = UDim2.new(1, -75, 0.5, -12)
+AnnouncBtn.BackgroundTransparency = 1
+AnnouncBtn.Text = ""
+AnnouncBtn.AutoButtonColor = false
+AnnouncBtn.Parent = TopBar
+
+local AnnouncIcon = Instance.new("ImageLabel")
+AnnouncIcon.Size = UDim2.new(0, 18, 0, 18)
+AnnouncIcon.Position = UDim2.new(0.5, 0, 0.5, 0)
+AnnouncIcon.AnchorPoint = Vector2.new(0.5, 0.5)
+AnnouncIcon.BackgroundTransparency = 1
+AnnouncIcon.Image = "rbxassetid://86611648211571"
+AnnouncIcon.ScaleType = Enum.ScaleType.Fit
+AnnouncIcon.Parent = AnnouncBtn
+
+UnreadDot = Instance.new("Frame")
+UnreadDot.Name = "UnreadDot"
+UnreadDot.Size = UDim2.new(0, 8, 0, 8)
+UnreadDot.Position = UDim2.new(1, -6, 0, 0)
+UnreadDot.BackgroundColor3 = Colors.Red
+UnreadDot.BorderSizePixel = 0
+UnreadDot.Visible = false
+UnreadDot.ZIndex = 10
+UnreadDot.Parent = AnnouncBtn
+Instance.new("UICorner").Parent = UnreadDot
+
 local MaximizeBtn = Instance.new("TextButton")
 MaximizeBtn.Size = UDim2.new(0, 26, 0, 26)
-MaximizeBtn.Position = UDim2.new(1, -60, 0.5, -13)
+MaximizeBtn.Position = UDim2.new(1, -50, 0.5, -13) 
 MaximizeBtn.BackgroundTransparency = 1
 MaximizeBtn.Text = ""
 MaximizeBtn.AutoButtonColor = false
@@ -676,7 +752,7 @@ MaximizeIcon.Parent = MaximizeBtn
 
 local CloseBtn = Instance.new("TextButton")
 CloseBtn.Size = UDim2.new(0, 26, 0, 26)
-CloseBtn.Position = UDim2.new(1, -30, 0.5, -13)
+CloseBtn.Position = UDim2.new(1, -25, 0.5, -13) 
 CloseBtn.BackgroundTransparency = 1
 CloseBtn.Text = ""
 CloseBtn.AutoButtonColor = false
@@ -898,17 +974,33 @@ local ContentCorner = Instance.new("UICorner")
 ContentCorner.CornerRadius = UDim.new(0, 10)
 ContentCorner.Parent = Content
 
+-- INI BAGIAN WATERMARK YANG BISA DIGANTI
 local WatermarkLogo = Instance.new("ImageLabel")
 WatermarkLogo.Name = "WatermarkLogo"
 WatermarkLogo.Size = UDim2.new(0, 240, 0, 240)
 WatermarkLogo.Position = UDim2.new(0.5, 0, 0.5, 0)
 WatermarkLogo.AnchorPoint = Vector2.new(0.5, 0.5)
 WatermarkLogo.BackgroundTransparency = 1
-WatermarkLogo.Image = "rbxassetid://134572030759999"
+WatermarkLogo.Image = "rbxassetid://134572030759999" -- ID Default awal
 WatermarkLogo.ImageTransparency = 0.88
 WatermarkLogo.ScaleType = Enum.ScaleType.Fit
 WatermarkLogo.ZIndex = 1
 WatermarkLogo.Parent = Content
+
+-- TARIK ID WATERMARK DARI FIREBASE
+task.spawn(function()
+	if reqFunc then
+		pcall(function()
+			local res = reqFunc({ Url = "https://zorx-broadcast-default-rtdb.firebaseio.com/info/WatermarkId.json", Method = "GET" })
+			if res and (res.StatusCode == 200 or res.Status == 200) then
+				local wmId = HttpService:JSONDecode(res.Body)
+				if wmId and wmId ~= "" and wmId ~= "null" then
+					WatermarkLogo.Image = "rbxassetid://" .. tostring(wmId)
+				end
+			end
+		end)
+	end
+end)
 
 local Scroll = Instance.new("ScrollingFrame")
 Scroll.Name = "Scroll"
@@ -1081,6 +1173,9 @@ RunService.Heartbeat:Connect(function()
 	SidebarDivider.BackgroundColor3 = rainbowColor
 end)
 
+-- ============================================================
+-- PANEL ABOUT (FOTO DIKECILIN)
+-- ============================================================
 local function loadAboutPanel()
 	clearContent()
 
@@ -1143,7 +1238,9 @@ local function loadAboutPanel()
 	iCorner.Parent = imageCard
 
 	local img = Instance.new("ImageLabel")
-	img.Size = UDim2.new(1, 0, 1, 0)
+	img.Size = UDim2.new(1, -4, 1, -4) -- FOTO DIKECILIN (FIX)
+	img.Position = UDim2.new(0.5, 0, 0.5, 0)
+	img.AnchorPoint = Vector2.new(0.5, 0.5)
 	img.BackgroundTransparency = 1
 	img.BorderSizePixel = 0
 	img.Image = "rbxassetid://91006115016356"
@@ -1164,7 +1261,7 @@ local function loadAboutPanel()
 end
 
 -- ============================================================
--- TAB INFO (OTOMATIS TARIK VERSI & CHANGELOG DARI FIREBASE)
+-- TAB INFO (FOTO DIKECILIN)
 -- ============================================================
 local function loadInfoPanel()
 	clearContent()
@@ -1190,7 +1287,7 @@ local function loadInfoPanel()
 	registerBorder(cStroke)
 
 	local logoBox = Instance.new("Frame")
-	logoBox.Size = UDim2.new(0, 56, 0, 56)
+	logoBox.Size = UDim2.new(0, 54, 0, 54) -- KOTAK DIKECILIN (FIX)
 	logoBox.Position = UDim2.new(0, 14, 0, 14)
 	logoBox.BackgroundColor3 = Color3.fromRGB(22, 22, 28)
 	logoBox.BorderSizePixel = 0
@@ -1209,12 +1306,13 @@ local function loadInfoPanel()
 	registerInfoLogoBorder(logoStroke)
 
 	local logoImg2 = Instance.new("ImageLabel")
-	logoImg2.Size = UDim2.new(1, 0, 1, 0)
-	logoImg2.Position = UDim2.new(0, 0, 0, 0)
+	logoImg2.Size = UDim2.new(1, -4, 1, -4) -- FOTO DIKECILIN (FIX)
+	logoImg2.Position = UDim2.new(0.5, 0, 0.5, 0)
+	logoImg2.AnchorPoint = Vector2.new(0.5, 0.5)
 	logoImg2.BackgroundTransparency = 1
 	logoImg2.BorderSizePixel = 0
 	logoImg2.Image = "rbxassetid://77776661633653"
-	logoImg2.ScaleType = Enum.ScaleType.Stretch 
+	logoImg2.ScaleType = Enum.ScaleType.Fit 
 	logoImg2.ClipsDescendants = true
 	logoImg2.Parent = logoBox
 
@@ -1348,12 +1446,10 @@ local function loadInfoPanel()
 
 	copyDiscordBtn.MouseButton1Click:Connect(function()
 		pcall(function()
-			if setclipboard then
-				setclipboard("https://discord.gg/3MrpqYycs")
-			elseif toclipboard then
-				toclipboard("https://discord.gg/3MrpqYycs")
-			end
+			if setclipboard then setclipboard("https://discord.gg/3MrpqYycs")
+			elseif toclipboard then toclipboard("https://discord.gg/3MrpqYycs") end
 		end)
+		createTopRightNotification("Discord Invite", "Successfully copied to your clipboard!", "82414580295798", 4)
 	end)
 
 	updateBtn.MouseButton1Click:Connect(function()
@@ -1362,9 +1458,11 @@ local function loadInfoPanel()
 		fetchLiveInfo()
 		task.wait(0.8)
 		udIcon.Rotation = 0
+		createTopRightNotification("Info Updated", "Latest version and date successfully fetched!", "82414580295798", 4)
 	end)
 end
 
+-- PANEL SETTINGS (TETAP)
 local function loadSetingsPanel()
 	clearContent()
 
@@ -1616,4 +1714,108 @@ end
 
 loadAboutPanel()
 
-print("ZORX Hub - Full Service Loaded Successfully!")
+-- ============================================================
+-- UI ANNOUNCEMENT (RAPI & PAS DIBAWAH LONCENG)
+-- ============================================================
+local AnnouncPanel = Instance.new("Frame")
+AnnouncPanel.Name = "AnnouncPanel"
+AnnouncPanel.Size = UDim2.new(0, 260, 0, 220)
+AnnouncPanel.Position = UDim2.new(1, -270, 0, 32)
+AnnouncPanel.BackgroundColor3 = Colors.Panel
+AnnouncPanel.BorderSizePixel = 0
+AnnouncPanel.Visible = false
+AnnouncPanel.ZIndex = 50
+AnnouncPanel.Parent = Main
+
+local apCorner = Instance.new("UICorner")
+apCorner.CornerRadius = UDim.new(0, 8)
+apCorner.Parent = AnnouncPanel
+
+local apStroke = Instance.new("UIStroke")
+apStroke.Color = DefaultBorder
+apStroke.Parent = AnnouncPanel
+
+local apTitle = Instance.new("TextLabel")
+apTitle.Size = UDim2.new(1, 0, 0, 30)
+apTitle.BackgroundTransparency = 1
+apTitle.Text = "Announcements"
+apTitle.TextColor3 = Colors.Text
+apTitle.Font = Enum.Font.GothamBold
+apTitle.TextSize = 12
+apTitle.Parent = AnnouncPanel
+
+local apCloseBtn = Instance.new("TextButton")
+apCloseBtn.Size = UDim2.new(0, 20, 0, 20)
+apCloseBtn.Position = UDim2.new(1, -25, 0, 5)
+apCloseBtn.BackgroundTransparency = 1
+apCloseBtn.Text = ""
+apCloseBtn.AutoButtonColor = false
+apCloseBtn.Parent = AnnouncPanel
+
+local apCloseIcon = Instance.new("ImageLabel")
+apCloseIcon.Size = UDim2.new(0, 10, 0, 10)
+apCloseIcon.Position = UDim2.new(0.5, 0, 0.5, 0)
+apCloseIcon.AnchorPoint = Vector2.new(0.5, 0.5)
+apCloseIcon.BackgroundTransparency = 1
+apCloseIcon.Image = "rbxassetid://85435035697164"
+apCloseIcon.ImageColor3 = Color3.fromRGB(170, 170, 180)
+apCloseIcon.ScaleType = Enum.ScaleType.Fit
+apCloseIcon.Parent = apCloseBtn
+
+local apDivider = Instance.new("Frame")
+apDivider.Size = UDim2.new(1, -20, 0, 1)
+apDivider.Position = UDim2.new(0, 10, 0, 30)
+apDivider.BackgroundColor3 = DefaultBorder
+apDivider.BorderSizePixel = 0
+apDivider.Parent = AnnouncPanel
+
+local apScroll = Instance.new("ScrollingFrame")
+apScroll.Size = UDim2.new(1, -20, 1, -45)
+apScroll.Position = UDim2.new(0, 10, 0, 35)
+apScroll.BackgroundTransparency = 1
+apScroll.ScrollBarThickness = 4
+apScroll.ScrollBarImageColor3 = Colors.Stroke
+apScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
+apScroll.Parent = AnnouncPanel
+
+local apList = Instance.new("UIListLayout")
+apList.SortOrder = Enum.SortOrder.LayoutOrder
+apList.Padding = UDim.new(0, 5)
+apList.Parent = apScroll
+
+apCloseBtn.MouseButton1Click:Connect(function()
+	AnnouncPanel.Visible = false
+	UnreadDot.Visible = false
+	unreadAnnouncements = 0
+end)
+
+_G.AddAnnouncement = function(text)
+	local msgFrame = Instance.new("Frame")
+	msgFrame.Size = UDim2.new(1, 0, 0, 40)
+	msgFrame.BackgroundColor3 = Colors.Slot
+	msgFrame.BorderSizePixel = 0
+	msgFrame.Parent = apScroll
+	Instance.new("UICorner").Parent = msgFrame
+
+	local msgLabel = Instance.new("TextLabel")
+	msgLabel.Size = UDim2.new(1, -10, 1, 0)
+	msgLabel.Position = UDim2.new(0, 5, 0, 0)
+	msgLabel.BackgroundTransparency = 1
+	msgLabel.Text = text
+	msgLabel.TextColor3 = Colors.Text
+	msgLabel.Font = Enum.Font.Gotham
+	msgLabel.TextSize = 10
+	msgLabel.TextWrapped = true
+	msgLabel.TextXAlignment = Enum.TextXAlignment.Left
+	msgLabel.Parent = msgFrame
+end
+
+AnnouncBtn.MouseButton1Click:Connect(function()
+	AnnouncPanel.Visible = not AnnouncPanel.Visible
+	if AnnouncPanel.Visible then
+		UnreadDot.Visible = false
+		unreadAnnouncements = 0
+	end
+end)
+
+print("ZORX Hub - Full UI (Murni UI) Loaded Successfully!")
