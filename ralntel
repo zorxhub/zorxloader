@@ -706,7 +706,7 @@ task.spawn(function()
 end)
 
 -- ============================================================
--- TOMBOL LONCENG & ANNOUNCEMENT (POSISI DIPERBAIKI)
+-- TOMBOL LONCENG & ANNOUNCEMENT
 -- ============================================================
 local AnnouncBtn = Instance.new("TextButton")
 AnnouncBtn.Name = "AnnouncBtn"
@@ -1179,7 +1179,7 @@ RunService.Heartbeat:Connect(function()
 end)
 
 -- ============================================================
--- PANEL ABOUT (FOTO DIKECILIN)
+-- PANEL ABOUT
 -- ============================================================
 local function loadAboutPanel()
 	clearContent()
@@ -1266,7 +1266,7 @@ local function loadAboutPanel()
 end
 
 -- ============================================================
--- TAB INFO (FOTO DIKECILIN)
+-- TAB INFO
 -- ============================================================
 local function loadInfoPanel()
 	clearContent()
@@ -1467,7 +1467,9 @@ local function loadInfoPanel()
 	end)
 end
 
--- PANEL SETTINGS (TETAP)
+-- ============================================================
+-- PANEL SETTINGS
+-- ============================================================
 local function loadSetingsPanel()
 	clearContent()
 
@@ -1744,7 +1746,7 @@ apStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
 apStroke.Parent = AnnouncPanel
 registerBorder(apStroke)
 
--- Header (judul + tombol close) — fixed di atas
+-- Header (judul + tombol close)
 local apHeader = Instance.new("Frame")
 apHeader.Name = "Header"
 apHeader.Size = UDim2.new(1, 0, 0, 32)
@@ -1800,7 +1802,7 @@ apListLayout.SortOrder = Enum.SortOrder.LayoutOrder
 apListLayout.Padding = UDim.new(0, 4)
 apListLayout.Parent = apList
 
--- Empty state: "No notifications yet"
+-- Empty state
 local apEmptyLabel = Instance.new("TextLabel")
 apEmptyLabel.Name = "EmptyLabel"
 apEmptyLabel.Size = UDim2.new(1, 0, 0, 20)
@@ -1843,6 +1845,9 @@ local function refreshAnnouncPanelSize()
 	end)
 end
 
+-- ============================================================
+-- MESSAGE CREATION LOGIC (DIPERBAIKI TOTAL)
+-- ============================================================
 _G.AddAnnouncement = function(text)
 	if not text or text == "" then return end
 
@@ -1896,22 +1901,15 @@ _G.AddAnnouncement = function(text)
 	msgCorner.CornerRadius = UDim.new(0, 6)
 	msgCorner.Parent = msgFrame
 
-	-- Padding untuk isi pesan
+	-- Padding (Bawah dibuat agak lebar agar teks tidak menabrak tombol)
 	local msgPad = Instance.new("UIPadding")
 	msgPad.PaddingTop = UDim.new(0, 6)
-	msgPad.PaddingBottom = UDim.new(0, 6)
+	msgPad.PaddingBottom = UDim.new(0, 26)
 	msgPad.PaddingLeft = UDim.new(0, 8)
 	msgPad.PaddingRight = UDim.new(0, 8)
 	msgPad.Parent = msgFrame
 
-	-- Gunakan UIListLayout Vertikal agar Teks dan Tombol berurutan ke bawah
-	local layout = Instance.new("UIListLayout")
-	layout.FillDirection = Enum.FillDirection.Vertical
-	layout.SortOrder = Enum.SortOrder.LayoutOrder
-	layout.Padding = UDim.new(0, 4)
-	layout.Parent = msgFrame
-
-	-- Teks Pesan (Otomatis menyesuaikan panjang)
+	-- Teks Pesan
 	local msgLabel = Instance.new("TextLabel")
 	msgLabel.Name = "MsgText"
 	msgLabel.Size = UDim2.new(1, 0, 0, 0)
@@ -1924,32 +1922,32 @@ _G.AddAnnouncement = function(text)
 	msgLabel.TextXAlignment = Enum.TextXAlignment.Left
 	msgLabel.TextYAlignment = Enum.TextYAlignment.Top
 	msgLabel.AutomaticSize = Enum.AutomaticSize.Y
-	msgLabel.LayoutOrder = 1
 	msgLabel.ZIndex = 53
 	msgLabel.Parent = msgFrame
 
 	-- ==========================================
-	-- FITUR LIKE & DISLIKE (DI BAWAH TEKS)
+	-- FITUR LIKE & DISLIKE (POJOK KANAN BAWAH)
 	-- ==========================================
 	local actionFrame = Instance.new("Frame")
 	actionFrame.Name = "ActionFrame"
-	actionFrame.Size = UDim2.new(1, 0, 0, 16) -- Lebar penuh
+	actionFrame.Size = UDim2.new(0, 45, 0, 16) -- Kotak kecil untuk 2 tombol
+	actionFrame.Position = UDim2.new(1, -6, 1, -4) -- Ditempel di pojok kanan bawah
+	actionFrame.AnchorPoint = Vector2.new(1, 1) -- Acuan tariknya dari kanan bawah
 	actionFrame.BackgroundTransparency = 1
-	actionFrame.LayoutOrder = 2 -- Berada di bawah teks
 	actionFrame.ZIndex = 54
 	actionFrame.Parent = msgFrame
 
 	local actionList = Instance.new("UIListLayout")
 	actionList.FillDirection = Enum.FillDirection.Horizontal
 	actionList.VerticalAlignment = Enum.VerticalAlignment.Center
-	actionList.HorizontalAlignment = Enum.HorizontalAlignment.Left
+	actionList.HorizontalAlignment = Enum.HorizontalAlignment.Right -- Rata kanan
 	actionList.Padding = UDim.new(0, 6)
 	actionList.Parent = actionFrame
 
 	-- Tombol LIKE
 	local likeBtn = Instance.new("ImageButton")
 	likeBtn.Name = "LikeBtn"
-	likeBtn.Size = UDim2.new(0, 14, 0, 14) -- Ukuran icon disesuaikan agar rapi
+	likeBtn.Size = UDim2.new(0, 14, 0, 14)
 	likeBtn.BackgroundTransparency = 1
 	likeBtn.Image = "rbxassetid://78703642436909"
 	likeBtn.ImageColor3 = Color3.fromRGB(255, 255, 255)
