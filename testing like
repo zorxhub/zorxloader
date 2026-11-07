@@ -838,7 +838,7 @@ task.spawn(function()
 end)
 
 -- ============================================================
--- REAL-TIME COUNTDOWN (Memanjang & Teks Utuh)
+-- REAL-TIME COUNTDOWN (ANGKA MUNDUR DARI HTML)
 -- ============================================================
 local function FormatTime(seconds)
 	local d = math.floor(seconds / 86400)
@@ -855,11 +855,8 @@ local function FormatTime(seconds)
 	end
 end
 
-local licenseConnection
 local function StartCountdown()
-	if licenseConnection then licenseConnection:Disconnect() end
-	
-	licenseConnection = RunService.Heartbeat:Connect(function()
+	RunService.Heartbeat:Connect(function()
 		local currentTimeMs = os.time() * 1000
 		local timeLeftMs = expireTime - currentTimeMs
 		
@@ -867,18 +864,17 @@ local function StartCountdown()
 			local timeLeftSec = math.floor(timeLeftMs / 1000)
 			local formattedTime = FormatTime(timeLeftSec)
 			
-			-- Teks Trial dari HTML
+			-- Teks Trial
 			if trialText then
 				trialText.Text = customTrialText
 			end
 			
-			-- Teks Countdown (Lebar Menyesuaikan Teks)
+			-- Teks Countdown (Lebar nyesuaiin teks)
 			if zeroText and zeroCard then
 				zeroText.Text = formattedTime
 				zeroCard.Size = UDim2.new(0, zeroText.TextBounds.X + 16, 0, 22)
 			end
 		else
-			licenseConnection:Disconnect()
 			DestroyEverything()
 		end
 	end)
