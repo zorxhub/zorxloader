@@ -1901,18 +1901,19 @@ _G.AddAnnouncement = function(text)
 	msgCorner.CornerRadius = UDim.new(0, 6)
 	msgCorner.Parent = msgFrame
 
-	-- Padding (Bawah dibuat agak lebar agar teks tidak menabrak tombol)
+	-- Padding standar
 	local msgPad = Instance.new("UIPadding")
-	msgPad.PaddingTop = UDim.new(0, 6)
-	msgPad.PaddingBottom = UDim.new(0, 26)
+	msgPad.PaddingTop = UDim.new(0, 8)
+	msgPad.PaddingBottom = UDim.new(0, 8)
 	msgPad.PaddingLeft = UDim.new(0, 8)
 	msgPad.PaddingRight = UDim.new(0, 8)
 	msgPad.Parent = msgFrame
 
-	-- Teks Pesan
+	-- Teks Pesan (Lebar dikurangi agar tidak menabrak tombol di kanan)
 	local msgLabel = Instance.new("TextLabel")
 	msgLabel.Name = "MsgText"
-	msgLabel.Size = UDim2.new(1, 0, 0, 0)
+	msgLabel.Size = UDim2.new(1, -45, 0, 0) -- Sisa 45px untuk tombol
+	msgLabel.Position = UDim2.new(0, 0, 0, 0) 
 	msgLabel.BackgroundTransparency = 1
 	msgLabel.Text = text
 	msgLabel.TextColor3 = Colors.Text
@@ -1926,21 +1927,24 @@ _G.AddAnnouncement = function(text)
 	msgLabel.Parent = msgFrame
 
 	-- ==========================================
-	-- FITUR LIKE & DISLIKE (POJOK KANAN BAWAH)
+	-- FITUR LIKE & DISLIKE (SEJAJAR TEKS, MENTOK KANAN)
 	-- ==========================================
 	local actionFrame = Instance.new("Frame")
 	actionFrame.Name = "ActionFrame"
-	actionFrame.Size = UDim2.new(0, 45, 0, 16) -- Kotak kecil untuk 2 tombol
-	actionFrame.Position = UDim2.new(1, -6, 1, -4) -- Ditempel di pojok kanan bawah
-	actionFrame.AnchorPoint = Vector2.new(1, 1) -- Acuan tariknya dari kanan bawah
+	actionFrame.Size = UDim2.new(0, 40, 0, 14) 
+	
+	-- Posisi: Di sebelah kanan teks, rata atas
+	actionFrame.Position = UDim2.new(1, 0, 0, 0) 
+	actionFrame.AnchorPoint = Vector2.new(1, 0) -- Acuan dari kanan atas
+	
 	actionFrame.BackgroundTransparency = 1
 	actionFrame.ZIndex = 54
 	actionFrame.Parent = msgFrame
 
 	local actionList = Instance.new("UIListLayout")
 	actionList.FillDirection = Enum.FillDirection.Horizontal
-	actionList.VerticalAlignment = Enum.VerticalAlignment.Center
-	actionList.HorizontalAlignment = Enum.HorizontalAlignment.Right -- Rata kanan
+	actionList.VerticalAlignment = Enum.VerticalAlignment.Top
+	actionList.HorizontalAlignment = Enum.HorizontalAlignment.Right
 	actionList.Padding = UDim.new(0, 6)
 	actionList.Parent = actionFrame
 
