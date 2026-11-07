@@ -953,30 +953,40 @@ local isMaximized = false
 MaximizeBtn.MouseButton1Click:Connect(function()
 	isMaximized = not isMaximized
 
-	-- ===== HIDE/SHOW TITLE "ZORX" + LOGO =====
+	-- ===== HIDE/SHOW TITLE "ZORX" SAJA (LOGO TETAP) =====
 	if isMaximized then
-		-- Saat maximize: sembunyikan Title & Logo
 		TweenService:Create(Title, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
 			TextTransparency = 1
 		}):Play()
-		TweenService:Create(LogoImg, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-			ImageTransparency = 1
-		}):Play()
 		Title.Visible = false
-		LogoImg.Visible = false
 	else
-		-- Saat normal: munculkan lagi Title & Logo
 		Title.Visible = true
-		LogoImg.Visible = true
 		Title.TextTransparency = 1
-		LogoImg.ImageTransparency = 1
 		TweenService:Create(Title, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
 			TextTransparency = 0
 		}):Play()
-		TweenService:Create(LogoImg, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-			ImageTransparency = 0
-		}):Play()
 	end
+
+	-- ===== SHOW/HIDE PILL KARTU =====
+	for _, card in ipairs({avatarCard, nickCard, trialCard, zeroCard}) do
+		if isMaximized then
+			card.Visible = true
+			card.BackgroundTransparency = 1
+			TweenService:Create(card, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+				BackgroundTransparency = 0
+			}):Play()
+		else
+			card.Visible = false
+			card.BackgroundTransparency = 1
+		end
+	end
+
+	-- ===== RESIZE MAIN UI =====
+	TweenService:Create(Main, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+		Size = isMaximized and UDim2.new(0, 620, 0, 390) or UDim2.new(0, 480, 0, 300),
+		Position = UDim2.new(0.5, 0, 0.5, 0)
+	}):Play()
+end)
 
 	-- ===== SHOW/HIDE PILL KARTU =====
 	for _, card in ipairs({avatarCard, nickCard, trialCard, zeroCard}) do
