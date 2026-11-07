@@ -1914,15 +1914,15 @@ _G.AddAnnouncement = function(text)
 	msgLabel.Parent = msgFrame
 
 -- ==========================================
--- FITUR LIKE & DISLIKE (SEJAJAR & RAPI)
+-- FITUR LIKE & DISLIKE (SEJAJAR & RAPI KE BAWAH)
 -- ==========================================
 local actionFrame = Instance.new("Frame")
 actionFrame.Name = "ActionFrame"
 actionFrame.Size = UDim2.new(0, 60, 0, 20)
 
--- Posisi Nempel Kanan, Sejajar Tengah (Vertikal)
-actionFrame.Position = UDim2.new(1, -8, 0.5, 0) 
-actionFrame.AnchorPoint = Vector2.new(1, 0.5) -- Titik tumpu di tengah kanan
+-- Posisi agak ke bawah dan menempel di kanan pesan
+actionFrame.Position = UDim2.new(1, -8, 0, 22) 
+actionFrame.AnchorPoint = Vector2.new(1, 0)
 
 actionFrame.BackgroundTransparency = 1
 actionFrame.ZIndex = 54
@@ -1931,7 +1931,7 @@ actionFrame.Parent = msgFrame
 local actionList = Instance.new("UIListLayout")
 actionList.FillDirection = Enum.FillDirection.Horizontal
 actionList.VerticalAlignment = Enum.VerticalAlignment.Center
-actionList.HorizontalAlignment = Enum.HorizontalAlignment.Center -- Biar rapi di tengah
+actionList.HorizontalAlignment = Enum.HorizontalAlignment.Right
 actionList.Padding = UDim.new(0, 8)
 actionList.Parent = actionFrame
 
@@ -1942,7 +1942,7 @@ likeBtn.Size = UDim2.new(0, 18, 0, 18)
 likeBtn.BackgroundTransparency = 1
 likeBtn.Image = "rbxassetid://78703642436909"
 likeBtn.ImageColor3 = Color3.fromRGB(255, 255, 255)
-likeBtn.LayoutOrder = 1 -- Kiri
+likeBtn.LayoutOrder = 1 -- Di kiri
 likeBtn.ZIndex = 55
 likeBtn.Parent = actionFrame
 
@@ -1953,7 +1953,7 @@ dislikeBtn.Size = UDim2.new(0, 18, 0, 18)
 dislikeBtn.BackgroundTransparency = 1
 dislikeBtn.Image = "rbxassetid://115295848024534"
 dislikeBtn.ImageColor3 = Color3.fromRGB(255, 255, 255)
-dislikeBtn.LayoutOrder = 2 -- Kanan
+dislikeBtn.LayoutOrder = 2 -- Di kanan
 dislikeBtn.ZIndex = 55
 dislikeBtn.Parent = actionFrame
 
@@ -1964,6 +1964,7 @@ likeBtn.MouseButton1Click:Connect(function()
 	if liked then
 		likeBtn.Image = "rbxassetid://118652612472796"
 		dislikeBtn.Image = "rbxassetid://115295848024534"
+		disliked = false
 	else
 		likeBtn.Image = "rbxassetid://78703642436909"
 	end
@@ -1976,6 +1977,7 @@ dislikeBtn.MouseButton1Click:Connect(function()
 	if disliked then
 		dislikeBtn.Image = "rbxassetid://127169986638010"
 		likeBtn.Image = "rbxassetid://78703642436909"
+		liked = false
 	else
 		dislikeBtn.Image = "rbxassetid://115295848024534"
 	end
