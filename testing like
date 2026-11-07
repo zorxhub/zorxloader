@@ -988,27 +988,6 @@ MaximizeBtn.MouseButton1Click:Connect(function()
 	}):Play()
 end)
 
-	-- ===== SHOW/HIDE PILL KARTU =====
-	for _, card in ipairs({avatarCard, nickCard, trialCard, zeroCard}) do
-		if isMaximized then
-			card.Visible = true
-			card.BackgroundTransparency = 1
-			TweenService:Create(card, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-				BackgroundTransparency = 0
-			}):Play()
-		else
-			card.Visible = false
-			card.BackgroundTransparency = 1
-		end
-	end
-
-	-- ===== RESIZE MAIN UI =====
-	TweenService:Create(Main, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-		Size = isMaximized and UDim2.new(0, 620, 0, 390) or UDim2.new(0, 480, 0, 300),
-		Position = UDim2.new(0.5, 0, 0.5, 0)
-	}):Play()
-end)
-
 local frameCount = 0
 local lastTime = tick()
 RunService.RenderStepped:Connect(function()
