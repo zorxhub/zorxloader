@@ -823,6 +823,9 @@ local safeTrialText = customTrialText or "Trial"
 local trialWidth = #safeTrialText * 7 + 16
 local trialCard, trialText = createPill(safeTrialText, trialWidth, "", 2, false)
 
+-- TAMBAHKAN BARIS INI (Ini yang tadi kehapus)
+local zeroCard, zeroText = createPill("000", 60, "", 3, false) 
+
 -- 4. Pill Utama
 local gamePill, gameText = createPill(getGameName(), 145, "83907651602856", 4, true)
 local fpsPill, fpsText = createPill("0", 48, "87621836182790", 5, true)
@@ -836,50 +839,6 @@ task.spawn(function()
 		end
 	end
 end)
-
--- ============================================================
--- REAL-TIME COUNTDOWN (ANGKA MUNDUR DARI HTML)
--- ============================================================
-local function FormatTime(seconds)
-	local d = math.floor(seconds / 86400)
-	local h = math.floor((seconds % 86400) / 3600)
-	local m = math.floor((seconds % 3600) / 60)
-	local s = math.floor(seconds % 60)
-	
-	if d > 0 then
-		return string.format("%dD %02dH %02dM", d, h, m)
-	elseif h > 0 then
-		return string.format("%02dH %02dM %02dS", h, m, s)
-	else
-		return string.format("%02dM %02dS", m, s)
-	end
-end
-
-local function StartCountdown()
-	RunService.Heartbeat:Connect(function()
-		local currentTimeMs = os.time() * 1000
-		local timeLeftMs = expireTime - currentTimeMs
-		
-		if timeLeftMs > 0 then
-			local timeLeftSec = math.floor(timeLeftMs / 1000)
-			local formattedTime = FormatTime(timeLeftSec)
-			
-			-- Teks Trial
-			if trialText then
-				trialText.Text = customTrialText
-			end
-			
-			-- Teks Countdown (Lebar nyesuaiin teks)
-			if zeroText and zeroCard then
-				zeroText.Text = formattedTime
-				zeroCard.Size = UDim2.new(0, zeroText.TextBounds.X + 16, 0, 22)
-			end
-		else
-			DestroyEverything()
-		end
-	end)
-end
-StartCountdown()
 
 -- ============================================================
 -- TOMBOL LONCENG & ANNOUNCEMENT
@@ -2200,16 +2159,54 @@ apCloseBtn.MouseButton1Click:Connect(function()
 end)
 
 -- ============================================================
--- PENGAMAN ANTI-NABRAK (PILL BERHENTI MEMANJANG JIKA KEPANJANGAN)
+-- PENGAMAN ANTI-NABRAK
 -- ============================================================
 RunService.Heartbeat:Connect(function()
-	local MAX_WIDTH = 280 -- Jika total pill lebih dari 280px, dia berhenti memanjang
-	
+	local MAX_WIDTH = 280
 	if PillContainer.AbsoluteSize.X > MAX_WIDTH then
 		PillContainer.Size = UDim2.new(0, MAX_WIDTH, 0, 22)
 		PillContainer.AutomaticSize = Enum.AutomaticSize.None
 	else
 		PillContainer.AutomaticSize = Enum.AutomaticSize.X
+	end
+end)
+
+-- ============================================================
+-- REAL-TIME COUNTDOWN (Ditaruh di paling bawah biar aman)
+-- ============================================================
+local function FormatTime(seconds)
+	local d = math.floor(seconds / 86400)
+	local h = math.floor((seconds % 86400) / 3600)
+	local m = math.floor((seconds % 3600) / 60)
+	local s = math.floor(seconds % 60)
+	
+	if d > 0 then
+		return string.format("%dD %02dH %02dM", d, h, m)
+	elseif h > 0 then
+		return string.format("%02dH %02dM %02dS", h, m, s)
+	else
+		return string.format("%02dM %02dS", m, s)
+	end
+end
+
+RunService.Heartbeat:Connect(function()
+	local currentTimeMs = os.time() * 1000
+	local timeLeftMs = expireTime - currentTimeMs
+	
+	if timeLeftMs > 0 then
+		local timeLeftSec = math.floor(timeLeftMs / 1000)
+		local formattedTime = FormatTime(timeLeftSec)
+		
+		if trialText then
+			trialText.Text = customTrialText
+		end
+		
+		if zeroText and zeroCard then
+			zeroText.Text = formattedTime
+			zeroCard.Size = UDim2.new(0, zeroText.TextBounds.X + 16, 0, 22)
+		end
+	else
+		DestroyEverything()
 	end
 end)
 
