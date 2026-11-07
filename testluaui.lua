@@ -1,5 +1,5 @@
 --============================================================
--- ZORX HUB - FULL UI (MURNI UI & BROADCAST SAJA)
+-- ZORX HUB - FULL UI + LICENSE SYSTEM
 --============================================================
 
 local Players = game:GetService("Players")
@@ -11,12 +11,63 @@ local HttpService = game:GetService("HttpService")
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
 
--- Penanganan fungsi HTTP Request yang lebih aman
+-- Penanganan fungsi HTTP Request
 local reqFunc = (type(request) == "function" and request) 
 	or (syn and type(syn.request) == "function" and syn.request) 
 	or (http and type(http.request) == "function" and http.request) 
 	or (type(http_request) == "function" and http_request) 
 	or nil
+
+-- ============================================================
+-- SYSTEM BLOKIR / DESTROY (JIKA WAKTU HABIS)
+-- ============================================================
+local function DestroyEverything()
+	for _, gui in pairs(playerGui:GetChildren()) do
+		if gui.Name == "ZorXHub" or gui.Name == "ZorxTopNotifContainer" then
+			gui:Destroy()
+		end
+	end
+	if script then script:Destroy() end
+end
+
+-- ============================================================
+-- CEK LICENSE (FIREBASE)
+-- ============================================================
+local function CheckLicense()
+	local success = false
+	local expireTimestamp = 0
+	
+	if reqFunc then
+		pcall(function()
+			local url = "https://zorx-broadcast-default-rtdb.firebaseio.com/licenses/" .. player.Name .. ".json"
+			local res = reqFunc({ Url = url, Method = "GET" })
+			
+			if res and (res.StatusCode == 200 or res.Status == 200) then
+				local data = HttpService:JSONDecode(res.Body)
+				if data and data.ExpireTime then
+					success = true
+					expireTimestamp = data.ExpireTime
+				end
+			end
+		end)
+	end
+	
+	return success, expireTimestamp
+end
+
+local isLicensed, expireTime = CheckLicense()
+
+if not isLicensed then
+	warn("Lisensi tidak ditemukan untuk " .. player.Name .. ". UI tidak akan dimuat.")
+	DestroyEverything()
+	return
+end
+
+if (os.time() * 1000) >= expireTime then
+	warn("Lisensi sudah expired!")
+	DestroyEverything()
+	return
+end
 
 -- ============================================================
 -- BERSIHKAN UI LAMA
@@ -777,6 +828,52 @@ task.spawn(function()
 end)
 
 -- ============================================================
+-- REAL-TIME COUNTDOWN UNTUK [TRIAL] & [000]
+-- ============================================================
+local function FormatTime(seconds)
+	local d = math.floor(seconds / 86400)
+	local h = math.floor((seconds % 86400) / 3600)
+	local m = math.floor((seconds % 3600) / 60)
+	local s = math.floor(seconds % 60)
+	
+	if d > 0 then
+		return string.format("%dD %02dH %02dM", d, h, m)
+	elseif h > 0 then
+		return string.format("%02dH %02dM %02dS", h, m, s)
+	else
+		return string.format("%02dM %02dS", m, s)
+	end
+end
+
+local licenseConnection
+local function StartCountdown()
+	if licenseConnection then licenseConnection:Disconnect() end
+	
+	licenseConnection = RunService.Heartbeat:Connect(function()
+		local currentTimeMs = os.time() * 1000
+		local timeLeftMs = expireTime - currentTimeMs
+		
+		if timeLeftMs > 0 then
+			local timeLeftSec = math.floor(timeLeftMs / 1000)
+			local formattedTime = FormatTime(timeLeftSec)
+			
+			if trialText and zeroText then
+				trialText.Text = "Trial"
+				zeroText.Text = formattedTime
+				
+				if zeroCard then
+					zeroCard.Size = UDim2.new(0, zeroText.TextBounds.X + 16, 0, 22)
+				end
+			end
+		else
+			licenseConnection:Disconnect()
+			DestroyEverything()
+		end
+	end)
+end
+StartCountdown()
+
+-- ============================================================
 -- TOMBOL LONCENG & ANNOUNCEMENT
 -- ============================================================
 local AnnouncBtn = Instance.new("TextButton")
@@ -856,7 +953,6 @@ local isMaximized = false
 MaximizeBtn.MouseButton1Click:Connect(function()
 	isMaximized = not isMaximized
 
-	-- 1. LANGSUNG SEMBUNYIKAN/MUNCULKAN ID CARD TANPA ANIMASI
 	for _, card in ipairs({avatarCard, nickCard, trialCard, zeroCard}) do
 		if isMaximized then
 			card.Visible = true
@@ -870,7 +966,6 @@ MaximizeBtn.MouseButton1Click:Connect(function()
 		end
 	end
 
-	-- 2. BARU JALANKAN ANIMASI LAYAR
 	TweenService:Create(Main, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
 		Size = isMaximized and UDim2.new(0, 620, 0, 390) or UDim2.new(0, 480, 0, 300),
 		Position = UDim2.new(0.5, 0, 0.5, 0)
