@@ -697,9 +697,10 @@ end
 
 -- ============================================================
 -- ID CARD (KHUSUS MODE PERBESAR) - LayoutOrder negatif = paling kiri
+-- Tanpa icon, hanya teks
 -- ============================================================
-local trialCard, trialText = createPill("Trial", 46, "117372440865704", -2, false)
-local zeroCard, zeroText   = createPill("000",   40, "83907651602856",  -1, false)
+local trialCard, trialText = createPill("Trial", 46, "", -2, false)
+local zeroCard, zeroText   = createPill("000",   40, "", -1, false)
 
 -- Pill utama
 local gamePill, gameText = createPill(getGameName(), 145, "83907651602856", 1, true)
