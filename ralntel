@@ -621,7 +621,7 @@ Title.TextSize = 11
 Title.TextXAlignment = Enum.TextXAlignment.Left
 Title.Parent = TopBar
 
--- CONTAINER PILL UTAMA (Profil, Nickname, Trial, 000, Tech Game, dll digabung di sini)
+-- CONTAINER PILL UTAMA
 local PillContainer = Instance.new("Frame")
 PillContainer.Name = "PillContainer"
 PillContainer.Size = UDim2.new(0, 0, 0, 22)
@@ -648,18 +648,20 @@ local function registerInfoLogoBorder(stroke)
 	table.insert(infoLogoBorders, stroke)
 end
 
--- FUNGSI BARU UNTUK MEMBUAT FOTO PROFIL (BULAT)
+-- FUNGSI BARU UNTUK MEMBUAT FOTO PROFIL (BULAT) MENGGUNAKAN TextButton
 local function createAvatarPill(layoutOrder, visible)
-	local pill = Instance.new("Frame")
+	local pill = Instance.new("TextButton") -- Gunakan TextButton agar bisa diklik
 	pill.Size = UDim2.new(0, 22, 0, 22) -- Ukuran persegi agar jadi bulat sempurna
 	pill.BackgroundColor3 = DefaultPillBg
 	pill.BorderSizePixel = 0
+	pill.Text = ""
+	pill.AutoButtonColor = false
 	pill.LayoutOrder = layoutOrder or 0
 	pill.Visible = (visible ~= false)
 	pill.Parent = PillContainer
 
 	local pCorner = Instance.new("UICorner")
-	pCorner.CornerRadius = UDim.new(1, 0) -- Full bulat
+	pCorner.CornerRadius = UDim.new(1, 0)
 	pCorner.Parent = pill
 
 	local pStroke = Instance.new("UIStroke")
@@ -670,7 +672,7 @@ local function createAvatarPill(layoutOrder, visible)
 
 	local avatar = Instance.new("ImageLabel")
 	avatar.Name = "Avatar"
-	avatar.Size = UDim2.new(1, -2, 1, -2) -- Ada margin 1px agar border kelihatan
+	avatar.Size = UDim2.new(1, -2, 1, -2)
 	avatar.Position = UDim2.new(0.5, 0, 0.5, 0)
 	avatar.AnchorPoint = Vector2.new(0.5, 0.5)
 	avatar.BackgroundTransparency = 1
@@ -683,7 +685,6 @@ local function createAvatarPill(layoutOrder, visible)
 	avCorner.Parent = avatar
 
 	-- Fitur interaksi klik (copy link profil)
-	pill.Active = true
 	pill.MouseButton1Click:Connect(function()
 		local profileUrl = "https://www.roblox.com/users/" .. player.UserId .. "/profile"
 		pcall(function()
@@ -695,7 +696,6 @@ local function createAvatarPill(layoutOrder, visible)
 
 	table.insert(allPills, pill)
 	table.insert(allPillStrokes, pStroke)
-	-- Avatar tidak masuk allPillTexts karena dia gambar
 
 	return pill
 end
@@ -719,7 +719,6 @@ local function createPill(textText, width, iconId, layoutOrder, visible)
 	pStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
 	pStroke.Parent = pill
 
-	-- PERBAIKAN LOGIKA: Cek apakah iconId ada dan BUKAN string kosong
 	local hasIcon = (iconId and iconId ~= "")
 
 	if hasIcon then
@@ -756,14 +755,14 @@ local avatarCard = createAvatarPill(0, false)
 
 -- 2. Nickname User (Lebar dinamis menyesuaikan nama)
 local nameLength = #player.Name
-local namePillWidth = math.clamp(nameLength * 6 + 16, 40, 120) -- Estimasi lebar teks
+local namePillWidth = math.clamp(nameLength * 6 + 16, 40, 120)
 local nickCard, nickText = createPill(player.Name, namePillWidth, "", 1, false)
 
--- 3. ID Card (Tanpa Ikon, Teks Ke Tengah) - LayoutOrder 2 & 3
+-- 3. ID Card (Tanpa Ikon, Teks Ke Tengah)
 local trialCard, trialText = createPill("Trial", 46, "", 2, false)
 local zeroCard, zeroText   = createPill("000",   40, "", 3, false)
 
--- 4. Pill Utama - LayoutOrder 4, 5, 6 (Otomatis di kanan)
+-- 4. Pill Utama
 local gamePill, gameText = createPill(getGameName(), 145, "83907651602856", 4, true)
 local fpsPill, fpsText = createPill("0", 48, "87621836182790", 5, true)
 local execPill, execText = createPill(detectedExecutor, 68, "76551269066313", 6, true)
