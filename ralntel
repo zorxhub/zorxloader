@@ -1892,26 +1892,26 @@ _G.AddAnnouncement = function(text)
 	msgCorner.Parent = msgFrame
 
 	local msgPad = Instance.new("UIPadding")
-	msgPad.PaddingTop = UDim.new(0, 6)
-	msgPad.PaddingBottom = UDim.new(0, 6)
-	msgPad.PaddingLeft = UDim.new(0, 8)
-	msgPad.PaddingRight = UDim.new(0, 8)
-	msgPad.Parent = msgFrame
+msgPad.PaddingTop = UDim.new(0, 4) -- Dikurangi dari 6 biar tipis
+msgPad.PaddingBottom = UDim.new(0, 22) -- Ruang buat tombol di bawah
+msgPad.PaddingLeft = UDim.new(0, 6) -- Dikurangi dari 8 biar gak terlalu lebar
+msgPad.PaddingRight = UDim.new(0, 6)
+msgPad.Parent = msgFrame
 
-	local msgLabel = Instance.new("TextLabel")
-	msgLabel.Name = "MsgText"
-	msgLabel.Size = UDim2.new(1, -50, 0, 0) 
-	msgLabel.BackgroundTransparency = 1
-	msgLabel.Text = text
-	msgLabel.TextColor3 = Colors.Text
-	msgLabel.Font = Enum.Font.Gotham
-	msgLabel.TextSize = 10
-	msgLabel.TextWrapped = true
-	msgLabel.TextXAlignment = Enum.TextXAlignment.Left
-	msgLabel.TextYAlignment = Enum.TextYAlignment.Top
-	msgLabel.AutomaticSize = Enum.AutomaticSize.Y
-	msgLabel.ZIndex = 53
-	msgLabel.Parent = msgFrame
+local msgLabel = Instance.new("TextLabel")
+msgLabel.Name = "MsgText"
+msgLabel.Size = UDim2.new(1, -40, 0, 0) 
+msgLabel.BackgroundTransparency = 1
+msgLabel.Text = text
+msgLabel.TextColor3 = Colors.Text
+msgLabel.Font = Enum.Font.Gotham
+msgLabel.TextSize = 9 -- Diperkecil dari 10 jadi 9
+msgLabel.TextWrapped = true
+msgLabel.TextXAlignment = Enum.TextXAlignment.Left
+msgLabel.TextYAlignment = Enum.TextYAlignment.Top
+msgLabel.AutomaticSize = Enum.AutomaticSize.Y
+msgLabel.ZIndex = 53
+msgLabel.Parent = msgFrame
 
 	-- Wadah untuk menaruh tombol di pojok kanan bawah
 	local actionFrame = Instance.new("Frame")
