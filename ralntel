@@ -1921,7 +1921,7 @@ actionFrame.Name = "ActionFrame"
 actionFrame.Size = UDim2.new(0, 60, 0, 20)
 
 -- Posisi Nempel Kanan, Sejajar Tengah (Vertikal)
-actionFrame.Position = UDim2.new(1, -8, 0.5, 0) 
+actionFrame.Position = UDim2.new(1, -8, 0.5, 7) 
 actionFrame.AnchorPoint = Vector2.new(1, 0.5) -- Titik tumpu di tengah kanan
 
 actionFrame.BackgroundTransparency = 1
