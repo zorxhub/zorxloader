@@ -1792,7 +1792,7 @@ apList.Parent = AnnouncPanel
 
 local apListLayout = Instance.new("UIListLayout")
 apListLayout.SortOrder = Enum.SortOrder.LayoutOrder
-apListLayout.Padding = UDim.new(0, 2) -- DIUBAH JADI 2 (DARI 4)
+apListLayout.Padding = UDim.new(0, 4)
 apListLayout.Parent = apList
 
 -- Empty state: "No notifications yet"
@@ -1830,7 +1830,7 @@ local function refreshAnnouncPanelSize()
 		if n == 0 then
 			targetH = 42 + 20
 		else
-			targetH = 34 + apList.AbsoluteSize.Y + 6 -- DIUBAH JADI 6 (DARI 8) BIAR PAS
+			targetH = 34 + apList.AbsoluteSize.Y + 8
 		end
 		TweenService:Create(AnnouncPanel, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
 			Size = UDim2.new(0, 260, 0, targetH)
@@ -1879,7 +1879,7 @@ _G.AddAnnouncement = function(text)
 
 	local msgFrame = Instance.new("Frame")
 	msgFrame.Name = "AnnMsg"
-	msgFrame.Size = UDim2.new(1, 0, 0, 0) -- DIUBAH JADI 0,0 (SEBELUMNYA 40) BIAR AUTO-SIZE MENGECIL
+	msgFrame.Size = UDim2.new(1, 0, 0, 40)
 	msgFrame.BackgroundColor3 = Colors.Slot
 	msgFrame.BorderSizePixel = 0
 	msgFrame.LayoutOrder = newOrder
@@ -1892,26 +1892,82 @@ _G.AddAnnouncement = function(text)
 	msgCorner.Parent = msgFrame
 
 	local msgPad = Instance.new("UIPadding")
-	msgPad.PaddingTop = UDim.new(0, 4) -- DIUBAH JADI 4 (DARI 6)
-	msgPad.PaddingBottom = UDim.new(0, 4) -- DIUBAH JADI 4 (DARI 6)
-	msgPad.PaddingLeft = UDim.new(0, 6) -- DIUBAH JADI 6 (DARI 8)
-	msgPad.PaddingRight = UDim.new(0, 6) -- DIUBAH JADI 6 (DARI 8)
+	msgPad.PaddingTop = UDim.new(0, 6)
+	msgPad.PaddingBottom = UDim.new(0, 6)
+	msgPad.PaddingLeft = UDim.new(0, 8)
+	msgPad.PaddingRight = UDim.new(0, 8)
 	msgPad.Parent = msgFrame
 
 	local msgLabel = Instance.new("TextLabel")
 	msgLabel.Name = "MsgText"
-	msgLabel.Size = UDim2.new(1, 0, 0, 0)
+	msgLabel.Size = UDim2.new(1, -50, 0, 0) -- Lebar dikurangi agar tidak menabrak tombol
 	msgLabel.BackgroundTransparency = 1
 	msgLabel.Text = text
 	msgLabel.TextColor3 = Colors.Text
 	msgLabel.Font = Enum.Font.Gotham
-	msgLabel.TextSize = 9 -- DIUBAH JADI 9 (DARI 10)
+	msgLabel.TextSize = 10
 	msgLabel.TextWrapped = true
 	msgLabel.TextXAlignment = Enum.TextXAlignment.Left
 	msgLabel.TextYAlignment = Enum.TextYAlignment.Top
 	msgLabel.AutomaticSize = Enum.AutomaticSize.Y
 	msgLabel.ZIndex = 53
 	msgLabel.Parent = msgFrame
+
+	-- ==========================================
+	-- FITUR LIKE & DISLIKE (ICON GAMBAR)
+	-- ==========================================
+	local actionFrame = Instance.new("Frame")
+	actionFrame.Name = "ActionFrame"
+	actionFrame.Size = UDim2.new(0, 46, 0, 20)
+	actionFrame.Position = UDim2.new(1, -4, 0.5, 0) 
+	actionFrame.AnchorPoint = Vector2.new(1, 0.5)
+	actionFrame.BackgroundTransparency = 1
+	actionFrame.ZIndex = 54
+	actionFrame.Parent = msgFrame
+
+	local actionList = Instance.new("UIListLayout")
+	actionList.FillDirection = Enum.FillDirection.Horizontal
+	actionList.VerticalAlignment = Enum.VerticalAlignment.Center
+	actionList.HorizontalAlignment = Enum.HorizontalAlignment.Right
+	actionList.Padding = UDim.new(0, 6)
+	actionList.Parent = actionFrame
+
+	-- Tombol LIKE
+	local likeBtn = Instance.new("ImageButton")
+	likeBtn.Name = "LikeBtn"
+	likeBtn.Size = UDim2.new(0, 15, 0, 15)
+	likeBtn.BackgroundTransparency = 1
+	likeBtn.Image = "rbxassetid://6031090990"
+	likeBtn.ImageColor3 = Color3.fromRGB(200, 200, 200)
+	likeBtn.ZIndex = 55
+	likeBtn.Parent = actionFrame
+
+	-- Tombol DISLIKE
+	local dislikeBtn = Instance.new("ImageButton")
+	dislikeBtn.Name = "DislikeBtn"
+	dislikeBtn.Size = UDim2.new(0, 15, 0, 15)
+	dislikeBtn.BackgroundTransparency = 1
+	dislikeBtn.Image = "rbxassetid://6031094664"
+	dislikeBtn.ImageColor3 = Color3.fromRGB(200, 200, 200)
+	dislikeBtn.ZIndex = 55
+	dislikeBtn.Parent = actionFrame
+
+	-- Logika Like
+	local liked = false
+	likeBtn.MouseButton1Click:Connect(function()
+		liked = not liked
+		likeBtn.ImageColor3 = liked and Color3.fromRGB(60, 180, 90) or Color3.fromRGB(200, 200, 200)
+		dislikeBtn.ImageColor3 = Color3.fromRGB(200, 200, 200) 
+	end)
+
+	-- Logika Dislike
+	local disliked = false
+	dislikeBtn.MouseButton1Click:Connect(function()
+		disliked = not disliked
+		dislikeBtn.ImageColor3 = disliked and Color3.fromRGB(220, 60, 70) or Color3.fromRGB(200, 200, 200)
+		likeBtn.ImageColor3 = Color3.fromRGB(200, 200, 200)
+	end)
+	-- ==========================================
 
 	msgFrame.BackgroundTransparency = 1
 	TweenService:Create(msgFrame, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
