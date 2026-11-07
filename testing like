@@ -621,26 +621,7 @@ Title.TextSize = 11
 Title.TextXAlignment = Enum.TextXAlignment.Left
 Title.Parent = TopBar
 
--- CONTAINER ID CARD (KIRI)
-local IdCardContainer = Instance.new("Frame")
-IdCardContainer.Name = "IdCardContainer"
-IdCardContainer.Size = UDim2.new(0, 0, 0, 22)
-IdCardContainer.AutomaticSize = Enum.AutomaticSize.X
-IdCardContainer.BackgroundTransparency = 1
-IdCardContainer.AnchorPoint = Vector2.new(1, 0.5)
-IdCardContainer.Position = UDim2.new(1, -100, 0.5, 0)
-IdCardContainer.Parent = TopBar
-IdCardContainer.Visible = false
-
-local IdList = Instance.new("UIListLayout")
-IdList.FillDirection = Enum.FillDirection.Horizontal
-IdList.HorizontalAlignment = Enum.HorizontalAlignment.Right
-IdList.VerticalAlignment = Enum.VerticalAlignment.Center
-IdList.Padding = UDim.new(0, 4)
-IdList.SortOrder = Enum.SortOrder.LayoutOrder
-IdList.Parent = IdCardContainer
-
--- CONTAINER PILL UTAMA
+-- CONTAINER PILL UTAMA (Trial, 000, Tech Game, dll digabung di sini)
 local PillContainer = Instance.new("Frame")
 PillContainer.Name = "PillContainer"
 PillContainer.Size = UDim2.new(0, 0, 0, 22)
@@ -667,14 +648,14 @@ local function registerInfoLogoBorder(stroke)
 	table.insert(infoLogoBorders, stroke)
 end
 
-local function createPill(textText, width, iconId, layoutOrder, visible, parentContainer)
+local function createPill(textText, width, iconId, layoutOrder, visible)
 	local pill = Instance.new("Frame")
 	pill.Size = UDim2.new(0, width, 0, 22)
 	pill.BackgroundColor3 = DefaultPillBg
 	pill.BorderSizePixel = 0
 	pill.LayoutOrder = layoutOrder or 0
 	pill.Visible = (visible ~= false)
-	pill.Parent = parentContainer or PillContainer
+	pill.Parent = PillContainer
 
 	local pCorner = Instance.new("UICorner")
 	pCorner.CornerRadius = UDim.new(0, 5)
@@ -718,14 +699,14 @@ local function createPill(textText, width, iconId, layoutOrder, visible, parentC
 	return pill, txt
 end
 
--- ID Card (Tanpa Ikon, Teks Ke Tengah)
-local trialCard, trialText = createPill("Trial", 46, "", 1, false, IdCardContainer)
-local zeroCard, zeroText   = createPill("000",   40, "", 2, false, IdCardContainer)
+-- ID Card (Tanpa Ikon, Teks Ke Tengah) - LayoutOrder 1 & 2
+local trialCard, trialText = createPill("Trial", 46, "", 1, false)
+local zeroCard, zeroText   = createPill("000",   40, "", 2, false)
 
--- Pill Utama
-local gamePill, gameText = createPill(getGameName(), 145, "83907651602856", 1, true)
-local fpsPill, fpsText = createPill("0", 48, "87621836182790", 2, true)
-local execPill, execText = createPill(detectedExecutor, 68, "76551269066313", 3, true)
+-- Pill Utama - LayoutOrder 3, 4, 5 (Otomatis di kanan ID Card)
+local gamePill, gameText = createPill(getGameName(), 145, "83907651602856", 3, true)
+local fpsPill, fpsText = createPill("0", 48, "87621836182790", 4, true)
+local execPill, execText = createPill(detectedExecutor, 68, "76551269066313", 5, true)
 
 task.spawn(function()
 	while task.wait(5) do
@@ -821,28 +802,15 @@ MaximizeBtn.MouseButton1Click:Connect(function()
 		Position = UDim2.new(0.5, 0, 0.5, 0)
 	}):Play()
 
-	if isMaximized then
-		IdCardContainer.Visible = true
-		
-		-- Hitung posisi X dari PillContainer utama
-		task.defer(function()
-			local pillAbs = PillContainer.AbsolutePosition
-			local topBarAbs = TopBar.AbsolutePosition
-			local relativeX = (pillAbs.X - topBarAbs.X) - 8
-			
-			-- Posisi X disesuaikan, Posisi Y pakai 0.5 (tengah dari TopBar)
-			IdCardContainer.Position = UDim2.new(0, relativeX, 0.5, 0)
-		end)
-
-		for _, card in ipairs({trialCard, zeroCard}) do
+	-- Fade in/out ID Card (Trial & 000)
+	for _, card in ipairs({trialCard, zeroCard}) do
+		if isMaximized then
 			card.Visible = true
 			card.BackgroundTransparency = 1
 			TweenService:Create(card, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
 				BackgroundTransparency = 0
 			}):Play()
-		end
-	else
-		for _, card in ipairs({trialCard, zeroCard}) do
+		else
 			TweenService:Create(card, TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
 				BackgroundTransparency = 1
 			}):Play()
@@ -850,9 +818,6 @@ MaximizeBtn.MouseButton1Click:Connect(function()
 				if not isMaximized then card.Visible = false end
 			end)
 		end
-		task.delay(0.2, function()
-			if not isMaximized then IdCardContainer.Visible = false end
-		end)
 	end
 end)
 
