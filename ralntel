@@ -1238,7 +1238,7 @@ local function loadAboutPanel()
 	iCorner.Parent = imageCard
 
 	local img = Instance.new("ImageLabel")
-	img.Size = UDim2.new(1, -4, 1, -4) -- FOTO DIKECILIN (FIX)
+	img.Size = UDim2.new(1, -4, 1, -4)
 	img.Position = UDim2.new(0.5, 0, 0.5, 0)
 	img.AnchorPoint = Vector2.new(0.5, 0.5)
 	img.BackgroundTransparency = 1
@@ -1287,7 +1287,7 @@ local function loadInfoPanel()
 	registerBorder(cStroke)
 
 	local logoBox = Instance.new("Frame")
-	logoBox.Size = UDim2.new(0, 54, 0, 54) -- KOTAK DIKECILIN (FIX)
+	logoBox.Size = UDim2.new(0, 54, 0, 54)
 	logoBox.Position = UDim2.new(0, 14, 0, 14)
 	logoBox.BackgroundColor3 = Color3.fromRGB(22, 22, 28)
 	logoBox.BorderSizePixel = 0
@@ -1306,7 +1306,7 @@ local function loadInfoPanel()
 	registerInfoLogoBorder(logoStroke)
 
 	local logoImg2 = Instance.new("ImageLabel")
-	logoImg2.Size = UDim2.new(1, -4, 1, -4) -- FOTO DIKECILIN (FIX)
+	logoImg2.Size = UDim2.new(1, -4, 1, -4)
 	logoImg2.Position = UDim2.new(0.5, 0, 0.5, 0)
 	logoImg2.AnchorPoint = Vector2.new(0.5, 0.5)
 	logoImg2.BackgroundTransparency = 1
@@ -1462,7 +1462,7 @@ local function loadInfoPanel()
 	end)
 end
 
--- PANEL SETTINGS (TETAP)
+-- PANEL SETTINGS
 local function loadSetingsPanel()
 	clearContent()
 
@@ -1739,7 +1739,7 @@ apStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
 apStroke.Parent = AnnouncPanel
 registerBorder(apStroke)
 
--- Header (judul + tombol close) — fixed di atas
+-- Header (judul + tombol close)
 local apHeader = Instance.new("Frame")
 apHeader.Name = "Header"
 apHeader.Size = UDim2.new(1, 0, 0, 32)
@@ -1780,7 +1780,75 @@ apCloseIcon.ScaleType = Enum.ScaleType.Fit
 apCloseIcon.ZIndex = 53
 apCloseIcon.Parent = apCloseBtn
 
--- Container untuk pesan (auto memanjang ke bawah)
+-- ==========================================
+-- TOMBOL LIKE & DISLIKE DI BAWAH PANEL
+-- ==========================================
+local actionFrame = Instance.new("Frame")
+actionFrame.Name = "ActionFrame"
+actionFrame.Size = UDim2.new(0, 60, 0, 16)
+actionFrame.Position = UDim2.new(0, 12, 1, -10) 
+actionFrame.AnchorPoint = Vector2.new(0, 1)
+actionFrame.BackgroundTransparency = 1
+actionFrame.ZIndex = 54
+actionFrame.Parent = AnnouncPanel
+
+local actionList = Instance.new("UIListLayout")
+actionList.FillDirection = Enum.FillDirection.Horizontal
+actionList.VerticalAlignment = Enum.VerticalAlignment.Center
+actionList.HorizontalAlignment = Enum.HorizontalAlignment.Left
+actionList.Padding = UDim.new(0, 8)
+actionList.Parent = actionFrame
+
+-- Tombol LIKE (Di Kiri)
+local likeBtn = Instance.new("ImageButton")
+likeBtn.Name = "LikeBtn"
+likeBtn.Size = UDim2.new(0, 14, 0, 14) 
+likeBtn.BackgroundTransparency = 1
+likeBtn.Image = "rbxassetid://78703642436909"
+likeBtn.ImageColor3 = Color3.fromRGB(255, 255, 255)
+likeBtn.LayoutOrder = 1
+likeBtn.ZIndex = 55
+likeBtn.Parent = actionFrame
+
+-- Tombol DISLIKE (Di Kanan)
+local dislikeBtn = Instance.new("ImageButton")
+dislikeBtn.Name = "DislikeBtn"
+dislikeBtn.Size = UDim2.new(0, 14, 0, 14) 
+dislikeBtn.BackgroundTransparency = 1
+dislikeBtn.Image = "rbxassetid://115295848024534"
+dislikeBtn.ImageColor3 = Color3.fromRGB(255, 255, 255)
+dislikeBtn.LayoutOrder = 2
+dislikeBtn.ZIndex = 55
+dislikeBtn.Parent = actionFrame
+
+-- Logika Like
+local liked = false
+likeBtn.MouseButton1Click:Connect(function()
+	liked = not liked
+	if liked then
+		likeBtn.Image = "rbxassetid://118652612472796"
+		disliked = false
+		dislikeBtn.Image = "rbxassetid://115295848024534"
+	else
+		likeBtn.Image = "rbxassetid://78703642436909"
+	end
+end)
+
+-- Logika Dislike
+local disliked = false
+dislikeBtn.MouseButton1Click:Connect(function()
+	disliked = not disliked
+	if disliked then
+		dislikeBtn.Image = "rbxassetid://127169986638010"
+		liked = false
+		likeBtn.Image = "rbxassetid://78703642436909"
+	else
+		dislikeBtn.Image = "rbxassetid://115295848024534"
+	end
+end)
+-- ==========================================
+
+-- Container untuk pesan
 local apList = Instance.new("Frame")
 apList.Name = "MsgContainer"
 apList.Size = UDim2.new(1, -16, 0, 0)
@@ -1828,9 +1896,9 @@ local function refreshAnnouncPanelSize()
 	task.defer(function()
 		local targetH
 		if n == 0 then
-			targetH = 42 + 20
+			targetH = 42 + 20 + 20 -- Ditambah space untuk tombol like/dislike di bawah
 		else
-			targetH = 34 + apList.AbsoluteSize.Y + 8
+			targetH = 34 + apList.AbsoluteSize.Y + 28
 		end
 		TweenService:Create(AnnouncPanel, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
 			Size = UDim2.new(0, 260, 0, targetH)
@@ -1841,7 +1909,6 @@ end
 _G.AddAnnouncement = function(text)
 	if not text or text == "" then return end
 
-	-- Anti spam: skip duplikat di 3 pesan terakhir
 	local recent = {}
 	for _, c in pairs(apList:GetChildren()) do
 		if c:IsA("Frame") and c.Name == "AnnMsg" then
@@ -1859,7 +1926,6 @@ _G.AddAnnouncement = function(text)
 		end
 	end
 
-	-- Batasi maksimal 6 pesan
 	if #recent >= 6 then
 		local oldest = nil
 		for _, c in pairs(recent) do
@@ -1893,7 +1959,7 @@ _G.AddAnnouncement = function(text)
 
 	local msgPad = Instance.new("UIPadding")
 	msgPad.PaddingTop = UDim.new(0, 6)
-	msgPad.PaddingBottom = UDim.new(0, 24) -- Diberi space bawah buat tombol like/dislike
+	msgPad.PaddingBottom = UDim.new(0, 6)
 	msgPad.PaddingLeft = UDim.new(0, 8)
 	msgPad.PaddingRight = UDim.new(0, 8)
 	msgPad.Parent = msgFrame
@@ -1912,75 +1978,6 @@ _G.AddAnnouncement = function(text)
 	msgLabel.AutomaticSize = Enum.AutomaticSize.Y
 	msgLabel.ZIndex = 53
 	msgLabel.Parent = msgFrame
-
-		-- ==========================================
-	-- FITUR LIKE & DISLIKE (DIKOREKSI POSISINYA)
-	-- ==========================================
-	local actionFrame = Instance.new("Frame")
-	actionFrame.Name = "ActionFrame"
-	actionFrame.Size = UDim2.new(0, 60, 0, 16)
-	-- Diberi jarak ke atas sedikit dari bawah card agar tidak terlalu mentok (-10 pixel)
-	actionFrame.Position = UDim2.new(0, 8, 1, -10) 
-	actionFrame.AnchorPoint = Vector2.new(0, 1)
-	actionFrame.BackgroundTransparency = 1
-	actionFrame.ZIndex = 54
-	actionFrame.Parent = msgFrame
-
-	local actionList = Instance.new("UIListLayout")
-	actionList.FillDirection = Enum.FillDirection.Horizontal
-	actionList.VerticalAlignment = Enum.VerticalAlignment.Center
-	actionList.HorizontalAlignment = Enum.HorizontalAlignment.Left
-	actionList.Padding = UDim.new(0, 8)
-	actionList.Parent = actionFrame
-
-	-- Tombol LIKE (Di Kiri, LayoutOrder = 1)
-	local likeBtn = Instance.new("ImageButton")
-	likeBtn.Name = "LikeBtn"
-	likeBtn.Size = UDim2.new(0, 14, 0, 14) 
-	likeBtn.BackgroundTransparency = 1
-	likeBtn.Image = "rbxassetid://78703642436909"
-	likeBtn.ImageColor3 = Color3.fromRGB(255, 255, 255)
-	likeBtn.LayoutOrder = 1
-	likeBtn.ZIndex = 55
-	likeBtn.Parent = actionFrame
-
-	-- Tombol DISLIKE (Di Kanan, LayoutOrder = 2)
-	local dislikeBtn = Instance.new("ImageButton")
-	dislikeBtn.Name = "DislikeBtn"
-	dislikeBtn.Size = UDim2.new(0, 14, 0, 14) 
-	dislikeBtn.BackgroundTransparency = 1
-	dislikeBtn.Image = "rbxassetid://115295848024534"
-	dislikeBtn.ImageColor3 = Color3.fromRGB(255, 255, 255)
-	dislikeBtn.LayoutOrder = 2
-	dislikeBtn.ZIndex = 55
-	dislikeBtn.Parent = actionFrame
-
-	-- Logika Like
-	local liked = false
-	likeBtn.MouseButton1Click:Connect(function()
-		liked = not liked
-		if liked then
-			likeBtn.Image = "rbxassetid://118652612472796"
-			disliked = false
-			dislikeBtn.Image = "rbxassetid://115295848024534"
-		else
-			likeBtn.Image = "rbxassetid://78703642436909"
-		end
-	end)
-
-	-- Logika Dislike
-	local disliked = false
-	dislikeBtn.MouseButton1Click:Connect(function()
-		disliked = not disliked
-		if disliked then
-			dislikeBtn.Image = "rbxassetid://127169986638010"
-			liked = false
-			likeBtn.Image = "rbxassetid://78703642436909"
-		else
-			dislikeBtn.Image = "rbxassetid://115295848024534"
-		end
-	end)
-	-- ==========================================
 
 	msgFrame.BackgroundTransparency = 1
 	TweenService:Create(msgFrame, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
