@@ -1913,14 +1913,17 @@ _G.AddAnnouncement = function(text)
 	msgLabel.ZIndex = 53
 	msgLabel.Parent = msgFrame
 
-	-- ==========================================
+-- ==========================================
 -- FITUR LIKE & DISLIKE (ICON CUSTOM)
 -- ==========================================
 local actionFrame = Instance.new("Frame")
 actionFrame.Name = "ActionFrame"
-actionFrame.Size = UDim2.new(0, 60, 0, 20) -- Diperlebar biar gak sempit
-actionFrame.Position = UDim2.new(1, -10, 0.5, 0) -- Digeser dikit ke kiri (-10)
-actionFrame.AnchorPoint = Vector2.new(1, 0.5)
+actionFrame.Size = UDim2.new(0, 60, 0, 20)
+
+-- UBAH POSISI: Nempel di pojok kanan bawah card
+actionFrame.Position = UDim2.new(1, -8, 1, -6) 
+actionFrame.AnchorPoint = Vector2.new(1, 1) -- Titik tumpu di kanan bawah
+
 actionFrame.BackgroundTransparency = 1
 actionFrame.ZIndex = 54
 actionFrame.Parent = msgFrame
@@ -1929,26 +1932,28 @@ local actionList = Instance.new("UIListLayout")
 actionList.FillDirection = Enum.FillDirection.Horizontal
 actionList.VerticalAlignment = Enum.VerticalAlignment.Center
 actionList.HorizontalAlignment = Enum.HorizontalAlignment.Right
-actionList.Padding = UDim.new(0, 8) -- Jarak antar ikon diperlebar dikit
+actionList.Padding = UDim.new(0, 8)
 actionList.Parent = actionFrame
 
--- Tombol LIKE
+-- Tombol LIKE (Kiri)
 local likeBtn = Instance.new("ImageButton")
 likeBtn.Name = "LikeBtn"
-likeBtn.Size = UDim2.new(0, 18, 0, 18) -- Ikon diperbesar dari 15 ke 18
+likeBtn.Size = UDim2.new(0, 18, 0, 18) 
 likeBtn.BackgroundTransparency = 1
 likeBtn.Image = "rbxassetid://78703642436909"
 likeBtn.ImageColor3 = Color3.fromRGB(255, 255, 255)
+likeBtn.LayoutOrder = 1 -- Memastikan Like di kiri
 likeBtn.ZIndex = 55
 likeBtn.Parent = actionFrame
 
--- Tombol DISLIKE
+-- Tombol DISLIKE (Kanan)
 local dislikeBtn = Instance.new("ImageButton")
 dislikeBtn.Name = "DislikeBtn"
-dislikeBtn.Size = UDim2.new(0, 18, 0, 18) -- Ikon diperbesar dari 15 ke 18
+dislikeBtn.Size = UDim2.new(0, 18, 0, 18) 
 dislikeBtn.BackgroundTransparency = 1
 dislikeBtn.Image = "rbxassetid://115295848024534"
 dislikeBtn.ImageColor3 = Color3.fromRGB(255, 255, 255)
+dislikeBtn.LayoutOrder = 2 -- Memastikan Dislike di kanan
 dislikeBtn.ZIndex = 55
 dislikeBtn.Parent = actionFrame
 
