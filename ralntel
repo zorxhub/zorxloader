@@ -10,7 +10,13 @@ local HttpService = game:GetService("HttpService")
 
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
-local reqFunc = request or (syn and syn.request) or (http and http.request) or http_request
+
+-- Penanganan fungsi HTTP Request yang lebih aman
+local reqFunc = (type(request) == "function" and request) 
+	or (syn and type(syn.request) == "function" and syn.request) 
+	or (http and type(http.request) == "function" and http.request) 
+	or (type(http_request) == "function" and http_request) 
+	or nil
 
 -- ============================================================
 -- BERSIHKAN UI LAMA
@@ -128,7 +134,6 @@ PopupLayer.Parent = ScreenGui
 -- ============================================================
 -- VARIABEL ANNOUNCEMENT
 -- ============================================================
-local announcementHistory = {}
 local unreadAnnouncements = 0
 local UnreadDot 
 
@@ -981,7 +986,7 @@ WatermarkLogo.Size = UDim2.new(0, 240, 0, 240)
 WatermarkLogo.Position = UDim2.new(0.5, 0, 0.5, 0)
 WatermarkLogo.AnchorPoint = Vector2.new(0.5, 0.5)
 WatermarkLogo.BackgroundTransparency = 1
-WatermarkLogo.Image = "rbxassetid://134572030759999" -- ID Default awal
+WatermarkLogo.Image = "rbxassetid://134572030759999"
 WatermarkLogo.ImageTransparency = 0.88
 WatermarkLogo.ScaleType = Enum.ScaleType.Fit
 WatermarkLogo.ZIndex = 1
@@ -1906,7 +1911,7 @@ _G.AddAnnouncement = function(text)
 	msgLabel.Text = text
 	msgLabel.TextColor3 = Colors.Text
 	msgLabel.Font = Enum.Font.Gotham
-	msgLabel.TextSize = 13 -- Diperbesar agar lebih jelas dan besar
+	msgLabel.TextSize = 13
 	msgLabel.TextWrapped = true
 	msgLabel.TextXAlignment = Enum.TextXAlignment.Left
 	msgLabel.TextYAlignment = Enum.TextYAlignment.Top
