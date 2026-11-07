@@ -1910,6 +1910,7 @@ _G.AddAnnouncement = function(text)
 	msgLabel.TextXAlignment = Enum.TextXAlignment.Left
 	msgLabel.TextYAlignment = Enum.TextYAlignment.Top
 	msgLabel.AutomaticSize = Enum.AutomaticSize.Y
+msgLabel.Size = UDim2.new(1, -50, 0, 28)
 	msgLabel.ZIndex = 53
 	msgLabel.Parent = msgFrame
 
