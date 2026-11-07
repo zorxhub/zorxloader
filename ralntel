@@ -1913,74 +1913,69 @@ _G.AddAnnouncement = function(text)
 	msgLabel.ZIndex = 53
 	msgLabel.Parent = msgFrame
 
--- ==========================================
--- FITUR LIKE & DISLIKE (SEJAJAR & RAPI)
--- ==========================================
-local actionFrame = Instance.new("Frame")
-actionFrame.Name = "ActionFrame"
-actionFrame.Size = UDim2.new(0, 60, 0, 20)
+	-- ==========================================
+	-- FITUR LIKE & DISLIKE (ICON CUSTOM)
+	-- ==========================================
+	local actionFrame = Instance.new("Frame")
+	actionFrame.Name = "ActionFrame"
+	actionFrame.Size = UDim2.new(0, 46, 0, 20)
+	actionFrame.Position = UDim2.new(1, -4, 0.5, 0) 
+	actionFrame.AnchorPoint = Vector2.new(1, 0.5)
+	actionFrame.BackgroundTransparency = 1
+	actionFrame.ZIndex = 54
+	actionFrame.Parent = msgFrame
 
--- Posisi Nempel Kanan, Sejajar Tengah (Vertikal)
-actionFrame.Position = UDim2.new(1, -8, 0.5, 0) 
-actionFrame.AnchorPoint = Vector2.new(1, 0.5) -- Titik tumpu di tengah kanan
+	local actionList = Instance.new("UIListLayout")
+	actionList.FillDirection = Enum.FillDirection.Horizontal
+	actionList.VerticalAlignment = Enum.VerticalAlignment.Center
+	actionList.HorizontalAlignment = Enum.HorizontalAlignment.Right
+	actionList.Padding = UDim.new(0, 6)
+	actionList.Parent = actionFrame
 
-actionFrame.BackgroundTransparency = 1
-actionFrame.ZIndex = 54
-actionFrame.Parent = msgFrame
+	-- Tombol LIKE
+	local likeBtn = Instance.new("ImageButton")
+	likeBtn.Name = "LikeBtn"
+	likeBtn.Size = UDim2.new(0, 15, 0, 15)
+	likeBtn.BackgroundTransparency = 1
+	likeBtn.Image = "rbxassetid://78703642436909"
+	likeBtn.ImageColor3 = Color3.fromRGB(255, 255, 255)
+	likeBtn.ZIndex = 55
+	likeBtn.Parent = actionFrame
 
-local actionList = Instance.new("UIListLayout")
-actionList.FillDirection = Enum.FillDirection.Horizontal
-actionList.VerticalAlignment = Enum.VerticalAlignment.Center
-actionList.HorizontalAlignment = Enum.HorizontalAlignment.Center -- Biar rapi di tengah
-actionList.Padding = UDim.new(0, 8)
-actionList.Parent = actionFrame
+	-- Tombol DISLIKE
+	local dislikeBtn = Instance.new("ImageButton")
+	dislikeBtn.Name = "DislikeBtn"
+	dislikeBtn.Size = UDim2.new(0, 15, 0, 15)
+	dislikeBtn.BackgroundTransparency = 1
+	dislikeBtn.Image = "rbxassetid://115295848024534"
+	dislikeBtn.ImageColor3 = Color3.fromRGB(255, 255, 255)
+	dislikeBtn.ZIndex = 55
+	dislikeBtn.Parent = actionFrame
 
--- Tombol LIKE (Kiri)
-local likeBtn = Instance.new("ImageButton")
-likeBtn.Name = "LikeBtn"
-likeBtn.Size = UDim2.new(0, 18, 0, 18) 
-likeBtn.BackgroundTransparency = 1
-likeBtn.Image = "rbxassetid://78703642436909"
-likeBtn.ImageColor3 = Color3.fromRGB(255, 255, 255)
-likeBtn.LayoutOrder = 1 -- Kiri
-likeBtn.ZIndex = 55
-likeBtn.Parent = actionFrame
+	-- Logika Like
+	local liked = false
+	likeBtn.MouseButton1Click:Connect(function()
+		liked = not liked
+		if liked then
+			likeBtn.Image = "rbxassetid://118652612472796"
+			dislikeBtn.Image = "rbxassetid://115295848024534" -- Reset dislike
+		else
+			likeBtn.Image = "rbxassetid://78703642436909"
+		end
+	end)
 
--- Tombol DISLIKE (Kanan)
-local dislikeBtn = Instance.new("ImageButton")
-dislikeBtn.Name = "DislikeBtn"
-dislikeBtn.Size = UDim2.new(0, 18, 0, 18) 
-dislikeBtn.BackgroundTransparency = 1
-dislikeBtn.Image = "rbxassetid://115295848024534"
-dislikeBtn.ImageColor3 = Color3.fromRGB(255, 255, 255)
-dislikeBtn.LayoutOrder = 2 -- Kanan
-dislikeBtn.ZIndex = 55
-dislikeBtn.Parent = actionFrame
-
--- Logika Like
-local liked = false
-likeBtn.MouseButton1Click:Connect(function()
-	liked = not liked
-	if liked then
-		likeBtn.Image = "rbxassetid://118652612472796"
-		dislikeBtn.Image = "rbxassetid://115295848024534"
-	else
-		likeBtn.Image = "rbxassetid://78703642436909"
-	end
-end)
-
--- Logika Dislike
-local disliked = false
-dislikeBtn.MouseButton1Click:Connect(function()
-	disliked = not disliked
-	if disliked then
-		dislikeBtn.Image = "rbxassetid://127169986638010"
-		likeBtn.Image = "rbxassetid://78703642436909"
-	else
-		dislikeBtn.Image = "rbxassetid://115295848024534"
-	end
-end)
--- ==========================================
+	-- Logika Dislike
+	local disliked = false
+	dislikeBtn.MouseButton1Click:Connect(function()
+		disliked = not disliked
+		if disliked then
+			dislikeBtn.Image = "rbxassetid://127169986638010"
+			likeBtn.Image = "rbxassetid://78703642436909" -- Reset like
+		else
+			dislikeBtn.Image = "rbxassetid://115295848024534"
+		end
+	end)
+	-- ==========================================
 
 	msgFrame.BackgroundTransparency = 1
 	TweenService:Create(msgFrame, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
