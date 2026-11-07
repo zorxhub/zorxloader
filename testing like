@@ -39,8 +39,7 @@ local Colors = {
 	PillBg       = Color3.fromRGB(28, 28, 34),
 	PillStroke   = Color3.fromRGB(45, 45, 55),
 	PillText     = Color3.fromRGB(240, 240, 240),
-	Red          = Color3.fromRGB(220, 50, 60),
-	White        = Color3.fromRGB(255, 255, 255)
+	Red          = Color3.fromRGB(220, 50, 60)
 }
 
 local DefaultPillBg = Color3.fromRGB(28, 28, 34)
@@ -591,12 +590,9 @@ local function setUIOpen(open)
 	MinimizeBtn.Visible = not open
 end
 
--- ============================================================
--- TOP BAR & NEW PROFILE UI
--- ============================================================
 local TopBar = Instance.new("Frame")
 TopBar.Name = "TopBar"
-TopBar.Size = UDim2.new(1, 0, 0, 36)
+TopBar.Size = UDim2.new(1, 0, 0, 32)
 TopBar.BackgroundColor3 = Colors.Background
 TopBar.BorderSizePixel = 0
 TopBar.Parent = Main
@@ -605,134 +601,26 @@ local TopCorner = Instance.new("UICorner")
 TopCorner.CornerRadius = UDim.new(0, 10)
 TopCorner.Parent = TopBar
 
--- Garis Putih Tipis di Atas
-local TopWhiteLine = Instance.new("Frame")
-TopWhiteLine.Name = "TopWhiteLine"
-TopWhiteLine.Size = UDim2.new(1, 0, 0, 1)
-TopWhiteLine.Position = UDim2.new(0, 0, 0, 0)
-TopWhiteLine.BackgroundColor3 = Colors.White
-TopWhiteLine.BorderSizePixel = 0
-TopWhiteLine.ZIndex = 2
-TopWhiteLine.Parent = TopBar
-
--- BAGIAN KIRI: LOGO ZORX
-local LeftHeaderFrame = Instance.new("Frame")
-LeftHeaderFrame.Name = "LeftHeaderFrame"
-LeftHeaderFrame.Size = UDim2.new(0, 95, 1, 0)
-LeftHeaderFrame.Position = UDim2.new(0, 0, 0, 0)
-LeftHeaderFrame.BackgroundTransparency = 1
-LeftHeaderFrame.Parent = TopBar
-
 local LogoImg = Instance.new("ImageLabel")
-LogoImg.Size = UDim2.new(0, 16, 0, 16)
-LogoImg.Position = UDim2.new(0, 14, 0.5, -8)
+LogoImg.Size = UDim2.new(0, 18, 0, 18)
+LogoImg.Position = UDim2.new(0, 14, 0.5, -9)
 LogoImg.BackgroundTransparency = 1
 LogoImg.Image = "rbxassetid://82414580295798"
 LogoImg.ScaleType = Enum.ScaleType.Fit
-LogoImg.Parent = LeftHeaderFrame
+LogoImg.Parent = TopBar
 
 local Title = Instance.new("TextLabel")
 Title.Name = "Title"
-Title.Size = UDim2.new(0, 60, 1, 0)
-Title.Position = UDim2.new(0, 36, 0, 0)
+Title.Size = UDim2.new(0, 100, 1, 0)
+Title.Position = UDim2.new(0, 38, 0, 0)
 Title.BackgroundTransparency = 1
 Title.Text = "ZORX"
 Title.TextColor3 = Colors.Text
 Title.Font = Enum.Font.GothamBold
-Title.TextSize = 12
+Title.TextSize = 11
 Title.TextXAlignment = Enum.TextXAlignment.Left
-Title.Parent = LeftHeaderFrame
+Title.Parent = TopBar
 
--- PEMISAH (Divider)
-local TitleDivider = Instance.new("Frame")
-TitleDivider.Size = UDim2.new(0, 1, 0, 16)
-TitleDivider.Position = UDim2.new(0, 95, 0.5, -8)
-TitleDivider.BackgroundColor3 = DefaultBorder
-TitleDivider.BorderSizePixel = 0
-TitleDivider.Parent = TopBar
-
--- BAGIAN TENGAH-KIRI: PROFIL
-local ProfileFrame = Instance.new("Frame")
-ProfileFrame.Name = "ProfileFrame"
-ProfileFrame.Size = UDim2.new(0, 200, 1, 0)
-ProfileFrame.Position = UDim2.new(0, 105, 0, 0)
-ProfileFrame.BackgroundTransparency = 1
-ProfileFrame.Parent = TopBar
-
-local AvatarFrame = Instance.new("Frame")
-AvatarFrame.Size = UDim2.new(0, 24, 0, 24)
-AvatarFrame.Position = UDim2.new(0, 0, 0.5, -12)
-AvatarFrame.BackgroundColor3 = Colors.Slot
-AvatarFrame.BorderSizePixel = 0
-AvatarFrame.ClipsDescendants = true
-AvatarFrame.Parent = ProfileFrame
-
-local AvCorner = Instance.new("UICorner")
-AvCorner.CornerRadius = UDim.new(1, 0)
-AvCorner.Parent = AvatarFrame
-
-local AvatarImg = Instance.new("ImageLabel")
-AvatarImg.Size = UDim2.new(1, 0, 1, 0)
-AvatarImg.BackgroundTransparency = 1
-AvatarImg.Image = "rbxthumb://type=AvatarHeadShot&id="..player.UserId.."&w=48&h=48"
-AvatarImg.ScaleType = Enum.ScaleType.Crop
-AvatarImg.Parent = AvatarFrame
-
-local NameLabel = Instance.new("TextLabel")
-NameLabel.Size = UDim2.new(0, 80, 0, 16)
-NameLabel.Position = UDim2.new(0, 32, 0.5, -8)
-NameLabel.BackgroundTransparency = 1
-NameLabel.Text = player.DisplayName or player.Name
-NameLabel.TextColor3 = Colors.Text
-NameLabel.Font = Enum.Font.GothamBold
-NameLabel.TextSize = 11
-NameLabel.TextXAlignment = Enum.TextXAlignment.Left
-NameLabel.TextTruncate = Enum.TextTruncate.AtEnd
-NameLabel.Parent = ProfileFrame
-
--- BAGIAN TIMER
-local TimerCard = Instance.new("Frame")
-TimerCard.Name = "TimerCard"
-TimerCard.Size = UDim2.new(0, 36, 0, 18)
-TimerCard.Position = UDim2.new(0, 115, 0.5, -9)
-TimerCard.BackgroundColor3 = Colors.Slot
-TimerCard.BorderSizePixel = 0
-TimerCard.Parent = ProfileFrame
-
-local TC_Corner = Instance.new("UICorner")
-TC_Corner.CornerRadius = UDim.new(0, 4)
-TC_Corner.Parent = TimerCard
-
-local TC_Stroke = Instance.new("UIStroke")
-TC_Stroke.Color = DefaultBorder
-TC_Stroke.Thickness = 1
-TC_Stroke.Parent = TimerCard
-registerBorder(TC_Stroke)
-
-local TimerLabel = Instance.new("TextLabel")
-TimerLabel.Size = UDim2.new(1, 0, 1, 0)
-TimerLabel.BackgroundTransparency = 1
-TimerLabel.Text = "123"
-TimerLabel.TextColor3 = Colors.Text
-TimerLabel.Font = Enum.Font.GothamBold
-TimerLabel.TextSize = 10
-TimerLabel.TextXAlignment = Enum.TextXAlignment.Center
-TimerLabel.Parent = TimerCard
-
--- SISTEM TIMER BERJALAN MUNDUR
-task.spawn(function()
-	local timeLeft = 123
-	while timeLeft > 0 and TimerLabel and TimerLabel.Parent do
-		TimerLabel.Text = tostring(timeLeft)
-		task.wait(1)
-		timeLeft = timeLeft - 1
-	end
-	if TimerLabel and TimerLabel.Parent then
-		TimerLabel.Text = "0"
-	end
-end)
-
--- BAGIAN KANAN: PILLS CONTAINER
 local PillContainer = Instance.new("Frame")
 PillContainer.Name = "PillContainer"
 PillContainer.Size = UDim2.new(0, 0, 0, 22)
@@ -747,6 +635,7 @@ PillList.FillDirection = Enum.FillDirection.Horizontal
 PillList.HorizontalAlignment = Enum.HorizontalAlignment.Right
 PillList.VerticalAlignment = Enum.VerticalAlignment.Center
 PillList.Padding = UDim.new(0, 4)
+PillList.SortOrder = Enum.SortOrder.LayoutOrder
 PillList.Parent = PillContainer
 
 local allPills = {}
@@ -758,11 +647,13 @@ local function registerInfoLogoBorder(stroke)
 	table.insert(infoLogoBorders, stroke)
 end
 
-local function createPill(textText, width, iconId)
+local function createPill(textText, width, iconId, layoutOrder, visible)
 	local pill = Instance.new("Frame")
 	pill.Size = UDim2.new(0, width, 0, 22)
 	pill.BackgroundColor3 = DefaultPillBg
 	pill.BorderSizePixel = 0
+	pill.LayoutOrder = layoutOrder or 0
+	pill.Visible = (visible ~= false)
 	pill.Parent = PillContainer
 
 	local pCorner = Instance.new("UICorner")
@@ -804,28 +695,16 @@ local function createPill(textText, width, iconId)
 	return pill, txt
 end
 
-local gamePill, gameText = createPill(getGameName(), 100, "83907651602856")
-local fpsPill, fpsText = createPill("0", 40, "87621836182790")
-local execPill, execText = createPill(detectedExecutor, 50, "76551269066313")
+-- ============================================================
+-- ID CARD (KHUSUS MODE PERBESAR) - LayoutOrder negatif = paling kiri
+-- ============================================================
+local trialCard, trialText = createPill("Trial", 46, "117372440865704", -2, false)
+local zeroCard, zeroText   = createPill("000",   40, "83907651602856",  -1, false)
 
--- FUNGSI UNTUK MENGATUR VISIBILITAS PILL BERDASARKAN UKURAN UI
-local function adjustTopBarLayout()
-	if Main.Size.X.Offset > 500 then
-		-- Mode Maximize (Lebar)
-		gamePill.Visible = true
-		fpsPill.Visible = true
-		execPill.Visible = true
-		ProfileFrame.Size = UDim2.new(0, 200, 1, 0)
-	else
-		-- Mode Normal (Sempit)
-		gamePill.Visible = false
-		fpsPill.Visible = false
-		execPill.Visible = false
-		ProfileFrame.Size = UDim2.new(0, 250, 1, 0) -- Beri ruang lebih untuk profil
-	end
-end
-
-adjustTopBarLayout()
+-- Pill utama
+local gamePill, gameText = createPill(getGameName(), 145, "83907651602856", 1, true)
+local fpsPill, fpsText = createPill("0", 48, "87621836182790", 2, true)
+local execPill, execText = createPill(detectedExecutor, 68, "76551269066313", 3, true)
 
 task.spawn(function()
 	while task.wait(5) do
@@ -915,13 +794,29 @@ end)
 local isMaximized = false
 MaximizeBtn.MouseButton1Click:Connect(function()
 	isMaximized = not isMaximized
+
 	TweenService:Create(Main, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
 		Size = isMaximized and UDim2.new(0, 620, 0, 390) or UDim2.new(0, 480, 0, 300),
 		Position = UDim2.new(0.5, 0, 0.5, 0)
 	}):Play()
-	
-	-- Panggil fungsi penyesuaian layout setelah animasi selesai
-	task.delay(0.3, adjustTopBarLayout)
+
+	-- Toggle ID Card (Trial & 000) hanya saat maximize
+	for _, card in ipairs({trialCard, zeroCard}) do
+		if isMaximized then
+			card.Visible = true
+			card.BackgroundTransparency = 1
+			TweenService:Create(card, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+				BackgroundTransparency = 0
+			}):Play()
+		else
+			TweenService:Create(card, TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
+				BackgroundTransparency = 1
+			}):Play()
+			task.delay(0.18, function()
+				if not isMaximized then card.Visible = false end
+			end)
+		end
+	end
 end)
 
 local frameCount = 0
@@ -938,15 +833,15 @@ end)
 local TopDivider = Instance.new("Frame")
 TopDivider.Name = "TopDivider"
 TopDivider.Size = UDim2.new(1, 0, 0, 1)
-TopDivider.Position = UDim2.new(0, 0, 0, 36) 
+TopDivider.Position = UDim2.new(0, 0, 0, 32)
 TopDivider.BackgroundColor3 = DefaultBorder
 TopDivider.BorderSizePixel = 0
 TopDivider.Parent = Main
 
 local Sidebar = Instance.new("Frame")
 Sidebar.Name = "Sidebar"
-Sidebar.Size = UDim2.new(0, 120, 1, -37)
-Sidebar.Position = UDim2.new(0, 0, 0, 37)
+Sidebar.Size = UDim2.new(0, 120, 1, -33)
+Sidebar.Position = UDim2.new(0, 0, 0, 33)
 Sidebar.BackgroundColor3 = Colors.Sidebar
 Sidebar.BorderSizePixel = 0
 Sidebar.Parent = Main
@@ -1019,8 +914,8 @@ SidebarList.Parent = SidebarButtonContainer
 
 local SidebarDivider = Instance.new("Frame")
 SidebarDivider.Name = "SidebarDivider"
-SidebarDivider.Size = UDim2.new(0, 1, 1, -37)
-SidebarDivider.Position = UDim2.new(0, 120, 0, 37)
+SidebarDivider.Size = UDim2.new(0, 1, 1, -33)
+SidebarDivider.Position = UDim2.new(0, 120, 0, 33)
 SidebarDivider.BackgroundColor3 = DefaultBorder
 SidebarDivider.BorderSizePixel = 0
 SidebarDivider.Parent = Main
@@ -1102,8 +997,8 @@ end)
 
 local Content = Instance.new("Frame")
 Content.Name = "Content"
-Content.Size = UDim2.new(1, -121, 1, -37)
-Content.Position = UDim2.new(0, 121, 0, 37)
+Content.Size = UDim2.new(1, -121, 1, -33)
+Content.Position = UDim2.new(0, 121, 0, 33)
 Content.BackgroundColor3 = Colors.Panel
 Content.BorderSizePixel = 0
 Content.ClipsDescendants = true
@@ -1113,7 +1008,7 @@ local ContentCorner = Instance.new("UICorner")
 ContentCorner.CornerRadius = UDim.new(0, 10)
 ContentCorner.Parent = Content
 
--- INI BAGIAN WATERMARK YANG BISA DIGANTI
+-- WATERMARK
 local WatermarkLogo = Instance.new("ImageLabel")
 WatermarkLogo.Name = "WatermarkLogo"
 WatermarkLogo.Size = UDim2.new(0, 240, 0, 240)
@@ -1126,7 +1021,6 @@ WatermarkLogo.ScaleType = Enum.ScaleType.Fit
 WatermarkLogo.ZIndex = 1
 WatermarkLogo.Parent = Content
 
--- TARIK ID WATERMARK DARI FIREBASE
 task.spawn(function()
 	if reqFunc then
 		pcall(function()
@@ -1861,7 +1755,7 @@ loadAboutPanel()
 local AnnouncPanel = Instance.new("Frame")
 AnnouncPanel.Name = "AnnouncPanel"
 AnnouncPanel.Size = UDim2.new(0, 260, 0, 42)
-AnnouncPanel.Position = UDim2.new(1, -270, 0, 42)
+AnnouncPanel.Position = UDim2.new(1, -270, 0, 38)
 AnnouncPanel.BackgroundColor3 = Colors.Panel
 AnnouncPanel.BorderSizePixel = 0
 AnnouncPanel.Visible = false
@@ -1880,7 +1774,6 @@ apStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
 apStroke.Parent = AnnouncPanel
 registerBorder(apStroke)
 
--- Header (judul + tombol close)
 local apHeader = Instance.new("Frame")
 apHeader.Name = "Header"
 apHeader.Size = UDim2.new(1, 0, 0, 32)
@@ -1921,7 +1814,6 @@ apCloseIcon.ScaleType = Enum.ScaleType.Fit
 apCloseIcon.ZIndex = 53
 apCloseIcon.Parent = apCloseBtn
 
--- Container untuk pesan (auto memanjang ke bawah)
 local apList = Instance.new("Frame")
 apList.Name = "MsgContainer"
 apList.Size = UDim2.new(1, -16, 0, 0)
@@ -1936,7 +1828,6 @@ apListLayout.SortOrder = Enum.SortOrder.LayoutOrder
 apListLayout.Padding = UDim.new(0, 4)
 apListLayout.Parent = apList
 
--- Empty state
 local apEmptyLabel = Instance.new("TextLabel")
 apEmptyLabel.Name = "EmptyLabel"
 apEmptyLabel.Size = UDim2.new(1, 0, 0, 20)
@@ -1962,9 +1853,6 @@ local function countAnnouncements()
 	return n
 end
 
--- ============================================================
--- FUNGSI REFRESH (TANPA ANIMASI LAMBAT)
--- ============================================================
 local function refreshAnnouncPanelSize()
 	local n = countAnnouncements()
 	apEmptyLabel.Visible = (n == 0)
@@ -1976,7 +1864,6 @@ local function refreshAnnouncPanelSize()
 		else
 			targetH = 34 + apList.AbsoluteSize.Y + 8
 		end
-		-- LANGSUNG UBAH UKURAN TANPA TWEEN
 		AnnouncPanel.Size = UDim2.new(0, 260, 0, targetH)
 	end)
 end
@@ -1987,7 +1874,6 @@ end
 _G.AddAnnouncement = function(text)
 	if not text or text == "" then return end
 
-	-- Anti spam: skip duplikat di 3 pesan terakhir
 	local recent = {}
 	for _, c in pairs(apList:GetChildren()) do
 		if c:IsA("Frame") and c.Name == "AnnMsg" then
@@ -2005,7 +1891,6 @@ _G.AddAnnouncement = function(text)
 		end
 	end
 
-	-- Batasi maksimal 6 pesan
 	if #recent >= 6 then
 		local oldest = nil
 		for _, c in pairs(recent) do
@@ -2037,7 +1922,6 @@ _G.AddAnnouncement = function(text)
 	msgCorner.CornerRadius = UDim.new(0, 6)
 	msgCorner.Parent = msgFrame
 
-	-- Padding standar
 	local msgPad = Instance.new("UIPadding")
 	msgPad.PaddingTop = UDim.new(0, 8)
 	msgPad.PaddingBottom = UDim.new(0, 8)
@@ -2045,10 +1929,9 @@ _G.AddAnnouncement = function(text)
 	msgPad.PaddingRight = UDim.new(0, 8)
 	msgPad.Parent = msgFrame
 
-	-- Teks Pesan (Lebar dikurangi agar tidak menabrak tombol di kanan)
 	local msgLabel = Instance.new("TextLabel")
 	msgLabel.Name = "MsgText"
-	msgLabel.Size = UDim2.new(1, -45, 0, 0) -- Sisa 45px untuk tombol
+	msgLabel.Size = UDim2.new(1, -45, 0, 0)
 	msgLabel.Position = UDim2.new(0, 0, 0, 0) 
 	msgLabel.BackgroundTransparency = 1
 	msgLabel.Text = text
@@ -2062,17 +1945,11 @@ _G.AddAnnouncement = function(text)
 	msgLabel.ZIndex = 53
 	msgLabel.Parent = msgFrame
 
-	-- ==========================================
-	-- FITUR LIKE & DISLIKE (SEJAJAR TEKS, MENTOK KANAN)
-	-- ==========================================
 	local actionFrame = Instance.new("Frame")
 	actionFrame.Name = "ActionFrame"
 	actionFrame.Size = UDim2.new(0, 40, 0, 14) 
-	
-	-- Posisi: Di sebelah kanan teks, rata atas
 	actionFrame.Position = UDim2.new(1, 0, 0, 0) 
-	actionFrame.AnchorPoint = Vector2.new(1, 0) -- Acuan dari kanan atas
-	
+	actionFrame.AnchorPoint = Vector2.new(1, 0)
 	actionFrame.BackgroundTransparency = 1
 	actionFrame.ZIndex = 54
 	actionFrame.Parent = msgFrame
@@ -2084,7 +1961,6 @@ _G.AddAnnouncement = function(text)
 	actionList.Padding = UDim.new(0, 6)
 	actionList.Parent = actionFrame
 
-	-- Tombol LIKE
 	local likeBtn = Instance.new("ImageButton")
 	likeBtn.Name = "LikeBtn"
 	likeBtn.Size = UDim2.new(0, 14, 0, 14)
@@ -2095,7 +1971,6 @@ _G.AddAnnouncement = function(text)
 	likeBtn.ZIndex = 55
 	likeBtn.Parent = actionFrame
 
-	-- Tombol DISLIKE
 	local dislikeBtn = Instance.new("ImageButton")
 	dislikeBtn.Name = "DislikeBtn"
 	dislikeBtn.Size = UDim2.new(0, 14, 0, 14)
@@ -2106,7 +1981,6 @@ _G.AddAnnouncement = function(text)
 	dislikeBtn.ZIndex = 55
 	dislikeBtn.Parent = actionFrame
 
-	-- Logika Like
 	local liked = false
 	likeBtn.MouseButton1Click:Connect(function()
 		liked = not liked
@@ -2118,7 +1992,6 @@ _G.AddAnnouncement = function(text)
 		end
 	end)
 
-	-- Logika Dislike
 	local disliked = false
 	dislikeBtn.MouseButton1Click:Connect(function()
 		disliked = not disliked
@@ -2129,7 +2002,6 @@ _G.AddAnnouncement = function(text)
 			dislikeBtn.Image = "rbxassetid://115295848024534"
 		end
 	end)
-	-- ==========================================
 
 	msgFrame.BackgroundTransparency = 1
 	TweenService:Create(msgFrame, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
@@ -2155,7 +2027,6 @@ AnnouncBtn.MouseButton1Click:Connect(function()
 		unreadAnnouncements = 0
 		refreshAnnouncPanelSize()
 	else
-		-- Langsung kecilkan tanpa animasi
 		AnnouncPanel.Size = UDim2.new(0, 260, 0, 42)
 	end
 end)
@@ -2164,7 +2035,6 @@ apCloseBtn.MouseButton1Click:Connect(function()
 	AnnouncPanel.Visible = false
 	if UnreadDot then UnreadDot.Visible = false end
 	unreadAnnouncements = 0
-	-- Langsung kecilkan tanpa animasi
 	AnnouncPanel.Size = UDim2.new(0, 260, 0, 42)
 end)
 
