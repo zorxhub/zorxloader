@@ -1899,20 +1899,56 @@ _G.AddAnnouncement = function(text)
 	msgPad.Parent = msgFrame
 
 	local msgLabel = Instance.new("TextLabel")
-	msgLabel.Name = "MsgText"
-	msgLabel.Size = UDim2.new(1, -50, 0, 0) -- Lebar dikurangi agar tidak menabrak tombol
-	msgLabel.BackgroundTransparency = 1
-	msgLabel.Text = text
-	msgLabel.TextColor3 = Colors.Text
-	msgLabel.Font = Enum.Font.Gotham
-	msgLabel.TextSize = 10
-	msgLabel.TextWrapped = true
-	msgLabel.TextXAlignment = Enum.TextXAlignment.Left
-	msgLabel.TextYAlignment = Enum.TextYAlignment.Top
-	msgLabel.AutomaticSize = Enum.AutomaticSize.Y
-msgLabel.Size = UDim2.new(1, -50, 0, 28)
-	msgLabel.ZIndex = 53
-	msgLabel.Parent = msgFrame
+msgLabel.Name = "MsgText"
+msgLabel.Size = UDim2.new(1, -50, 0, 0)
+msgLabel.BackgroundTransparency = 1
+msgLabel.Text = text
+msgLabel.TextColor3 = Colors.Text
+msgLabel.Font = Enum.Font.Gotham
+msgLabel.TextSize = 10
+msgLabel.TextWrapped = true
+msgLabel.TextXAlignment = Enum.TextXAlignment.Left
+msgLabel.TextYAlignment = Enum.TextYAlignment.Top
+msgLabel.AutomaticSize = Enum.AutomaticSize.Y
+msgLabel.ZIndex = 53
+msgLabel.Parent = msgFrame
+
+local actionFrame = Instance.new("Frame")
+actionFrame.Name = "ActionFrame"
+actionFrame.Size = UDim2.new(0, 60, 0, 20)
+actionFrame.Position = UDim2.new(1, -8, 0, 0)
+actionFrame.AnchorPoint = Vector2.new(1, 0)
+actionFrame.BackgroundTransparency = 1
+actionFrame.ZIndex = 54
+actionFrame.Parent = msgFrame
+
+local actionList = Instance.new("UIListLayout")
+actionList.FillDirection = Enum.FillDirection.Horizontal
+actionList.VerticalAlignment = Enum.VerticalAlignment.Center
+actionList.HorizontalAlignment = Enum.HorizontalAlignment.Center
+actionList.Padding = UDim.new(0, 8)
+actionList.Parent = actionFrame
+
+-- Atur posisi tombol setelah tinggi teks diketahui
+local function updateActionPosition()
+    actionFrame.Position = UDim2.new(
+        1, -8,
+        0, msgLabel.AbsoluteSize.Y + 8
+    )
+end
+
+msgLabel:GetPropertyChangedSignal("AbsoluteSize"):Connect(updateActionPosition)
+task.defer(updateActionPosition)
+
+-- Sisakan ruang untuk tombol agar ikut dihitung tinggi card
+local bottomSpace = Instance.new("Frame")
+bottomSpace.Name = "ActionSpace"
+bottomSpace.Size = UDim2.new(1, 0, 0, 28)
+bottomSpace.BackgroundTransparency = 1
+bottomSpace.LayoutOrder = 2
+bottomSpace.Parent = msgFrame
+
+msgLabel.LayoutOrder = 1
 
 -- ==========================================
 -- FITUR LIKE & DISLIKE (SEJAJAR & RAPI)
