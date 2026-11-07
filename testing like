@@ -1,5 +1,5 @@
 --============================================================
--- ZORX HUB - FULL UI + LICENSE SYSTEM (FULL FIX)
+-- ZORX HUB - FULL UI + LICENSE SYSTEM
 --============================================================
 
 local Players = game:GetService("Players")
@@ -36,7 +36,6 @@ end
 local function CheckLicense()
 	local success = false
 	local expireTimestamp = 0
-	local trialLabel = "Trial" -- Teks default
 	
 	if reqFunc then
 		pcall(function()
@@ -48,23 +47,15 @@ local function CheckLicense()
 				if data and data.ExpireTime then
 					success = true
 					expireTimestamp = data.ExpireTime
-					if data.TrialText then
-						trialLabel = data.TrialText -- Ambil teks dari HTML
-					end
 				end
 			end
 		end)
 	end
 	
-	return success, expireTimestamp, trialLabel
+	return success, expireTimestamp
 end
 
-local isLicensed, expireTime, customTrialText = CheckLicense()
-
--- Pengaman Tambahan (kalau di HTML kosong, pake "Trial")
-if not customTrialText or customTrialText == "" then
-	customTrialText = "Trial"
-end
+local isLicensed, expireTime = CheckLicense()
 
 if not isLicensed then
 	warn("Lisensi tidak ditemukan untuk " .. player.Name .. ". UI tidak akan dimuat.")
@@ -813,18 +804,14 @@ end
 -- 1. Profil Roblox (Avatar bulat)
 local avatarCard = createAvatarPill(0, false)
 
--- 2. Nickname User 
+-- 2. Nickname User (Lebar dinamis menyesuaikan nama)
 local nameLength = #player.Name
-local namePillWidth = nameLength * 7 + 16
+local namePillWidth = math.clamp(nameLength * 6 + 16, 40, 120)
 local nickCard, nickText = createPill(player.Name, namePillWidth, "", 1, false)
 
--- 3. Trial & Countdown
-local safeTrialText = customTrialText or "Trial"
-local trialWidth = #safeTrialText * 7 + 16
-local trialCard, trialText = createPill(safeTrialText, trialWidth, "", 2, false)
-
--- Tambah Card Timer
-local zeroCard, zeroText = createPill("000", 60, "", 3, false) 
+-- 3. ID Card (Tanpa Ikon, Teks Ke Tengah)
+local trialCard, trialText = createPill("Trial", 46, "", 2, false)
+local zeroCard, zeroText   = createPill("000",   40, "", 3, false)
 
 -- 4. Pill Utama
 local gamePill, gameText = createPill(getGameName(), 145, "83907651602856", 4, true)
@@ -839,6 +826,52 @@ task.spawn(function()
 		end
 	end
 end)
+
+-- ============================================================
+-- REAL-TIME COUNTDOWN UNTUK [TRIAL] & [000]
+-- ============================================================
+local function FormatTime(seconds)
+	local d = math.floor(seconds / 86400)
+	local h = math.floor((seconds % 86400) / 3600)
+	local m = math.floor((seconds % 3600) / 60)
+	local s = math.floor(seconds % 60)
+	
+	if d > 0 then
+		return string.format("%dD %02dH %02dM", d, h, m)
+	elseif h > 0 then
+		return string.format("%02dH %02dM %02dS", h, m, s)
+	else
+		return string.format("%02dM %02dS", m, s)
+	end
+end
+
+local licenseConnection
+local function StartCountdown()
+	if licenseConnection then licenseConnection:Disconnect() end
+	
+	licenseConnection = RunService.Heartbeat:Connect(function()
+		local currentTimeMs = os.time() * 1000
+		local timeLeftMs = expireTime - currentTimeMs
+		
+		if timeLeftMs > 0 then
+			local timeLeftSec = math.floor(timeLeftMs / 1000)
+			local formattedTime = FormatTime(timeLeftSec)
+			
+			if trialText and zeroText then
+				trialText.Text = "Trial"
+				zeroText.Text = formattedTime
+				
+				if zeroCard then
+					zeroCard.Size = UDim2.new(0, zeroText.TextBounds.X + 16, 0, 22)
+				end
+			end
+		else
+			licenseConnection:Disconnect()
+			DestroyEverything()
+		end
+	end)
+end
+StartCountdown()
 
 -- ============================================================
 -- TOMBOL LONCENG & ANNOUNCEMENT
@@ -920,6 +953,32 @@ local isMaximized = false
 MaximizeBtn.MouseButton1Click:Connect(function()
 	isMaximized = not isMaximized
 
+	-- ===== HIDE/SHOW TITLE "ZORX" + LOGO =====
+	if isMaximized then
+		-- Saat maximize: sembunyikan Title & Logo
+		TweenService:Create(Title, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+			TextTransparency = 1
+		}):Play()
+		TweenService:Create(LogoImg, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+			ImageTransparency = 1
+		}):Play()
+		Title.Visible = false
+		LogoImg.Visible = false
+	else
+		-- Saat normal: munculkan lagi Title & Logo
+		Title.Visible = true
+		LogoImg.Visible = true
+		Title.TextTransparency = 1
+		LogoImg.ImageTransparency = 1
+		TweenService:Create(Title, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+			TextTransparency = 0
+		}):Play()
+		TweenService:Create(LogoImg, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+			ImageTransparency = 0
+		}):Play()
+	end
+
+	-- ===== SHOW/HIDE PILL KARTU =====
 	for _, card in ipairs({avatarCard, nickCard, trialCard, zeroCard}) do
 		if isMaximized then
 			card.Visible = true
@@ -933,23 +992,11 @@ MaximizeBtn.MouseButton1Click:Connect(function()
 		end
 	end
 
-	-- Animasi ukuran layar
+	-- ===== RESIZE MAIN UI =====
 	TweenService:Create(Main, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
 		Size = isMaximized and UDim2.new(0, 620, 0, 390) or UDim2.new(0, 480, 0, 300),
 		Position = UDim2.new(0.5, 0, 0.5, 0)
 	}):Play()
-
-	-- FITUR AUTO-GESER (Ubah ukuran jangkar biar melar ke kanan)
-	task.wait(0.3) -- Tunggu animasi layar selesai
-	if isMaximized then
-		-- Ubah posisi pill: Mentok kiri di 115px (batas aman dari logo ZORX), melar ke kanan
-		PillContainer.AnchorPoint = Vector2.new(0, 0) 
-		PillContainer.Position = UDim2.new(0, 115, 0.5, -11)
-	else
-		-- Balikin ke posisi normal (nempel kanan)
-		PillContainer.AnchorPoint = Vector2.new(1, 0)
-		PillContainer.Position = UDim2.new(1, -85, 0.5, -11)
-	end
 end)
 
 local frameCount = 0
@@ -1262,3 +1309,913 @@ local function createSidebarButton(text, order, iconId, onClick)
 	table.insert(sidebarButtons, btn)
 	return btn
 end
+
+local function clearContent()
+	for _, child in pairs(Scroll:GetChildren()) do
+		if not child:IsA("UIListLayout") and not child:IsA("UIPadding") then
+			child:Destroy()
+		end
+	end
+	for _, child in pairs(PopupLayer:GetChildren()) do
+		child.Visible = false
+	end
+end
+
+SearchBox:GetPropertyChangedSignal("Text"):Connect(function()
+	local query = SearchBox.Text:lower()
+	for _, btn in pairs(SidebarButtonContainer:GetChildren()) do
+		if btn:IsA("TextButton") then
+			local label = btn:FindFirstChild("Label")
+			if label then
+				btn.Visible = (query == "" or label.Text:lower():find(query) ~= nil)
+			end
+		end
+	end
+end)
+
+local function applyPillTheme(themeName)
+	ActiveTheme = themeName
+	RainbowActive = (themeName == "Rainbow")
+	if RainbowActive then return end
+
+	local theme = ThemeColors[themeName]
+	if not theme then return end
+
+	for _, pill in pairs(allPills) do
+		TweenService:Create(pill, TweenInfo.new(0.2), { BackgroundColor3 = theme.bg }):Play()
+	end
+	for _, stroke in pairs(allPillStrokes) do
+		TweenService:Create(stroke, TweenInfo.new(0.2), { Color = theme.stroke }):Play()
+	end
+	for _, txt in pairs(allPillTexts) do
+		TweenService:Create(txt, TweenInfo.new(0.2), { TextColor3 = theme.text }):Play()
+	end
+	TweenService:Create(DiscordLink, TweenInfo.new(0.2), { TextColor3 = theme.text }):Play()
+
+	for _, border in pairs(allBorders) do
+		if border and border.Parent then
+			TweenService:Create(border, TweenInfo.new(0.2), { Color = theme.border }):Play()
+		end
+	end
+	TopDivider.BackgroundColor3 = theme.border
+	SidebarDivider.BackgroundColor3 = theme.border
+
+	for _, border in pairs(infoLogoBorders) do
+		if border and border.Parent then
+			TweenService:Create(border, TweenInfo.new(0.2), { Color = theme.infoLogo or theme.border }):Play()
+		end
+	end
+end
+
+RunService.Heartbeat:Connect(function()
+	if not RainbowActive then return end
+
+	RainbowHue = (RainbowHue + 0.005) % 1
+	local rainbowColor = Color3.fromHSV(RainbowHue, 0.8, 1)
+	local rainbowDark = Color3.fromHSV(RainbowHue, 0.8, 0.4)
+	local rainbowText = Color3.fromHSV(RainbowHue, 0.3, 1)
+
+	for _, pill in pairs(allPills) do pill.BackgroundColor3 = rainbowDark end
+	for _, stroke in pairs(allPillStrokes) do stroke.Color = rainbowColor end
+	for _, txt in pairs(allPillTexts) do txt.TextColor3 = rainbowText end
+	DiscordLink.TextColor3 = rainbowText
+
+	for _, border in pairs(allBorders) do if border and border.Parent then border.Color = rainbowColor end end
+	for _, border in pairs(infoLogoBorders) do if border and border.Parent then border.Color = rainbowColor end end
+	TopDivider.BackgroundColor3 = rainbowColor
+	SidebarDivider.BackgroundColor3 = rainbowColor
+end)
+
+-- ============================================================
+-- PANEL ABOUT
+-- ============================================================
+local function loadAboutPanel()
+	clearContent()
+
+	local welcomeCard = Instance.new("Frame")
+	welcomeCard.Name = "WelcomeCard"
+	welcomeCard.Size = UDim2.new(1, 0, 0, 75)
+	welcomeCard.Position = UDim2.new(0, 0, 0, 0)
+	welcomeCard.BackgroundColor3 = Color3.fromRGB(28, 28, 36)
+	welcomeCard.BorderSizePixel = 0
+	welcomeCard.LayoutOrder = 1
+	welcomeCard.Parent = Scroll
+
+	local wCorner = Instance.new("UICorner")
+	wCorner.CornerRadius = UDim.new(0, 8)
+	wCorner.Parent = welcomeCard
+
+	local wStroke = Instance.new("UIStroke")
+	wStroke.Color = ThemeColors[ActiveTheme].border
+	wStroke.Thickness = 1
+	wStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+	wStroke.Parent = welcomeCard
+	registerBorder(wStroke)
+
+	local wTitle = Instance.new("TextLabel")
+	wTitle.Size = UDim2.new(1, -30, 0, 20)
+	wTitle.Position = UDim2.new(0, 14, 0, 8)
+	wTitle.BackgroundTransparency = 1
+	wTitle.Text = "Welcome to Zorx"
+	wTitle.TextColor3 = Colors.Text
+	wTitle.Font = Enum.Font.GothamBold
+	wTitle.TextSize = 13
+	wTitle.TextXAlignment = Enum.TextXAlignment.Left
+	wTitle.Parent = welcomeCard
+
+	local wDesc = Instance.new("TextLabel")
+	wDesc.Size = UDim2.new(1, -28, 0, 38)
+	wDesc.Position = UDim2.new(0, 14, 0, 30)
+	wDesc.BackgroundTransparency = 1
+	wDesc.Text = "Welcome! This hub is designed to keep every feature organized, responsive, and easy to use. Select a tab from the sidebar to get started."
+	wDesc.TextColor3 = Color3.fromRGB(170, 170, 190)
+	wDesc.Font = Enum.Font.Gotham
+	wDesc.TextSize = 9.5
+	wDesc.TextXAlignment = Enum.TextXAlignment.Left
+	wDesc.TextYAlignment = Enum.TextYAlignment.Top
+	wDesc.TextWrapped = true
+	wDesc.Parent = welcomeCard
+
+	local imageCard = Instance.new("Frame")
+	imageCard.Name = "ImageCard"
+	imageCard.Size = UDim2.new(1, 0, 0, 140)
+	imageCard.Position = UDim2.new(0, 0, 0, 0)
+	imageCard.BackgroundColor3 = Color3.fromRGB(28, 28, 36)
+	imageCard.BorderSizePixel = 0
+	imageCard.ClipsDescendants = true
+	imageCard.LayoutOrder = 2
+	imageCard.Parent = Scroll
+
+	local iCorner = Instance.new("UICorner")
+	iCorner.CornerRadius = UDim.new(0, 8)
+	iCorner.Parent = imageCard
+
+	local img = Instance.new("ImageLabel")
+	img.Size = UDim2.new(1, -4, 1, -4)
+	img.Position = UDim2.new(0.5, 0, 0.5, 0)
+	img.AnchorPoint = Vector2.new(0.5, 0.5)
+	img.BackgroundTransparency = 1
+	img.BorderSizePixel = 0
+	img.Image = "rbxassetid://91006115016356"
+	img.ScaleType = Enum.ScaleType.Stretch
+	img.ClipsDescendants = true
+	img.Parent = imageCard
+
+	local imgCorner = Instance.new("UICorner")
+	imgCorner.CornerRadius = UDim.new(0, 7)
+	imgCorner.Parent = img
+
+	local iStroke = Instance.new("UIStroke")
+	iStroke.Color = ThemeColors[ActiveTheme].border
+	iStroke.Thickness = 1
+	iStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+	iStroke.Parent = imageCard
+	registerBorder(iStroke)
+end
+
+-- ============================================================
+-- TAB INFO
+-- ============================================================
+local function loadInfoPanel()
+	clearContent()
+
+	local communityCard = Instance.new("Frame")
+	communityCard.Name = "CommunityCard"
+	communityCard.Size = UDim2.new(1, 0, 0, 145)
+	communityCard.Position = UDim2.new(0, 0, 0, 0)
+	communityCard.BackgroundColor3 = Color3.fromRGB(28, 28, 36)
+	communityCard.BorderSizePixel = 0
+	communityCard.LayoutOrder = 1
+	communityCard.Parent = Scroll
+
+	local cCorner = Instance.new("UICorner")
+	cCorner.CornerRadius = UDim.new(0, 8)
+	cCorner.Parent = communityCard
+
+	local cStroke = Instance.new("UIStroke")
+	cStroke.Color = ThemeColors[ActiveTheme].border
+	cStroke.Thickness = 1
+	cStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+	cStroke.Parent = communityCard
+	registerBorder(cStroke)
+
+	local logoBox = Instance.new("Frame")
+	logoBox.Size = UDim2.new(0, 54, 0, 54)
+	logoBox.Position = UDim2.new(0, 14, 0, 14)
+	logoBox.BackgroundColor3 = Color3.fromRGB(22, 22, 28)
+	logoBox.BorderSizePixel = 0
+	logoBox.ClipsDescendants = true
+	logoBox.Parent = communityCard
+
+	local logoCorner = Instance.new("UICorner")
+	logoCorner.CornerRadius = UDim.new(0, 7)
+	logoCorner.Parent = logoBox
+
+	local logoStroke = Instance.new("UIStroke")
+	logoStroke.Color = ThemeColors[ActiveTheme].infoLogo or ThemeColors[ActiveTheme].border
+	logoStroke.Thickness = 1
+	logoStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+	logoStroke.Parent = logoBox
+	registerInfoLogoBorder(logoStroke)
+
+	local logoImg2 = Instance.new("ImageLabel")
+	logoImg2.Size = UDim2.new(1, -4, 1, -4)
+	logoImg2.Position = UDim2.new(0.5, 0, 0.5, 0)
+	logoImg2.AnchorPoint = Vector2.new(0.5, 0.5)
+	logoImg2.BackgroundTransparency = 1
+	logoImg2.BorderSizePixel = 0
+	logoImg2.Image = "rbxassetid://77776661633653"
+	logoImg2.ScaleType = Enum.ScaleType.Fit 
+	logoImg2.ClipsDescendants = true
+	logoImg2.Parent = logoBox
+
+	local logoImgCorner = Instance.new("UICorner")
+	logoImgCorner.CornerRadius = UDim.new(0, 6)
+	logoImgCorner.Parent = logoImg2
+
+	local cTitle = Instance.new("TextLabel")
+	cTitle.Size = UDim2.new(1, -85, 0, 18)
+	cTitle.Position = UDim2.new(0, 80, 0, 16)
+	cTitle.BackgroundTransparency = 1
+	cTitle.Text = "Zorx Community"
+	cTitle.TextColor3 = Colors.Text
+	cTitle.Font = Enum.Font.GothamBold
+	cTitle.TextSize = 12
+	cTitle.TextXAlignment = Enum.TextXAlignment.Left
+	cTitle.Parent = communityCard
+
+	local cInfo = Instance.new("TextLabel")
+	cInfo.Size = UDim2.new(1, -85, 0, 30)
+	cInfo.Position = UDim2.new(0, 80, 0, 36)
+	cInfo.BackgroundTransparency = 1
+	cInfo.Text = "- Version: Loading...\n- Last Update: Loading..."
+	cInfo.TextColor3 = Color3.fromRGB(170, 170, 190)
+	cInfo.Font = Enum.Font.Gotham
+	cInfo.TextSize = 10
+	cInfo.TextXAlignment = Enum.TextXAlignment.Left
+	cInfo.TextYAlignment = Enum.TextYAlignment.Top
+	cInfo.Parent = communityCard
+
+	local function fetchLiveInfo()
+		task.spawn(function()
+			if reqFunc then
+				pcall(function()
+					local response = reqFunc({
+						Url = "https://zorx-broadcast-default-rtdb.firebaseio.com/info.json",
+						Method = "GET"
+					})
+					if response and (response.StatusCode == 200 or response.Status == 200) then
+						local data = HttpService:JSONDecode(response.Body)
+						if data then
+							local ver = data.Version or "v1.0"
+							local updateDate = data.LastUpdate or getTodayDate()
+							cInfo.Text = "- Version: " .. ver .. "\n- Last Update: " .. updateDate
+						end
+					end
+				end)
+			end
+		end)
+	end
+
+	fetchLiveInfo()
+
+	local copyDiscordBtn = Instance.new("TextButton")
+	copyDiscordBtn.Size = UDim2.new(0.5, -18, 0, 32)
+	copyDiscordBtn.Position = UDim2.new(0, 14, 0, 96)
+	copyDiscordBtn.BackgroundColor3 = Color3.fromRGB(30, 38, 32)
+	copyDiscordBtn.BorderSizePixel = 0
+	copyDiscordBtn.Text = ""
+	copyDiscordBtn.AutoButtonColor = false
+	copyDiscordBtn.Parent = communityCard
+
+	local cdCorner = Instance.new("UICorner")
+	cdCorner.CornerRadius = UDim.new(0, 6)
+	cdCorner.Parent = copyDiscordBtn
+
+	local cdStroke = Instance.new("UIStroke")
+	cdStroke.Color = ThemeColors[ActiveTheme].border
+	cdStroke.Thickness = 1
+	cdStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+	cdStroke.Parent = copyDiscordBtn
+	registerBorder(cdStroke)
+
+	local cdText = Instance.new("TextLabel")
+	cdText.Size = UDim2.new(1, -45, 1, 0)
+	cdText.Position = UDim2.new(0, 12, 0, 0)
+	cdText.BackgroundTransparency = 1
+	cdText.Text = "Copy Discord Invite"
+	cdText.TextColor3 = Color3.fromRGB(230, 240, 235)
+	cdText.Font = Enum.Font.GothamBold
+	cdText.TextSize = 10
+	cdText.TextXAlignment = Enum.TextXAlignment.Left
+	cdText.Parent = copyDiscordBtn
+
+	local cdIcon = Instance.new("ImageLabel")
+	cdIcon.Size = UDim2.new(0, 14, 0, 14)
+	cdIcon.Position = UDim2.new(1, -22, 0.5, -7)
+	cdIcon.BackgroundTransparency = 1
+	cdIcon.Image = "rbxassetid://101397742551590"
+	cdIcon.ScaleType = Enum.ScaleType.Fit
+	cdIcon.Parent = copyDiscordBtn
+
+	local updateBtn = Instance.new("TextButton")
+	updateBtn.Size = UDim2.new(0.5, -18, 0, 32)
+	updateBtn.Position = UDim2.new(0.5, 4, 0, 96)
+	updateBtn.BackgroundColor3 = Color3.fromRGB(30, 38, 32)
+	updateBtn.BorderSizePixel = 0
+	updateBtn.Text = ""
+	updateBtn.AutoButtonColor = false
+	updateBtn.Parent = communityCard
+
+	local udCorner = Instance.new("UICorner")
+	udCorner.CornerRadius = UDim.new(0, 6)
+	udCorner.Parent = updateBtn
+
+	local udStroke = Instance.new("UIStroke")
+	udStroke.Color = ThemeColors[ActiveTheme].border
+	udStroke.Thickness = 1
+	udStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+	udStroke.Parent = updateBtn
+	registerBorder(udStroke)
+
+	local udText = Instance.new("TextLabel")
+	udText.Size = UDim2.new(1, -45, 1, 0)
+	udText.Position = UDim2.new(0, 12, 0, 0)
+	udText.BackgroundTransparency = 1
+	udText.Text = "Refresh Info"
+	udText.TextColor3 = Color3.fromRGB(230, 240, 235)
+	udText.Font = Enum.Font.GothamBold
+	udText.TextSize = 10
+	udText.TextXAlignment = Enum.TextXAlignment.Left
+	udText.Parent = updateBtn
+
+	local udIcon = Instance.new("ImageLabel")
+	udIcon.Size = UDim2.new(0, 14, 0, 14)
+	udIcon.Position = UDim2.new(1, -22, 0.5, -7)
+	udIcon.BackgroundTransparency = 1
+	udIcon.Image = "rbxassetid://137170375224448"
+	udIcon.ScaleType = Enum.ScaleType.Fit
+	udIcon.Parent = updateBtn
+
+	copyDiscordBtn.MouseButton1Click:Connect(function()
+		pcall(function()
+			if setclipboard then setclipboard("https://discord.gg/3MrpqYycs")
+			elseif toclipboard then toclipboard("https://discord.gg/3MrpqYycs") end
+		end)
+		createTopRightNotification("Discord Invite", "Successfully copied to your clipboard!", "82414580295798", 4)
+	end)
+
+	updateBtn.MouseButton1Click:Connect(function()
+		local rotateInfo = TweenInfo.new(0.8, Enum.EasingStyle.Linear, Enum.EasingDirection.InOut)
+		TweenService:Create(udIcon, rotateInfo, {Rotation = 360}):Play()
+		fetchLiveInfo()
+		task.wait(0.8)
+		udIcon.Rotation = 0
+		createTopRightNotification("Info Updated", "Latest version and date successfully fetched!", "82414580295798", 4)
+	end)
+end
+
+-- ============================================================
+-- PANEL SETTINGS
+-- ============================================================
+local function loadSetingsPanel()
+	clearContent()
+
+	local header = Instance.new("TextLabel")
+	header.Name = "Header_Colours"
+	header.Size = UDim2.new(1, 0, 0, 16)
+	header.BackgroundTransparency = 1
+	header.Text = "COLOURS"
+	header.TextColor3 = Colors.SubText
+	header.Font = Enum.Font.GothamBold
+	header.TextSize = 10
+	header.TextXAlignment = Enum.TextXAlignment.Left
+	header.LayoutOrder = 1
+	header.Parent = Scroll
+
+	local dropdownRow = Instance.new("Frame")
+	dropdownRow.Name = "Dropdown_Colours"
+	dropdownRow.Size = UDim2.new(1, 0, 0, 42)
+	dropdownRow.BackgroundColor3 = Colors.Slot
+	dropdownRow.BorderSizePixel = 0
+	dropdownRow.LayoutOrder = 2
+	dropdownRow.Parent = Scroll
+
+	local drCorner = Instance.new("UICorner")
+	drCorner.CornerRadius = UDim.new(0, 6)
+	drCorner.Parent = dropdownRow
+
+	local drStroke = Instance.new("UIStroke")
+	drStroke.Color = ThemeColors[ActiveTheme].border
+	drStroke.Thickness = 1
+	drStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+	drStroke.Parent = dropdownRow
+	registerBorder(drStroke)
+
+	local drTitle = Instance.new("TextLabel")
+	drTitle.Size = UDim2.new(1, -130, 0, 16)
+	drTitle.Position = UDim2.new(0, 10, 0, 6)
+	drTitle.BackgroundTransparency = 1
+	drTitle.Text = "Warna UI"
+	drTitle.TextColor3 = Colors.Text
+	drTitle.Font = Enum.Font.GothamMedium
+	drTitle.TextSize = 11
+	drTitle.TextXAlignment = Enum.TextXAlignment.Left
+	drTitle.Parent = dropdownRow
+
+	local drDesc = Instance.new("TextLabel")
+	drDesc.Size = UDim2.new(1, -130, 0, 12)
+	drDesc.Position = UDim2.new(0, 10, 0, 22)
+	drDesc.BackgroundTransparency = 1
+	drDesc.Text = "Ganti warna pill + border"
+	drDesc.TextColor3 = Colors.SubText
+	drDesc.Font = Enum.Font.Gotham
+	drDesc.TextSize = 9
+	drDesc.TextXAlignment = Enum.TextXAlignment.Left
+	drDesc.Parent = dropdownRow
+
+	local dropBox = Instance.new("TextButton")
+	dropBox.Size = UDim2.new(0, 110, 0, 24)
+	dropBox.Position = UDim2.new(1, -120, 0.5, -12)
+	dropBox.BackgroundColor3 = Color3.fromRGB(35, 35, 42)
+	dropBox.BorderSizePixel = 0
+	dropBox.Text = ActiveTheme
+	dropBox.TextColor3 = Colors.Text
+	dropBox.Font = Enum.Font.Gotham
+	dropBox.TextSize = 10
+	dropBox.AutoButtonColor = false
+	dropBox.Parent = dropdownRow
+
+	local dbCorner = Instance.new("UICorner")
+	dbCorner.CornerRadius = UDim.new(0, 5)
+	dbCorner.Parent = dropBox
+
+	local popup = Instance.new("Frame")
+	popup.Name = "Popup_Colours"
+	popup.Size = UDim2.new(0, 110, 0, 0)
+	popup.BackgroundColor3 = Color3.fromRGB(30, 30, 38)
+	popup.BorderSizePixel = 0
+	popup.Visible = false
+	popup.ZIndex = 100
+	popup.ClipsDescendants = true
+	popup.Parent = PopupLayer
+
+	local popupCorner = Instance.new("UICorner")
+	popupCorner.CornerRadius = UDim.new(0, 5)
+	popupCorner.Parent = popup
+
+	local popupStroke = Instance.new("UIStroke")
+	popupStroke.Color = Colors.Stroke
+	popupStroke.Thickness = 1
+	popupStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+	popupStroke.Parent = popup
+
+	local popupScroll = Instance.new("ScrollingFrame")
+	popupScroll.Size = UDim2.new(1, 0, 1, 0)
+	popupScroll.BackgroundTransparency = 1
+	popupScroll.BorderSizePixel = 0
+	popupScroll.ScrollBarThickness = 3
+	popupScroll.ScrollBarImageColor3 = Colors.Stroke
+	popupScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+	popupScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
+	popupScroll.Parent = popup
+
+	local popupList = Instance.new("UIListLayout")
+	popupList.SortOrder = Enum.SortOrder.LayoutOrder
+	popupList.Padding = UDim.new(0, 2)
+	popupList.Parent = popupScroll
+
+	local popupPad = Instance.new("UIPadding")
+	popupPad.PaddingTop = UDim.new(0, 4)
+	popupPad.PaddingBottom = UDim.new(0, 4)
+	popupPad.PaddingLeft = UDim.new(0, 4)
+	popupPad.PaddingRight = UDim.new(0, 4)
+	popupPad.Parent = popupScroll
+
+	local isOpen = false
+
+	local themeList = {
+		"None", "Rainbow", "Biru", "Ungu", "Hijau", "Kuning", "Oren",
+		"Merah", "Pink", "Cyan", "Putih", "Hitam", "Emas",
+		"Abu", "Lime", "Marun", "Navy"
+	}
+
+	local function refreshPopup()
+		for _, child in pairs(popupScroll:GetChildren()) do
+			if child:IsA("TextButton") then child:Destroy() end
+		end
+
+		local count = 0
+		for _, themeName in ipairs(themeList) do
+			count += 1
+			local themeData = ThemeColors[themeName]
+			local dotColor
+			if themeName == "Rainbow" then
+				dotColor = Color3.fromHSV(tick() % 1, 0.8, 1)
+			elseif themeName == "None" then
+				dotColor = NoneDotColor
+			else
+				dotColor = themeData and themeData.stroke or DefaultPillStroke
+			end
+
+			local item = Instance.new("TextButton")
+			item.Size = UDim2.new(1, -6, 0, 24)
+			item.BackgroundColor3 = Color3.fromRGB(40, 40, 48)
+			item.BackgroundTransparency = 1
+			item.BorderSizePixel = 0
+			item.Text = ""
+			item.AutoButtonColor = false
+			item.LayoutOrder = count
+			item.Parent = popupScroll
+
+			local itemCorner = Instance.new("UICorner")
+			itemCorner.CornerRadius = UDim.new(0, 4)
+			itemCorner.Parent = item
+
+			local dot = Instance.new("Frame")
+			dot.Size = UDim2.new(0, 12, 0, 12)
+			dot.Position = UDim2.new(0, 6, 0.5, -6)
+			dot.BackgroundColor3 = dotColor
+			dot.BorderSizePixel = 0
+			dot.Parent = item
+
+			local dotCorner = Instance.new("UICorner")
+			dotCorner.CornerRadius = UDim.new(1, 0)
+			dotCorner.Parent = dot
+
+			local dotStroke = Instance.new("UIStroke")
+			dotStroke.Color = Color3.fromRGB(80, 80, 90)
+			dotStroke.Thickness = 1
+			dotStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+			dotStroke.Parent = dot
+
+			local itemText = Instance.new("TextLabel")
+			itemText.Size = UDim2.new(1, -30, 1, 0)
+			itemText.Position = UDim2.new(0, 24, 0, 0)
+			itemText.BackgroundTransparency = 1
+			itemText.Text = themeName
+			itemText.TextColor3 = Colors.Text
+			itemText.Font = Enum.Font.Gotham
+			itemText.TextSize = 10
+			itemText.TextXAlignment = Enum.TextXAlignment.Left
+			itemText.Parent = item
+
+			if ActiveTheme == themeName then
+				item.BackgroundTransparency = 0.5
+				item.BackgroundColor3 = Colors.SlotHover
+			end
+
+			item.MouseEnter:Connect(function()
+				item.BackgroundTransparency = 0.5
+				item.BackgroundColor3 = Colors.SlotHover
+			end)
+
+			item.MouseLeave:Connect(function()
+				if ActiveTheme ~= themeName then
+					item.BackgroundTransparency = 1
+				end
+			end)
+
+			item.MouseButton1Click:Connect(function()
+				applyPillTheme(themeName)
+				dropBox.Text = themeName
+				isOpen = false
+				popup.Visible = false
+				popup.Size = UDim2.new(0, 110, 0, 0)
+			end)
+		end
+
+		return count
+	end
+
+	dropBox.MouseButton1Click:Connect(function()
+		isOpen = not isOpen
+		if isOpen then
+			local count = refreshPopup()
+			local absPos = dropBox.AbsolutePosition
+			local absSize = dropBox.AbsoluteSize
+			popup.Position = UDim2.new(0, absPos.X - 3, 0, absPos.Y + absSize.Y + 2)
+			popup.Visible = true
+			local h = math.max(math.min(count, 8) * 26 + 8, 30)
+			popup.Size = UDim2.new(0, 110, 0, h)
+		else
+			popup.Visible = false
+			popup.Size = UDim2.new(0, 110, 0, 0)
+		end
+	end)
+end
+
+local miscLockedText = "M\226\128\139i\226\128\139s\226\128\139c"
+
+createSidebarButton("About", 1, "135090089738327", loadAboutPanel)
+createSidebarButton("Farm", 2, "98852406765639", function() end)
+createSidebarButton(miscLockedText, 3, "112245774650566", function() end)
+createSidebarButton("Setings", 4, "117852848591099", loadSetingsPanel)
+createSidebarButton("Info", 5, "117372440865704", loadInfoPanel)
+
+task.wait(0.1)
+
+activeTab = sidebarButtons[1]
+if sidebarButtons[1] then
+	local lbl = sidebarButtons[1]:FindFirstChild("Label")
+	if lbl then
+		lbl.TextColor3 = Colors.Text
+	end
+	TweenService:Create(sidebarButtons[1], TweenInfo.new(0.15), {
+		BackgroundTransparency = 0.5,
+		BackgroundColor3 = Colors.SlotHover
+	}):Play()
+end
+
+loadAboutPanel()
+
+-- ============================================================
+-- UI ANNOUNCEMENT (AUTO-EXPAND KE BAWAH + EMPTY STATE)
+-- ============================================================
+local AnnouncPanel = Instance.new("Frame")
+AnnouncPanel.Name = "AnnouncPanel"
+AnnouncPanel.Size = UDim2.new(0, 260, 0, 42)
+AnnouncPanel.Position = UDim2.new(1, -270, 0, 38)
+AnnouncPanel.BackgroundColor3 = Colors.Panel
+AnnouncPanel.BorderSizePixel = 0
+AnnouncPanel.Visible = false
+AnnouncPanel.ZIndex = 50
+AnnouncPanel.ClipsDescendants = false
+AnnouncPanel.Parent = Main
+
+local apCorner = Instance.new("UICorner")
+apCorner.CornerRadius = UDim.new(0, 8)
+apCorner.Parent = AnnouncPanel
+
+local apStroke = Instance.new("UIStroke")
+apStroke.Color = DefaultBorder
+apStroke.Thickness = 1
+apStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+apStroke.Parent = AnnouncPanel
+registerBorder(apStroke)
+
+local apHeader = Instance.new("Frame")
+apHeader.Name = "Header"
+apHeader.Size = UDim2.new(1, 0, 0, 32)
+apHeader.Position = UDim2.new(0, 0, 0, 0)
+apHeader.BackgroundTransparency = 1
+apHeader.ZIndex = 51
+apHeader.Parent = AnnouncPanel
+
+local apTitle = Instance.new("TextLabel")
+apTitle.Size = UDim2.new(1, -30, 1, 0)
+apTitle.Position = UDim2.new(0, 12, 0, 0)
+apTitle.BackgroundTransparency = 1
+apTitle.Text = "Announcements"
+apTitle.TextColor3 = Colors.Text
+apTitle.Font = Enum.Font.GothamBold
+apTitle.TextSize = 12
+apTitle.TextXAlignment = Enum.TextXAlignment.Left
+apTitle.ZIndex = 52
+apTitle.Parent = apHeader
+
+local apCloseBtn = Instance.new("TextButton")
+apCloseBtn.Size = UDim2.new(0, 20, 0, 20)
+apCloseBtn.Position = UDim2.new(1, -25, 0.5, -10)
+apCloseBtn.BackgroundTransparency = 1
+apCloseBtn.Text = ""
+apCloseBtn.AutoButtonColor = false
+apCloseBtn.ZIndex = 52
+apCloseBtn.Parent = apHeader
+
+local apCloseIcon = Instance.new("ImageLabel")
+apCloseIcon.Size = UDim2.new(0, 10, 0, 10)
+apCloseIcon.Position = UDim2.new(0.5, 0, 0.5, 0)
+apCloseIcon.AnchorPoint = Vector2.new(0.5, 0.5)
+apCloseIcon.BackgroundTransparency = 1
+apCloseIcon.Image = "rbxassetid://85435035697164"
+apCloseIcon.ImageColor3 = Color3.fromRGB(170, 170, 180)
+apCloseIcon.ScaleType = Enum.ScaleType.Fit
+apCloseIcon.ZIndex = 53
+apCloseIcon.Parent = apCloseBtn
+
+local apList = Instance.new("Frame")
+apList.Name = "MsgContainer"
+apList.Size = UDim2.new(1, -16, 0, 0)
+apList.Position = UDim2.new(0, 8, 0, 34)
+apList.BackgroundTransparency = 1
+apList.AutomaticSize = Enum.AutomaticSize.Y
+apList.ZIndex = 51
+apList.Parent = AnnouncPanel
+
+local apListLayout = Instance.new("UIListLayout")
+apListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+apListLayout.Padding = UDim.new(0, 4)
+apListLayout.Parent = apList
+
+local apEmptyLabel = Instance.new("TextLabel")
+apEmptyLabel.Name = "EmptyLabel"
+apEmptyLabel.Size = UDim2.new(1, 0, 0, 20)
+apEmptyLabel.BackgroundTransparency = 1
+apEmptyLabel.Text = "No notifications yet"
+apEmptyLabel.TextColor3 = Colors.SubText
+apEmptyLabel.Font = Enum.Font.Gotham
+apEmptyLabel.TextSize = 10
+apEmptyLabel.TextXAlignment = Enum.TextXAlignment.Center
+apEmptyLabel.TextYAlignment = Enum.TextYAlignment.Center
+apEmptyLabel.LayoutOrder = 0
+apEmptyLabel.Visible = true
+apEmptyLabel.ZIndex = 52
+apEmptyLabel.Parent = apList
+
+local function countAnnouncements()
+	local n = 0
+	for _, c in pairs(apList:GetChildren()) do
+		if c:IsA("Frame") and c.Name == "AnnMsg" then
+			n += 1
+		end
+	end
+	return n
+end
+
+local function refreshAnnouncPanelSize()
+	local n = countAnnouncements()
+	apEmptyLabel.Visible = (n == 0)
+
+	task.defer(function()
+		local targetH
+		if n == 0 then
+			targetH = 42 + 20
+		else
+			targetH = 34 + apList.AbsoluteSize.Y + 8
+		end
+		AnnouncPanel.Size = UDim2.new(0, 260, 0, targetH)
+	end)
+end
+
+-- ============================================================
+-- MESSAGE CREATION LOGIC
+-- ============================================================
+_G.AddAnnouncement = function(text)
+	if not text or text == "" then return end
+
+	local recent = {}
+	for _, c in pairs(apList:GetChildren()) do
+		if c:IsA("Frame") and c.Name == "AnnMsg" then
+			table.insert(recent, c)
+		end
+	end
+	table.sort(recent, function(a, b) return a.LayoutOrder > b.LayoutOrder end)
+	local recentCount = 0
+	for _, c in pairs(recent) do
+		recentCount += 1
+		if recentCount > 3 then break end
+		local lbl = c:FindFirstChild("MsgText")
+		if lbl and lbl.Text == text then
+			return
+		end
+	end
+
+	if #recent >= 6 then
+		local oldest = nil
+		for _, c in pairs(recent) do
+			if not oldest or c.LayoutOrder < oldest.LayoutOrder then
+				oldest = c
+			end
+		end
+		if oldest then oldest:Destroy() end
+	end
+
+	local newOrder = 1
+	for _, c in pairs(apList:GetChildren()) do
+		if c:IsA("Frame") and c.Name == "AnnMsg" and c.LayoutOrder >= newOrder then
+			newOrder = c.LayoutOrder + 1
+		end
+	end
+
+	local msgFrame = Instance.new("Frame")
+	msgFrame.Name = "AnnMsg"
+	msgFrame.Size = UDim2.new(1, 0, 0, 0)
+	msgFrame.BackgroundColor3 = Colors.Slot
+	msgFrame.BorderSizePixel = 0
+	msgFrame.LayoutOrder = newOrder
+	msgFrame.AutomaticSize = Enum.AutomaticSize.Y
+	msgFrame.ZIndex = 52
+	msgFrame.Parent = apList
+
+	local msgCorner = Instance.new("UICorner")
+	msgCorner.CornerRadius = UDim.new(0, 6)
+	msgCorner.Parent = msgFrame
+
+	local msgPad = Instance.new("UIPadding")
+	msgPad.PaddingTop = UDim.new(0, 8)
+	msgPad.PaddingBottom = UDim.new(0, 8)
+	msgPad.PaddingLeft = UDim.new(0, 8)
+	msgPad.PaddingRight = UDim.new(0, 8)
+	msgPad.Parent = msgFrame
+
+	local msgLabel = Instance.new("TextLabel")
+	msgLabel.Name = "MsgText"
+	msgLabel.Size = UDim2.new(1, -45, 0, 0)
+	msgLabel.Position = UDim2.new(0, 0, 0, 0) 
+	msgLabel.BackgroundTransparency = 1
+	msgLabel.Text = text
+	msgLabel.TextColor3 = Colors.Text
+	msgLabel.Font = Enum.Font.Gotham
+	msgLabel.TextSize = 12
+	msgLabel.TextWrapped = true
+	msgLabel.TextXAlignment = Enum.TextXAlignment.Left
+	msgLabel.TextYAlignment = Enum.TextYAlignment.Top
+	msgLabel.AutomaticSize = Enum.AutomaticSize.Y
+	msgLabel.ZIndex = 53
+	msgLabel.Parent = msgFrame
+
+	local actionFrame = Instance.new("Frame")
+	actionFrame.Name = "ActionFrame"
+	actionFrame.Size = UDim2.new(0, 40, 0, 14) 
+	actionFrame.Position = UDim2.new(1, 0, 0, 0) 
+	actionFrame.AnchorPoint = Vector2.new(1, 0)
+	actionFrame.BackgroundTransparency = 1
+	actionFrame.ZIndex = 54
+	actionFrame.Parent = msgFrame
+
+	local actionList = Instance.new("UIListLayout")
+	actionList.FillDirection = Enum.FillDirection.Horizontal
+	actionList.VerticalAlignment = Enum.VerticalAlignment.Top
+	actionList.HorizontalAlignment = Enum.HorizontalAlignment.Right
+	actionList.Padding = UDim.new(0, 6)
+	actionList.Parent = actionFrame
+
+	local likeBtn = Instance.new("ImageButton")
+	likeBtn.Name = "LikeBtn"
+	likeBtn.Size = UDim2.new(0, 14, 0, 14)
+	likeBtn.BackgroundTransparency = 1
+	likeBtn.Image = "rbxassetid://78703642436909"
+	likeBtn.ImageColor3 = Color3.fromRGB(255, 255, 255)
+	likeBtn.LayoutOrder = 1
+	likeBtn.ZIndex = 55
+	likeBtn.Parent = actionFrame
+
+	local dislikeBtn = Instance.new("ImageButton")
+	dislikeBtn.Name = "DislikeBtn"
+	dislikeBtn.Size = UDim2.new(0, 14, 0, 14)
+	dislikeBtn.BackgroundTransparency = 1
+	dislikeBtn.Image = "rbxassetid://115295848024534"
+	dislikeBtn.ImageColor3 = Color3.fromRGB(255, 255, 255)
+	dislikeBtn.LayoutOrder = 2
+	dislikeBtn.ZIndex = 55
+	dislikeBtn.Parent = actionFrame
+
+	local liked = false
+	likeBtn.MouseButton1Click:Connect(function()
+		liked = not liked
+		if liked then
+			likeBtn.Image = "rbxassetid://118652612472796"
+			dislikeBtn.Image = "rbxassetid://115295848024534"
+		else
+			likeBtn.Image = "rbxassetid://78703642436909"
+		end
+	end)
+
+	local disliked = false
+	dislikeBtn.MouseButton1Click:Connect(function()
+		disliked = not disliked
+		if disliked then
+			dislikeBtn.Image = "rbxassetid://127169986638010"
+			likeBtn.Image = "rbxassetid://78703642436909"
+		else
+			dislikeBtn.Image = "rbxassetid://115295848024534"
+		end
+	end)
+
+	msgFrame.BackgroundTransparency = 1
+	TweenService:Create(msgFrame, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+		BackgroundTransparency = 0
+	}):Play()
+
+	refreshAnnouncPanelSize()
+
+	if not AnnouncPanel.Visible and UnreadDot then
+		UnreadDot.Visible = true
+		unreadAnnouncements += 1
+	end
+end
+
+apListLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+	refreshAnnouncPanelSize()
+end)
+
+AnnouncBtn.MouseButton1Click:Connect(function()
+	AnnouncPanel.Visible = not AnnouncPanel.Visible
+	if AnnouncPanel.Visible then
+		if UnreadDot then UnreadDot.Visible = false end
+		unreadAnnouncements = 0
+		refreshAnnouncPanelSize()
+	else
+		AnnouncPanel.Size = UDim2.new(0, 260, 0, 42)
+	end
+end)
+
+apCloseBtn.MouseButton1Click:Connect(function()
+	AnnouncPanel.Visible = false
+	if UnreadDot then UnreadDot.Visible = false end
+	unreadAnnouncements = 0
+	AnnouncPanel.Size = UDim2.new(0, 260, 0, 42)
+end)
+
+print("ZORX Hub - Full UI (Murni UI) Loaded Successfully!")
