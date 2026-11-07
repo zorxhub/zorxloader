@@ -49,25 +49,26 @@ local function CheckLicense()
 					success = true
 					role = "Owner"
 					expireTimestamp = os.time() * 1000 + (3650 * 24 * 60 * 60 * 1000) -- 10 Tahun (Unlimited)
-					return -- Langsung keluar, skip cek lisensi biasa
 				end
 			end
 		end)
 
-		-- 2. Cek Lisensi (Donatur/Trial)
-		pcall(function()
-			local url = "https://zorx-broadcast-default-rtdb.firebaseio.com/licenses/" .. player.Name .. ".json"
-			local res = reqFunc({ Url = url, Method = "GET" })
-			
-			if res and (res.StatusCode == 200 or res.Status == 200) then
-				local data = HttpService:JSONDecode(res.Body)
-				if data and data.ExpireTime then
-					success = true
-					expireTimestamp = data.ExpireTime
-					role = data.Role or "Trial"
+		-- 2. Cek Lisensi (Donatur/Trial) - Hanya jalan kalau BUKAN Owner
+		if not success then
+			pcall(function()
+				local url = "https://zorx-broadcast-default-rtdb.firebaseio.com/licenses/" .. player.Name .. ".json"
+				local res = reqFunc({ Url = url, Method = "GET" })
+				
+				if res and (res.StatusCode == 200 or res.Status == 200) then
+					local data = HttpService:JSONDecode(res.Body)
+					if data and data.ExpireTime then
+						success = true
+						expireTimestamp = data.ExpireTime
+						role = data.Role or "Trial"
+					end
 				end
-			end
-		end)
+			end)
+		end
 	end
 	
 	return success, expireTimestamp, role
