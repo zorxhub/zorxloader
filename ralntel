@@ -2030,5 +2030,3 @@ AnnouncPanel.Size = UDim2.new(0, 260, 0, 42)
 end)
 
 print("ZORX Hub - Full UI (Murni UI) Loaded Successfully!")
-
-fix kan bagian announcement bagian lonceng jadikan text Di dalam id card agak gede
