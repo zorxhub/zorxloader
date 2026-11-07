@@ -804,14 +804,15 @@ end
 -- 1. Profil Roblox (Avatar bulat)
 local avatarCard = createAvatarPill(0, false)
 
--- 2. Nickname User (Lebar dinamis menyesuaikan nama)
+-- 2. Nickname User 
 local nameLength = #player.Name
-local namePillWidth = math.clamp(nameLength * 6 + 16, 40, 120)
+local namePillWidth = nameLength * 7 + 16
 local nickCard, nickText = createPill(player.Name, namePillWidth, "", 1, false)
 
--- 3. ID Card (Tanpa Ikon, Teks Ke Tengah)
-local trialCard, trialText = createPill("Trial", 46, "", 2, false)
-local zeroCard, zeroText   = createPill("000",   40, "", 3, false)
+-- 3. Trial & Countdown
+local trialWidth = #customTrialText * 7 + 16
+local trialCard, trialText = createPill(customTrialText, trialWidth, "", 2, false)
+local zeroCard, zeroText   = createPill("000",   60, "", 3, false)
 
 -- 4. Pill Utama
 local gamePill, gameText = createPill(getGameName(), 145, "83907651602856", 4, true)
@@ -828,7 +829,7 @@ task.spawn(function()
 end)
 
 -- ============================================================
--- REAL-TIME COUNTDOWN UNTUK [TRIAL] & [000]
+-- REAL-TIME COUNTDOWN (Memanjang & Teks Utuh)
 -- ============================================================
 local function FormatTime(seconds)
 	local d = math.floor(seconds / 86400)
@@ -857,13 +858,15 @@ local function StartCountdown()
 			local timeLeftSec = math.floor(timeLeftMs / 1000)
 			local formattedTime = FormatTime(timeLeftSec)
 			
-			if trialText and zeroText then
-				trialText.Text = "Trial"
+			-- Teks Trial dari HTML
+			if trialText then
+				trialText.Text = customTrialText
+			end
+			
+			-- Teks Countdown (Lebar Menyesuaikan Teks)
+			if zeroText and zeroCard then
 				zeroText.Text = formattedTime
-				
-				if zeroCard then
-					zeroCard.Size = UDim2.new(0, zeroText.TextBounds.X + 16, 0, 22)
-				end
+				zeroCard.Size = UDim2.new(0, zeroText.TextBounds.X + 16, 0, 22)
 			end
 		else
 			licenseConnection:Disconnect()
@@ -2189,6 +2192,20 @@ apCloseBtn.MouseButton1Click:Connect(function()
 	if UnreadDot then UnreadDot.Visible = false end
 	unreadAnnouncements = 0
 	AnnouncPanel.Size = UDim2.new(0, 260, 0, 42)
+end)
+
+-- ============================================================
+-- PENGAMAN ANTI-NABRAK (PILL BERHENTI MEMANJANG JIKA KEPANJANGAN)
+-- ============================================================
+RunService.Heartbeat:Connect(function()
+	local MAX_WIDTH = 280 -- Jika total pill lebih dari 280px, dia berhenti memanjang
+	
+	if PillContainer.AbsoluteSize.X > MAX_WIDTH then
+		PillContainer.Size = UDim2.new(0, MAX_WIDTH, 0, 22)
+		PillContainer.AutomaticSize = Enum.AutomaticSize.None
+	else
+		PillContainer.AutomaticSize = Enum.AutomaticSize.X
+	end
 end)
 
 print("ZORX Hub - Full UI (Murni UI) Loaded Successfully!")
