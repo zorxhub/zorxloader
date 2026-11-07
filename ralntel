@@ -1914,7 +1914,7 @@ _G.AddAnnouncement = function(text)
 	msgLabel.Parent = msgFrame
 
 	-- ==========================================
-	-- FITUR LIKE & DISLIKE (ICON GAMBAR)
+	-- FITUR LIKE & DISLIKE (ICON CUSTOM)
 	-- ==========================================
 	local actionFrame = Instance.new("Frame")
 	actionFrame.Name = "ActionFrame"
@@ -1937,8 +1937,8 @@ _G.AddAnnouncement = function(text)
 	likeBtn.Name = "LikeBtn"
 	likeBtn.Size = UDim2.new(0, 15, 0, 15)
 	likeBtn.BackgroundTransparency = 1
-	likeBtn.Image = "rbxassetid://6031090990"
-	likeBtn.ImageColor3 = Color3.fromRGB(200, 200, 200)
+	likeBtn.Image = "rbxassetid://78703642436909"
+	likeBtn.ImageColor3 = Color3.fromRGB(255, 255, 255)
 	likeBtn.ZIndex = 55
 	likeBtn.Parent = actionFrame
 
@@ -1947,8 +1947,8 @@ _G.AddAnnouncement = function(text)
 	dislikeBtn.Name = "DislikeBtn"
 	dislikeBtn.Size = UDim2.new(0, 15, 0, 15)
 	dislikeBtn.BackgroundTransparency = 1
-	dislikeBtn.Image = "rbxassetid://6031094664"
-	dislikeBtn.ImageColor3 = Color3.fromRGB(200, 200, 200)
+	dislikeBtn.Image = "rbxassetid://115295848024534"
+	dislikeBtn.ImageColor3 = Color3.fromRGB(255, 255, 255)
 	dislikeBtn.ZIndex = 55
 	dislikeBtn.Parent = actionFrame
 
@@ -1956,16 +1956,24 @@ _G.AddAnnouncement = function(text)
 	local liked = false
 	likeBtn.MouseButton1Click:Connect(function()
 		liked = not liked
-		likeBtn.ImageColor3 = liked and Color3.fromRGB(60, 180, 90) or Color3.fromRGB(200, 200, 200)
-		dislikeBtn.ImageColor3 = Color3.fromRGB(200, 200, 200) 
+		if liked then
+			likeBtn.Image = "rbxassetid://118652612472796"
+			dislikeBtn.Image = "rbxassetid://115295848024534" -- Reset dislike
+		else
+			likeBtn.Image = "rbxassetid://78703642436909"
+		end
 	end)
 
 	-- Logika Dislike
 	local disliked = false
 	dislikeBtn.MouseButton1Click:Connect(function()
 		disliked = not disliked
-		dislikeBtn.ImageColor3 = disliked and Color3.fromRGB(220, 60, 70) or Color3.fromRGB(200, 200, 200)
-		likeBtn.ImageColor3 = Color3.fromRGB(200, 200, 200)
+		if disliked then
+			dislikeBtn.Image = "rbxassetid://127169986638010"
+			likeBtn.Image = "rbxassetid://78703642436909" -- Reset like
+		else
+			dislikeBtn.Image = "rbxassetid://115295848024534"
+		end
 	end)
 	-- ==========================================
 
