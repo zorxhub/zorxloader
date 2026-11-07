@@ -1713,18 +1713,19 @@ if sidebarButtons[1] then
 end
 
 loadAboutPanel()
-
+ 
 -- ============================================================
--- UI ANNOUNCEMENT (RAPI & PAS DIBAWAH LONCENG)
+-- UI ANNOUNCEMENT (AUTO-EXPAND KE BAWAH + EMPTY STATE)
 -- ============================================================
 local AnnouncPanel = Instance.new("Frame")
 AnnouncPanel.Name = "AnnouncPanel"
-AnnouncPanel.Size = UDim2.new(0, 260, 0, 220)
-AnnouncPanel.Position = UDim2.new(1, -270, 0, 32)
+AnnouncPanel.Size = UDim2.new(0, 260, 0, 42)
+AnnouncPanel.Position = UDim2.new(1, -270, 0, 38)
 AnnouncPanel.BackgroundColor3 = Colors.Panel
 AnnouncPanel.BorderSizePixel = 0
 AnnouncPanel.Visible = false
 AnnouncPanel.ZIndex = 50
+AnnouncPanel.ClipsDescendants = false
 AnnouncPanel.Parent = Main
 
 local apCorner = Instance.new("UICorner")
@@ -1733,24 +1734,40 @@ apCorner.Parent = AnnouncPanel
 
 local apStroke = Instance.new("UIStroke")
 apStroke.Color = DefaultBorder
+apStroke.Thickness = 1
+apStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
 apStroke.Parent = AnnouncPanel
+registerBorder(apStroke)
+
+-- Header (judul + tombol close) — fixed di atas
+local apHeader = Instance.new("Frame")
+apHeader.Name = "Header"
+apHeader.Size = UDim2.new(1, 0, 0, 32)
+apHeader.Position = UDim2.new(0, 0, 0, 0)
+apHeader.BackgroundTransparency = 1
+apHeader.ZIndex = 51
+apHeader.Parent = AnnouncPanel
 
 local apTitle = Instance.new("TextLabel")
-apTitle.Size = UDim2.new(1, 0, 0, 30)
+apTitle.Size = UDim2.new(1, -30, 1, 0)
+apTitle.Position = UDim2.new(0, 12, 0, 0)
 apTitle.BackgroundTransparency = 1
 apTitle.Text = "Announcements"
 apTitle.TextColor3 = Colors.Text
 apTitle.Font = Enum.Font.GothamBold
 apTitle.TextSize = 12
-apTitle.Parent = AnnouncPanel
+apTitle.TextXAlignment = Enum.TextXAlignment.Left
+apTitle.ZIndex = 52
+apTitle.Parent = apHeader
 
 local apCloseBtn = Instance.new("TextButton")
 apCloseBtn.Size = UDim2.new(0, 20, 0, 20)
-apCloseBtn.Position = UDim2.new(1, -25, 0, 5)
+apCloseBtn.Position = UDim2.new(1, -25, 0.5, -10)
 apCloseBtn.BackgroundTransparency = 1
 apCloseBtn.Text = ""
 apCloseBtn.AutoButtonColor = false
-apCloseBtn.Parent = AnnouncPanel
+apCloseBtn.ZIndex = 52
+apCloseBtn.Parent = apHeader
 
 local apCloseIcon = Instance.new("ImageLabel")
 apCloseIcon.Size = UDim2.new(0, 10, 0, 10)
@@ -1760,46 +1777,130 @@ apCloseIcon.BackgroundTransparency = 1
 apCloseIcon.Image = "rbxassetid://85435035697164"
 apCloseIcon.ImageColor3 = Color3.fromRGB(170, 170, 180)
 apCloseIcon.ScaleType = Enum.ScaleType.Fit
+apCloseIcon.ZIndex = 53
 apCloseIcon.Parent = apCloseBtn
 
-local apDivider = Instance.new("Frame")
-apDivider.Size = UDim2.new(1, -20, 0, 1)
-apDivider.Position = UDim2.new(0, 10, 0, 30)
-apDivider.BackgroundColor3 = DefaultBorder
-apDivider.BorderSizePixel = 0
-apDivider.Parent = AnnouncPanel
+-- Container untuk pesan (auto memanjang ke bawah)
+local apList = Instance.new("Frame")
+apList.Name = "MsgContainer"
+apList.Size = UDim2.new(1, -16, 0, 0)
+apList.Position = UDim2.new(0, 8, 0, 34)
+apList.BackgroundTransparency = 1
+apList.AutomaticSize = Enum.AutomaticSize.Y
+apList.ZIndex = 51
+apList.Parent = AnnouncPanel
 
-local apScroll = Instance.new("ScrollingFrame")
-apScroll.Size = UDim2.new(1, -20, 1, -45)
-apScroll.Position = UDim2.new(0, 10, 0, 35)
-apScroll.BackgroundTransparency = 1
-apScroll.ScrollBarThickness = 4
-apScroll.ScrollBarImageColor3 = Colors.Stroke
-apScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
-apScroll.Parent = AnnouncPanel
+local apListLayout = Instance.new("UIListLayout")
+apListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+apListLayout.Padding = UDim.new(0, 4)
+apListLayout.Parent = apList
 
-local apList = Instance.new("UIListLayout")
-apList.SortOrder = Enum.SortOrder.LayoutOrder
-apList.Padding = UDim.new(0, 5)
-apList.Parent = apScroll
+-- Empty state: "No notifications yet"
+local apEmptyLabel = Instance.new("TextLabel")
+apEmptyLabel.Name = "EmptyLabel"
+apEmptyLabel.Size = UDim2.new(1, 0, 0, 20)
+apEmptyLabel.BackgroundTransparency = 1
+apEmptyLabel.Text = "No notifications yet"
+apEmptyLabel.TextColor3 = Colors.SubText
+apEmptyLabel.Font = Enum.Font.Gotham
+apEmptyLabel.TextSize = 10
+apEmptyLabel.TextXAlignment = Enum.TextXAlignment.Center
+apEmptyLabel.TextYAlignment = Enum.TextYAlignment.Center
+apEmptyLabel.LayoutOrder = 0
+apEmptyLabel.Visible = true
+apEmptyLabel.ZIndex = 52
+apEmptyLabel.Parent = apList
 
-apCloseBtn.MouseButton1Click:Connect(function()
-	AnnouncPanel.Visible = false
-	UnreadDot.Visible = false
-	unreadAnnouncements = 0
-end)
+local function countAnnouncements()
+	local n = 0
+	for _, c in pairs(apList:GetChildren()) do
+		if c:IsA("Frame") and c.Name == "AnnMsg" then
+			n += 1
+		end
+	end
+	return n
+end
+
+local function refreshAnnouncPanelSize()
+	local n = countAnnouncements()
+	apEmptyLabel.Visible = (n == 0)
+
+	task.defer(function()
+		local targetH
+		if n == 0 then
+			targetH = 42 + 20
+		else
+			targetH = 34 + apList.AbsoluteSize.Y + 8
+		end
+		TweenService:Create(AnnouncPanel, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+			Size = UDim2.new(0, 260, 0, targetH)
+		}):Play()
+	end)
+end
 
 _G.AddAnnouncement = function(text)
+	if not text or text == "" then return end
+
+	-- Anti spam: skip duplikat di 3 pesan terakhir
+	local recent = {}
+	for _, c in pairs(apList:GetChildren()) do
+		if c:IsA("Frame") and c.Name == "AnnMsg" then
+			table.insert(recent, c)
+		end
+	end
+	table.sort(recent, function(a, b) return a.LayoutOrder > b.LayoutOrder end)
+	local recentCount = 0
+	for _, c in pairs(recent) do
+		recentCount += 1
+		if recentCount > 3 then break end
+		local lbl = c:FindFirstChild("MsgText")
+		if lbl and lbl.Text == text then
+			return
+		end
+	end
+
+	-- Batasi maksimal 6 pesan
+	if #recent >= 6 then
+		local oldest = nil
+		for _, c in pairs(recent) do
+			if not oldest or c.LayoutOrder < oldest.LayoutOrder then
+				oldest = c
+			end
+		end
+		if oldest then oldest:Destroy() end
+	end
+
+	local newOrder = 1
+	for _, c in pairs(apList:GetChildren()) do
+		if c:IsA("Frame") and c.Name == "AnnMsg" and c.LayoutOrder >= newOrder then
+			newOrder = c.LayoutOrder + 1
+		end
+	end
+
 	local msgFrame = Instance.new("Frame")
+	msgFrame.Name = "AnnMsg"
 	msgFrame.Size = UDim2.new(1, 0, 0, 40)
 	msgFrame.BackgroundColor3 = Colors.Slot
 	msgFrame.BorderSizePixel = 0
-	msgFrame.Parent = apScroll
-	Instance.new("UICorner").Parent = msgFrame
+	msgFrame.LayoutOrder = newOrder
+	msgFrame.AutomaticSize = Enum.AutomaticSize.Y
+	msgFrame.ZIndex = 52
+	msgFrame.Parent = apList
+
+	local msgCorner = Instance.new("UICorner")
+	msgCorner.CornerRadius = UDim.new(0, 6)
+	msgCorner.Parent = msgFrame
+
+	local msgPad = Instance.new("UIPadding")
+	msgPad.PaddingTop = UDim.new(0, 6)
+	msgPad.PaddingBottom = UDim.new(0, 6)
+	msgPad.PaddingLeft = UDim.new(0, 8)
+	msgPad.PaddingRight = UDim.new(0, 8)
+	msgPad.Parent = msgFrame
 
 	local msgLabel = Instance.new("TextLabel")
-	msgLabel.Size = UDim2.new(1, -10, 1, 0)
-	msgLabel.Position = UDim2.new(0, 5, 0, 0)
+	msgLabel.Name = "MsgText"
+	msgLabel.Size = UDim2.new(1, 0, 0, 0)
 	msgLabel.BackgroundTransparency = 1
 	msgLabel.Text = text
 	msgLabel.TextColor3 = Colors.Text
@@ -1807,15 +1908,44 @@ _G.AddAnnouncement = function(text)
 	msgLabel.TextSize = 10
 	msgLabel.TextWrapped = true
 	msgLabel.TextXAlignment = Enum.TextXAlignment.Left
+	msgLabel.TextYAlignment = Enum.TextYAlignment.Top
+	msgLabel.AutomaticSize = Enum.AutomaticSize.Y
+	msgLabel.ZIndex = 53
 	msgLabel.Parent = msgFrame
+
+	msgFrame.BackgroundTransparency = 1
+	TweenService:Create(msgFrame, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+		BackgroundTransparency = 0
+	}):Play()
+
+	refreshAnnouncPanelSize()
+
+	if not AnnouncPanel.Visible and UnreadDot then
+		UnreadDot.Visible = true
+		unreadAnnouncements += 1
+	end
 end
+
+apListLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+	refreshAnnouncPanelSize()
+end)
 
 AnnouncBtn.MouseButton1Click:Connect(function()
 	AnnouncPanel.Visible = not AnnouncPanel.Visible
 	if AnnouncPanel.Visible then
-		UnreadDot.Visible = false
+		if UnreadDot then UnreadDot.Visible = false end
 		unreadAnnouncements = 0
+		refreshAnnouncPanelSize()
+	else
+		AnnouncPanel.Size = UDim2.new(0, 260, 0, 42)
 	end
+end)
+
+apCloseBtn.MouseButton1Click:Connect(function()
+	AnnouncPanel.Visible = false
+	if UnreadDot then UnreadDot.Visible = false end
+	unreadAnnouncements = 0
+	AnnouncPanel.Size = UDim2.new(0, 260, 0, 42)
 end)
 
 print("ZORX Hub - Full UI (Murni UI) Loaded Successfully!")
