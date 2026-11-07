@@ -1,3 +1,4 @@
+
 --============================================================
 -- ZORX HUB - FULL UI (MURNI UI & BROADCAST SAJA)
 --============================================================
@@ -1828,6 +1829,9 @@ local function countAnnouncements()
 	return n
 end
 
+-- ============================================================
+-- FUNGSI REFRESH (TANPA ANIMASI LAMBAT)
+-- ============================================================
 local function refreshAnnouncPanelSize()
 	local n = countAnnouncements()
 	apEmptyLabel.Visible = (n == 0)
@@ -1839,14 +1843,13 @@ local function refreshAnnouncPanelSize()
 		else
 			targetH = 34 + apList.AbsoluteSize.Y + 8
 		end
-		TweenService:Create(AnnouncPanel, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-			Size = UDim2.new(0, 260, 0, targetH)
-		}):Play()
+		-- LANGSUNG UBAH UKURAN TANPA TWEEN
+		AnnouncPanel.Size = UDim2.new(0, 260, 0, targetH)
 	end)
 end
 
 -- ============================================================
--- MESSAGE CREATION LOGIC (DIPERBAIKI TOTAL)
+-- MESSAGE CREATION LOGIC
 -- ============================================================
 _G.AddAnnouncement = function(text)
 	if not text or text == "" then return end
@@ -2019,6 +2022,7 @@ AnnouncBtn.MouseButton1Click:Connect(function()
 		unreadAnnouncements = 0
 		refreshAnnouncPanelSize()
 	else
+		-- Langsung kecilkan tanpa animasi
 		AnnouncPanel.Size = UDim2.new(0, 260, 0, 42)
 	end
 end)
@@ -2027,6 +2031,7 @@ apCloseBtn.MouseButton1Click:Connect(function()
 	AnnouncPanel.Visible = false
 	if UnreadDot then UnreadDot.Visible = false end
 	unreadAnnouncements = 0
+	-- Langsung kecilkan tanpa animasi
 	AnnouncPanel.Size = UDim2.new(0, 260, 0, 42)
 end)
 
