@@ -1914,46 +1914,46 @@ _G.AddAnnouncement = function(text)
 	msgLabel.Parent = msgFrame
 
 -- ==========================================
--- FITUR LIKE & DISLIKE (SEJAJAR & RAPI KE BAWAH)
+-- FITUR LIKE & DISLIKE (SUSUNAN KE BAWAH / VERTIKAL)
 -- ==========================================
 local actionFrame = Instance.new("Frame")
 actionFrame.Name = "ActionFrame"
-actionFrame.Size = UDim2.new(0, 60, 0, 20)
+actionFrame.Size = UDim2.new(0, 24, 0, 48)
 
--- Posisi agak ke bawah dan menempel di kanan pesan
-actionFrame.Position = UDim2.new(1, -8, 0, 32)
-actionFrame.AnchorPoint = Vector2.new(1, 0)
+-- Posisi di pojok kanan bawah dari pesan
+actionFrame.Position = UDim2.new(1, -8, 1, -6) 
+actionFrame.AnchorPoint = Vector2.new(1, 1)
 
 actionFrame.BackgroundTransparency = 1
 actionFrame.ZIndex = 54
 actionFrame.Parent = msgFrame
 
 local actionList = Instance.new("UIListLayout")
-actionList.FillDirection = Enum.FillDirection.Horizontal
+actionList.FillDirection = Enum.FillDirection.Vertical -- Diubah menjadi vertikal (ke bawah)
 actionList.VerticalAlignment = Enum.VerticalAlignment.Center
-actionList.HorizontalAlignment = Enum.HorizontalAlignment.Right
-actionList.Padding = UDim.new(0, 8)
+actionList.HorizontalAlignment = Enum.HorizontalAlignment.Center
+actionList.Padding = UDim.new(0, 4) -- Jarak antara tombol like dan dislike
 actionList.Parent = actionFrame
 
--- Tombol LIKE (Kiri)
+-- Tombol LIKE (Atas)
 local likeBtn = Instance.new("ImageButton")
 likeBtn.Name = "LikeBtn"
 likeBtn.Size = UDim2.new(0, 18, 0, 18) 
 likeBtn.BackgroundTransparency = 1
 likeBtn.Image = "rbxassetid://78703642436909"
 likeBtn.ImageColor3 = Color3.fromRGB(255, 255, 255)
-likeBtn.LayoutOrder = 1 -- Di kiri
+likeBtn.LayoutOrder = 1 -- Di atas
 likeBtn.ZIndex = 55
 likeBtn.Parent = actionFrame
 
--- Tombol DISLIKE (Kanan)
+-- Tombol DISLIKE (Bawah)
 local dislikeBtn = Instance.new("ImageButton")
 dislikeBtn.Name = "DislikeBtn"
 dislikeBtn.Size = UDim2.new(0, 18, 0, 18) 
 dislikeBtn.BackgroundTransparency = 1
 dislikeBtn.Image = "rbxassetid://115295848024534"
 dislikeBtn.ImageColor3 = Color3.fromRGB(255, 255, 255)
-dislikeBtn.LayoutOrder = 2 -- Di kanan
+dislikeBtn.LayoutOrder = 2 -- Di bawah
 dislikeBtn.ZIndex = 55
 dislikeBtn.Parent = actionFrame
 
@@ -1983,6 +1983,7 @@ dislikeBtn.MouseButton1Click:Connect(function()
 	end
 end)
 -- ==========================================
+
 
 	msgFrame.BackgroundTransparency = 1
 	TweenService:Create(msgFrame, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
