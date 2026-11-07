@@ -1884,7 +1884,7 @@ _G.AddAnnouncement = function(text)
 
 	local msgFrame = Instance.new("Frame")
 	msgFrame.Name = "AnnMsg"
-	msgFrame.Size = UDim2.new(1, 0, 0, 40)
+	msgFrame.Size = UDim2.new(1, 0, 0, 0)
 	msgFrame.BackgroundColor3 = Colors.Slot
 	msgFrame.BorderSizePixel = 0
 	msgFrame.LayoutOrder = newOrder
@@ -1896,6 +1896,7 @@ _G.AddAnnouncement = function(text)
 	msgCorner.CornerRadius = UDim.new(0, 6)
 	msgCorner.Parent = msgFrame
 
+	-- Padding untuk isi pesan
 	local msgPad = Instance.new("UIPadding")
 	msgPad.PaddingTop = UDim.new(0, 6)
 	msgPad.PaddingBottom = UDim.new(0, 6)
@@ -1903,45 +1904,52 @@ _G.AddAnnouncement = function(text)
 	msgPad.PaddingRight = UDim.new(0, 8)
 	msgPad.Parent = msgFrame
 
-	-- Teks pesan diperbesar ukurannya (TextSize = 13)
+	-- Gunakan UIListLayout Vertikal agar Teks dan Tombol berurutan ke bawah
+	local layout = Instance.new("UIListLayout")
+	layout.FillDirection = Enum.FillDirection.Vertical
+	layout.SortOrder = Enum.SortOrder.LayoutOrder
+	layout.Padding = UDim.new(0, 4)
+	layout.Parent = msgFrame
+
+	-- Teks Pesan (Otomatis menyesuaikan panjang)
 	local msgLabel = Instance.new("TextLabel")
 	msgLabel.Name = "MsgText"
-	msgLabel.Size = UDim2.new(1, -50, 0, 0)
+	msgLabel.Size = UDim2.new(1, 0, 0, 0)
 	msgLabel.BackgroundTransparency = 1
 	msgLabel.Text = text
 	msgLabel.TextColor3 = Colors.Text
 	msgLabel.Font = Enum.Font.Gotham
-	msgLabel.TextSize = 13
+	msgLabel.TextSize = 12
 	msgLabel.TextWrapped = true
 	msgLabel.TextXAlignment = Enum.TextXAlignment.Left
 	msgLabel.TextYAlignment = Enum.TextYAlignment.Top
 	msgLabel.AutomaticSize = Enum.AutomaticSize.Y
+	msgLabel.LayoutOrder = 1
 	msgLabel.ZIndex = 53
 	msgLabel.Parent = msgFrame
 
 	-- ==========================================
-	-- FITUR LIKE & DISLIKE (SEJAJAR & RAPI)
+	-- FITUR LIKE & DISLIKE (DI BAWAH TEKS)
 	-- ==========================================
 	local actionFrame = Instance.new("Frame")
 	actionFrame.Name = "ActionFrame"
-	actionFrame.Size = UDim2.new(0, 60, 0, 20)
-	actionFrame.Position = UDim2.new(1, -8, 0.5, 0)
-	actionFrame.AnchorPoint = Vector2.new(1, 0.5)
+	actionFrame.Size = UDim2.new(1, 0, 0, 16) -- Lebar penuh
 	actionFrame.BackgroundTransparency = 1
+	actionFrame.LayoutOrder = 2 -- Berada di bawah teks
 	actionFrame.ZIndex = 54
 	actionFrame.Parent = msgFrame
 
 	local actionList = Instance.new("UIListLayout")
 	actionList.FillDirection = Enum.FillDirection.Horizontal
 	actionList.VerticalAlignment = Enum.VerticalAlignment.Center
-	actionList.HorizontalAlignment = Enum.HorizontalAlignment.Center
-	actionList.Padding = UDim.new(0, 8)
+	actionList.HorizontalAlignment = Enum.HorizontalAlignment.Left
+	actionList.Padding = UDim.new(0, 6)
 	actionList.Parent = actionFrame
 
-	-- Tombol LIKE (Kiri)
+	-- Tombol LIKE
 	local likeBtn = Instance.new("ImageButton")
 	likeBtn.Name = "LikeBtn"
-	likeBtn.Size = UDim2.new(0, 18, 0, 18)
+	likeBtn.Size = UDim2.new(0, 14, 0, 14) -- Ukuran icon disesuaikan agar rapi
 	likeBtn.BackgroundTransparency = 1
 	likeBtn.Image = "rbxassetid://78703642436909"
 	likeBtn.ImageColor3 = Color3.fromRGB(255, 255, 255)
@@ -1949,10 +1957,10 @@ _G.AddAnnouncement = function(text)
 	likeBtn.ZIndex = 55
 	likeBtn.Parent = actionFrame
 
-	-- Tombol DISLIKE (Kanan)
+	-- Tombol DISLIKE
 	local dislikeBtn = Instance.new("ImageButton")
 	dislikeBtn.Name = "DislikeBtn"
-	dislikeBtn.Size = UDim2.new(0, 18, 0, 18)
+	dislikeBtn.Size = UDim2.new(0, 14, 0, 14)
 	dislikeBtn.BackgroundTransparency = 1
 	dislikeBtn.Image = "rbxassetid://115295848024534"
 	dislikeBtn.ImageColor3 = Color3.fromRGB(255, 255, 255)
