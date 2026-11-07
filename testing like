@@ -592,11 +592,11 @@ local function setUIOpen(open)
 end
 
 -- ============================================================
--- TOP BAR & NEW PROFILE UI (SESUAI GAMBAR)
+-- TOP BAR & NEW PROFILE UI
 -- ============================================================
 local TopBar = Instance.new("Frame")
 TopBar.Name = "TopBar"
-TopBar.Size = UDim2.new(1, 0, 0, 36) -- Sedikit lebih tinggi untuk avatar
+TopBar.Size = UDim2.new(1, 0, 0, 36)
 TopBar.BackgroundColor3 = Colors.Background
 TopBar.BorderSizePixel = 0
 TopBar.Parent = Main
@@ -615,14 +615,21 @@ TopWhiteLine.BorderSizePixel = 0
 TopWhiteLine.ZIndex = 2
 TopWhiteLine.Parent = TopBar
 
--- LOGO ZORX (Kiri)
+-- BAGIAN KIRI: LOGO ZORX
+local LeftHeaderFrame = Instance.new("Frame")
+LeftHeaderFrame.Name = "LeftHeaderFrame"
+LeftHeaderFrame.Size = UDim2.new(0, 95, 1, 0)
+LeftHeaderFrame.Position = UDim2.new(0, 0, 0, 0)
+LeftHeaderFrame.BackgroundTransparency = 1
+LeftHeaderFrame.Parent = TopBar
+
 local LogoImg = Instance.new("ImageLabel")
 LogoImg.Size = UDim2.new(0, 16, 0, 16)
 LogoImg.Position = UDim2.new(0, 14, 0.5, -8)
 LogoImg.BackgroundTransparency = 1
 LogoImg.Image = "rbxassetid://82414580295798"
 LogoImg.ScaleType = Enum.ScaleType.Fit
-LogoImg.Parent = TopBar
+LogoImg.Parent = LeftHeaderFrame
 
 local Title = Instance.new("TextLabel")
 Title.Name = "Title"
@@ -634,7 +641,7 @@ Title.TextColor3 = Colors.Text
 Title.Font = Enum.Font.GothamBold
 Title.TextSize = 12
 Title.TextXAlignment = Enum.TextXAlignment.Left
-Title.Parent = TopBar
+Title.Parent = LeftHeaderFrame
 
 -- PEMISAH (Divider)
 local TitleDivider = Instance.new("Frame")
@@ -644,10 +651,10 @@ TitleDivider.BackgroundColor3 = DefaultBorder
 TitleDivider.BorderSizePixel = 0
 TitleDivider.Parent = TopBar
 
--- BAGIAN PROFIL (Avatar, Nickname, ID Card)
+-- BAGIAN TENGAH-KIRI: PROFIL
 local ProfileFrame = Instance.new("Frame")
 ProfileFrame.Name = "ProfileFrame"
-ProfileFrame.Size = UDim2.new(0, 260, 1, 0)
+ProfileFrame.Size = UDim2.new(0, 200, 1, 0)
 ProfileFrame.Position = UDim2.new(0, 105, 0, 0)
 ProfileFrame.BackgroundTransparency = 1
 ProfileFrame.Parent = TopBar
@@ -672,7 +679,7 @@ AvatarImg.ScaleType = Enum.ScaleType.Crop
 AvatarImg.Parent = AvatarFrame
 
 local NameLabel = Instance.new("TextLabel")
-NameLabel.Size = UDim2.new(0, 100, 0, 16)
+NameLabel.Size = UDim2.new(0, 80, 0, 16)
 NameLabel.Position = UDim2.new(0, 32, 0.5, -8)
 NameLabel.BackgroundTransparency = 1
 NameLabel.Text = player.DisplayName or player.Name
@@ -683,33 +690,11 @@ NameLabel.TextXAlignment = Enum.TextXAlignment.Left
 NameLabel.TextTruncate = Enum.TextTruncate.AtEnd
 NameLabel.Parent = ProfileFrame
 
--- BAGIAN PUTIH (ID CARD + TIMER)
-local IdCard = Instance.new("Frame")
-IdCard.Name = "IdCard"
-IdCard.Size = UDim2.new(0, 60, 0, 18)
-IdCard.Position = UDim2.new(0, 135, 0.5, -9)
-IdCard.BackgroundColor3 = Colors.White
-IdCard.BorderSizePixel = 0
-IdCard.Parent = ProfileFrame
-
-local IdCorner = Instance.new("UICorner")
-IdCorner.CornerRadius = UDim.new(0, 4)
-IdCorner.Parent = IdCard
-
-local IdLabel = Instance.new("TextLabel")
-IdLabel.Size = UDim2.new(1, 0, 1, 0)
-IdLabel.BackgroundTransparency = 1
-IdLabel.Text = "ID CARD"
-IdLabel.TextColor3 = Color3.fromRGB(30, 30, 30)
-IdLabel.Font = Enum.Font.GothamBold
-IdLabel.TextSize = 9
-IdLabel.TextXAlignment = Enum.TextXAlignment.Center
-IdLabel.Parent = IdCard
-
+-- BAGIAN TIMER
 local TimerCard = Instance.new("Frame")
 TimerCard.Name = "TimerCard"
-TimerCard.Size = UDim2.new(0, 40, 0, 18)
-TimerCard.Position = UDim2.new(0, 200, 0.5, -9)
+TimerCard.Size = UDim2.new(0, 36, 0, 18)
+TimerCard.Position = UDim2.new(0, 115, 0.5, -9)
 TimerCard.BackgroundColor3 = Colors.Slot
 TimerCard.BorderSizePixel = 0
 TimerCard.Parent = ProfileFrame
@@ -727,7 +712,7 @@ registerBorder(TC_Stroke)
 local TimerLabel = Instance.new("TextLabel")
 TimerLabel.Size = UDim2.new(1, 0, 1, 0)
 TimerLabel.BackgroundTransparency = 1
-TimerLabel.Text = "123" -- Timer diset 123
+TimerLabel.Text = "123"
 TimerLabel.TextColor3 = Colors.Text
 TimerLabel.Font = Enum.Font.GothamBold
 TimerLabel.TextSize = 10
@@ -747,7 +732,7 @@ task.spawn(function()
 	end
 end)
 
--- TATA LETAK PILL (Digeser ke kiri agar tidak menabrak profil)
+-- BAGIAN KANAN: PILLS CONTAINER
 local PillContainer = Instance.new("Frame")
 PillContainer.Name = "PillContainer"
 PillContainer.Size = UDim2.new(0, 0, 0, 22)
@@ -819,10 +804,28 @@ local function createPill(textText, width, iconId)
 	return pill, txt
 end
 
--- Ukuran pill disesuaikan agar pas di sisa ruang
 local gamePill, gameText = createPill(getGameName(), 100, "83907651602856")
 local fpsPill, fpsText = createPill("0", 40, "87621836182790")
 local execPill, execText = createPill(detectedExecutor, 50, "76551269066313")
+
+-- FUNGSI UNTUK MENGATUR VISIBILITAS PILL BERDASARKAN UKURAN UI
+local function adjustTopBarLayout()
+	if Main.Size.X.Offset > 500 then
+		-- Mode Maximize (Lebar)
+		gamePill.Visible = true
+		fpsPill.Visible = true
+		execPill.Visible = true
+		ProfileFrame.Size = UDim2.new(0, 200, 1, 0)
+	else
+		-- Mode Normal (Sempit)
+		gamePill.Visible = false
+		fpsPill.Visible = false
+		execPill.Visible = false
+		ProfileFrame.Size = UDim2.new(0, 250, 1, 0) -- Beri ruang lebih untuk profil
+	end
+end
+
+adjustTopBarLayout()
 
 task.spawn(function()
 	while task.wait(5) do
@@ -916,6 +919,9 @@ MaximizeBtn.MouseButton1Click:Connect(function()
 		Size = isMaximized and UDim2.new(0, 620, 0, 390) or UDim2.new(0, 480, 0, 300),
 		Position = UDim2.new(0.5, 0, 0.5, 0)
 	}):Play()
+	
+	-- Panggil fungsi penyesuaian layout setelah animasi selesai
+	task.delay(0.3, adjustTopBarLayout)
 end)
 
 local frameCount = 0
@@ -932,7 +938,7 @@ end)
 local TopDivider = Instance.new("Frame")
 TopDivider.Name = "TopDivider"
 TopDivider.Size = UDim2.new(1, 0, 0, 1)
-TopDivider.Position = UDim2.new(0, 0, 0, 36) -- Disesuaikan dengan tinggi TopBar baru
+TopDivider.Position = UDim2.new(0, 0, 0, 36) 
 TopDivider.BackgroundColor3 = DefaultBorder
 TopDivider.BorderSizePixel = 0
 TopDivider.Parent = Main
