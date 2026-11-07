@@ -621,6 +621,26 @@ Title.TextSize = 11
 Title.TextXAlignment = Enum.TextXAlignment.Left
 Title.Parent = TopBar
 
+-- CONTAINER ID CARD (KIRI)
+local IdCardContainer = Instance.new("Frame")
+IdCardContainer.Name = "IdCardContainer"
+IdCardContainer.Size = UDim2.new(0, 0, 0, 22)
+IdCardContainer.AutomaticSize = Enum.AutomaticSize.X
+IdCardContainer.BackgroundTransparency = 1
+IdCardContainer.AnchorPoint = Vector2.new(1, 0.5)
+IdCardContainer.Position = UDim2.new(1, -100, 0.5, 0)
+IdCardContainer.Parent = TopBar
+IdCardContainer.Visible = false
+
+local IdList = Instance.new("UIListLayout")
+IdList.FillDirection = Enum.FillDirection.Horizontal
+IdList.HorizontalAlignment = Enum.HorizontalAlignment.Right
+IdList.VerticalAlignment = Enum.VerticalAlignment.Center
+IdList.Padding = UDim.new(0, 4)
+IdList.SortOrder = Enum.SortOrder.LayoutOrder
+IdList.Parent = IdCardContainer
+
+-- CONTAINER PILL UTAMA
 local PillContainer = Instance.new("Frame")
 PillContainer.Name = "PillContainer"
 PillContainer.Size = UDim2.new(0, 0, 0, 22)
@@ -647,14 +667,14 @@ local function registerInfoLogoBorder(stroke)
 	table.insert(infoLogoBorders, stroke)
 end
 
-local function createPill(textText, width, iconId, layoutOrder, visible)
+local function createPill(textText, width, iconId, layoutOrder, visible, parentContainer)
 	local pill = Instance.new("Frame")
 	pill.Size = UDim2.new(0, width, 0, 22)
 	pill.BackgroundColor3 = DefaultPillBg
 	pill.BorderSizePixel = 0
 	pill.LayoutOrder = layoutOrder or 0
 	pill.Visible = (visible ~= false)
-	pill.Parent = PillContainer
+	pill.Parent = parentContainer or PillContainer
 
 	local pCorner = Instance.new("UICorner")
 	pCorner.CornerRadius = UDim.new(0, 5)
@@ -666,7 +686,10 @@ local function createPill(textText, width, iconId, layoutOrder, visible)
 	pStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
 	pStroke.Parent = pill
 
-	if iconId and iconId ~= "" then
+	-- PERBAIKAN LOGIKA: Cek apakah iconId ada dan BUKAN string kosong
+	local hasIcon = (iconId and iconId ~= "")
+
+	if hasIcon then
 		local pIcon = Instance.new("ImageLabel")
 		pIcon.Size = UDim2.new(0, 15, 0, 15)
 		pIcon.Position = UDim2.new(0, 9, 0.5, -7.5)
@@ -677,8 +700,8 @@ local function createPill(textText, width, iconId, layoutOrder, visible)
 	end
 
 	local txt = Instance.new("TextLabel")
-	txt.Size = UDim2.new(1, iconId and -24 or 0, 1, 0)
-	txt.Position = UDim2.new(0, iconId and 22 or 0, 0, 0)
+	txt.Size = UDim2.new(1, hasIcon and -24 or 0, 1, 0)
+	txt.Position = UDim2.new(0, hasIcon and 22 or 0, 0, 0)
 	txt.BackgroundTransparency = 1
 	txt.Text = textText
 	txt.TextColor3 = DefaultPillText
@@ -695,23 +718,11 @@ local function createPill(textText, width, iconId, layoutOrder, visible)
 	return pill, txt
 end
 
--- ============================================================
--- ID CARD (KHUSUS MODE PERBESAR) - LayoutOrder negatif = paling kiri
--- Tanpa icon, hanya teks
--- ============================================================
+-- ID Card (Tanpa Ikon, Teks Ke Tengah)
 local trialCard, trialText = createPill("Trial", 46, "", 1, false, IdCardContainer)
 local zeroCard, zeroText   = createPill("000",   40, "", 2, false, IdCardContainer)
 
--- Perbaikan posisi teks agar benar-benar CENTER
-trialText.Size = UDim2.new(1, 0, 1, 0)
-trialText.Position = UDim2.new(0, 0, 0, 0)
-trialText.TextXAlignment = Enum.TextXAlignment.Center
-
-zeroText.Size = UDim2.new(1, 0, 1, 0)
-zeroText.Position = UDim2.new(0, 0, 0, 0)
-zeroText.TextXAlignment = Enum.TextXAlignment.Center
-
--- Pill utama
+-- Pill Utama
 local gamePill, gameText = createPill(getGameName(), 145, "83907651602856", 1, true)
 local fpsPill, fpsText = createPill("0", 48, "87621836182790", 2, true)
 local execPill, execText = createPill(detectedExecutor, 68, "76551269066313", 3, true)
@@ -810,15 +821,28 @@ MaximizeBtn.MouseButton1Click:Connect(function()
 		Position = UDim2.new(0.5, 0, 0.5, 0)
 	}):Play()
 
-	-- Toggle ID Card (Trial & 000) hanya saat maximize
-	for _, card in ipairs({trialCard, zeroCard}) do
-		if isMaximized then
+	if isMaximized then
+		IdCardContainer.Visible = true
+		
+		-- Hitung posisi X dari PillContainer utama
+		task.defer(function()
+			local pillAbs = PillContainer.AbsolutePosition
+			local topBarAbs = TopBar.AbsolutePosition
+			local relativeX = (pillAbs.X - topBarAbs.X) - 8
+			
+			-- Posisi X disesuaikan, Posisi Y pakai 0.5 (tengah dari TopBar)
+			IdCardContainer.Position = UDim2.new(0, relativeX, 0.5, 0)
+		end)
+
+		for _, card in ipairs({trialCard, zeroCard}) do
 			card.Visible = true
 			card.BackgroundTransparency = 1
 			TweenService:Create(card, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
 				BackgroundTransparency = 0
 			}):Play()
-		else
+		end
+	else
+		for _, card in ipairs({trialCard, zeroCard}) do
 			TweenService:Create(card, TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
 				BackgroundTransparency = 1
 			}):Play()
@@ -826,6 +850,9 @@ MaximizeBtn.MouseButton1Click:Connect(function()
 				if not isMaximized then card.Visible = false end
 			end)
 		end
+		task.delay(0.2, function()
+			if not isMaximized then IdCardContainer.Visible = false end
+		end)
 	end
 end)
 
