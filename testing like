@@ -36,6 +36,7 @@ end
 local function CheckLicense()
 	local success = false
 	local expireTimestamp = 0
+	local trialLabel = "Trial" -- Teks default
 	
 	if reqFunc then
 		pcall(function()
@@ -47,15 +48,23 @@ local function CheckLicense()
 				if data and data.ExpireTime then
 					success = true
 					expireTimestamp = data.ExpireTime
+					if data.TrialText then
+						trialLabel = data.TrialText -- Ambil teks dari HTML
+					end
 				end
 			end
 		end)
 	end
 	
-	return success, expireTimestamp
+	return success, expireTimestamp, trialLabel
 end
 
-local isLicensed, expireTime = CheckLicense()
+local isLicensed, expireTime, customTrialText = CheckLicense()
+
+-- Pengaman Tambahan (kalau di HTML kosong, pake "Trial")
+if not customTrialText or customTrialText == "" then
+	customTrialText = "Trial"
+end
 
 if not isLicensed then
 	warn("Lisensi tidak ditemukan untuk " .. player.Name .. ". UI tidak akan dimuat.")
@@ -810,9 +819,9 @@ local namePillWidth = nameLength * 7 + 16
 local nickCard, nickText = createPill(player.Name, namePillWidth, "", 1, false)
 
 -- 3. Trial & Countdown
-local trialWidth = #customTrialText * 7 + 16
-local trialCard, trialText = createPill(customTrialText, trialWidth, "", 2, false)
-local zeroCard, zeroText   = createPill("000",   60, "", 3, false)
+local safeTrialText = customTrialText or "Trial"
+local trialWidth = #safeTrialText * 7 + 16
+local trialCard, trialText = createPill(safeTrialText, trialWidth, "", 2, false)
 
 -- 4. Pill Utama
 local gamePill, gameText = createPill(getGameName(), 145, "83907651602856", 4, true)
