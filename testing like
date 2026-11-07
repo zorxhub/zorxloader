@@ -699,8 +699,17 @@ end
 -- ID CARD (KHUSUS MODE PERBESAR) - LayoutOrder negatif = paling kiri
 -- Tanpa icon, hanya teks
 -- ============================================================
-local trialCard, trialText = createPill("Trial", 46, "", -2, false)
-local zeroCard, zeroText   = createPill("000",   40, "", -1, false)
+local trialCard, trialText = createPill("Trial", 46, "", 1, false, IdCardContainer)
+local zeroCard, zeroText   = createPill("000",   40, "", 2, false, IdCardContainer)
+
+-- Perbaikan posisi teks agar benar-benar CENTER
+trialText.Size = UDim2.new(1, 0, 1, 0)
+trialText.Position = UDim2.new(0, 0, 0, 0)
+trialText.TextXAlignment = Enum.TextXAlignment.Center
+
+zeroText.Size = UDim2.new(1, 0, 1, 0)
+zeroText.Position = UDim2.new(0, 0, 0, 0)
+zeroText.TextXAlignment = Enum.TextXAlignment.Center
 
 -- Pill utama
 local gamePill, gameText = createPill(getGameName(), 145, "83907651602856", 1, true)
