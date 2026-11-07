@@ -1,5 +1,5 @@
 --============================================================
--- ZORX HUB - FULL UI (MURNI UI & BROADCAST SAJA)
+-- ZORX HUB - FULL UI + LICENSE SYSTEM
 --============================================================
 
 local Players = game:GetService("Players")
@@ -11,12 +11,63 @@ local HttpService = game:GetService("HttpService")
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
 
--- Penanganan fungsi HTTP Request yang lebih aman
+-- Penanganan fungsi HTTP Request
 local reqFunc = (type(request) == "function" and request) 
 	or (syn and type(syn.request) == "function" and syn.request) 
 	or (http and type(http.request) == "function" and http.request) 
 	or (type(http_request) == "function" and http_request) 
 	or nil
+
+-- ============================================================
+-- SYSTEM BLOKIR / DESTROY (JIKA WAKTU HABIS)
+-- ============================================================
+local function DestroyEverything()
+	for _, gui in pairs(playerGui:GetChildren()) do
+		if gui.Name == "ZorXHub" or gui.Name == "ZorxTopNotifContainer" then
+			gui:Destroy()
+		end
+	end
+	if script then script:Destroy() end
+end
+
+-- ============================================================
+-- CEK LICENSE (FIREBASE)
+-- ============================================================
+local function CheckLicense()
+	local success = false
+	local expireTimestamp = 0
+	
+	if reqFunc then
+		pcall(function()
+			local url = "https://zorx-broadcast-default-rtdb.firebaseio.com/licenses/" .. player.Name .. ".json"
+			local res = reqFunc({ Url = url, Method = "GET" })
+			
+			if res and (res.StatusCode == 200 or res.Status == 200) then
+				local data = HttpService:JSONDecode(res.Body)
+				if data and data.ExpireTime then
+					success = true
+					expireTimestamp = data.ExpireTime
+				end
+			end
+		end)
+	end
+	
+	return success, expireTimestamp
+end
+
+local isLicensed, expireTime = CheckLicense()
+
+if not isLicensed then
+	warn("Lisensi tidak ditemukan untuk " .. player.Name .. ". UI tidak akan dimuat.")
+	DestroyEverything()
+	return
+end
+
+if (os.time() * 1000) >= expireTime then
+	warn("Lisensi sudah expired!")
+	DestroyEverything()
+	return
+end
 
 -- ============================================================
 -- BERSIHKAN UI LAMA
@@ -621,7 +672,7 @@ Title.TextSize = 11
 Title.TextXAlignment = Enum.TextXAlignment.Left
 Title.Parent = TopBar
 
--- CONTAINER PILL UTAMA (Trial, 000, Tech Game, dll digabung di sini)
+-- CONTAINER PILL UTAMA
 local PillContainer = Instance.new("Frame")
 PillContainer.Name = "PillContainer"
 PillContainer.Size = UDim2.new(0, 0, 0, 22)
@@ -648,6 +699,58 @@ local function registerInfoLogoBorder(stroke)
 	table.insert(infoLogoBorders, stroke)
 end
 
+-- FUNGSI FOTO PROFIL (BULAT)
+local function createAvatarPill(layoutOrder, visible)
+	local pill = Instance.new("TextButton")
+	pill.Size = UDim2.new(0, 22, 0, 22)
+	pill.BackgroundColor3 = DefaultPillBg
+	pill.BorderSizePixel = 0
+	pill.Text = ""
+	pill.AutoButtonColor = false
+	pill.LayoutOrder = layoutOrder or 0
+	pill.Visible = (visible ~= false)
+	pill.Parent = PillContainer
+
+	local pCorner = Instance.new("UICorner")
+	pCorner.CornerRadius = UDim.new(1, 0)
+	pCorner.Parent = pill
+
+	local pStroke = Instance.new("UIStroke")
+	pStroke.Color = DefaultPillStroke
+	pStroke.Thickness = 1
+	pStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+	pStroke.Parent = pill
+
+	local avatar = Instance.new("ImageLabel")
+	avatar.Name = "Avatar"
+	avatar.Size = UDim2.new(1, -2, 1, -2)
+	avatar.Position = UDim2.new(0.5, 0, 0.5, 0)
+	avatar.AnchorPoint = Vector2.new(0.5, 0.5)
+	avatar.BackgroundTransparency = 1
+	avatar.Image = "https://www.roblox.com/headshot-thumbnail/image?userId=" .. player.UserId .. "&width=150&height=150&format=png"
+	avatar.ScaleType = Enum.ScaleType.Crop
+	avatar.Parent = pill
+
+	local avCorner = Instance.new("UICorner")
+	avCorner.CornerRadius = UDim.new(1, 0)
+	avCorner.Parent = avatar
+
+	-- Fitur interaksi klik (copy link profil)
+	pill.MouseButton1Click:Connect(function()
+		local profileUrl = "https://www.roblox.com/users/" .. player.UserId .. "/profile"
+		pcall(function()
+			if setclipboard then setclipboard(profileUrl)
+			elseif toclipboard then toclipboard(profileUrl) end
+		end)
+		createTopRightNotification("Profile Link", "Link profil berhasil di-copy!", "82414580295798", 4)
+	end)
+
+	table.insert(allPills, pill)
+	table.insert(allPillStrokes, pStroke)
+
+	return pill
+end
+
 local function createPill(textText, width, iconId, layoutOrder, visible)
 	local pill = Instance.new("Frame")
 	pill.Size = UDim2.new(0, width, 0, 22)
@@ -667,7 +770,6 @@ local function createPill(textText, width, iconId, layoutOrder, visible)
 	pStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
 	pStroke.Parent = pill
 
-	-- PERBAIKAN LOGIKA: Cek apakah iconId ada dan BUKAN string kosong
 	local hasIcon = (iconId and iconId ~= "")
 
 	if hasIcon then
@@ -699,14 +801,22 @@ local function createPill(textText, width, iconId, layoutOrder, visible)
 	return pill, txt
 end
 
--- ID Card (Tanpa Ikon, Teks Ke Tengah) - LayoutOrder 1 & 2
-local trialCard, trialText = createPill("Trial", 46, "", 1, false)
-local zeroCard, zeroText   = createPill("000",   40, "", 2, false)
+-- 1. Profil Roblox (Avatar bulat)
+local avatarCard = createAvatarPill(0, false)
 
--- Pill Utama - LayoutOrder 3, 4, 5 (Otomatis di kanan ID Card)
-local gamePill, gameText = createPill(getGameName(), 145, "83907651602856", 3, true)
-local fpsPill, fpsText = createPill("0", 48, "87621836182790", 4, true)
-local execPill, execText = createPill(detectedExecutor, 68, "76551269066313", 5, true)
+-- 2. Nickname User (Lebar dinamis menyesuaikan nama)
+local nameLength = #player.Name
+local namePillWidth = math.clamp(nameLength * 6 + 16, 40, 120)
+local nickCard, nickText = createPill(player.Name, namePillWidth, "", 1, false)
+
+-- 3. ID Card (Tanpa Ikon, Teks Ke Tengah)
+local trialCard, trialText = createPill("Trial", 46, "", 2, false)
+local zeroCard, zeroText   = createPill("000",   40, "", 3, false)
+
+-- 4. Pill Utama
+local gamePill, gameText = createPill(getGameName(), 145, "83907651602856", 4, true)
+local fpsPill, fpsText = createPill("0", 48, "87621836182790", 5, true)
+local execPill, execText = createPill(detectedExecutor, 68, "76551269066313", 6, true)
 
 task.spawn(function()
 	while task.wait(5) do
@@ -716,6 +826,52 @@ task.spawn(function()
 		end
 	end
 end)
+
+-- ============================================================
+-- REAL-TIME COUNTDOWN UNTUK [TRIAL] & [000]
+-- ============================================================
+local function FormatTime(seconds)
+	local d = math.floor(seconds / 86400)
+	local h = math.floor((seconds % 86400) / 3600)
+	local m = math.floor((seconds % 3600) / 60)
+	local s = math.floor(seconds % 60)
+	
+	if d > 0 then
+		return string.format("%dD %02dH %02dM", d, h, m)
+	elseif h > 0 then
+		return string.format("%02dH %02dM %02dS", h, m, s)
+	else
+		return string.format("%02dM %02dS", m, s)
+	end
+end
+
+local licenseConnection
+local function StartCountdown()
+	if licenseConnection then licenseConnection:Disconnect() end
+	
+	licenseConnection = RunService.Heartbeat:Connect(function()
+		local currentTimeMs = os.time() * 1000
+		local timeLeftMs = expireTime - currentTimeMs
+		
+		if timeLeftMs > 0 then
+			local timeLeftSec = math.floor(timeLeftMs / 1000)
+			local formattedTime = FormatTime(timeLeftSec)
+			
+			if trialText and zeroText then
+				trialText.Text = "Trial"
+				zeroText.Text = formattedTime
+				
+				if zeroCard then
+					zeroCard.Size = UDim2.new(0, zeroText.TextBounds.X + 16, 0, 22)
+				end
+			end
+		else
+			licenseConnection:Disconnect()
+			DestroyEverything()
+		end
+	end)
+end
+StartCountdown()
 
 -- ============================================================
 -- TOMBOL LONCENG & ANNOUNCEMENT
@@ -797,28 +953,23 @@ local isMaximized = false
 MaximizeBtn.MouseButton1Click:Connect(function()
 	isMaximized = not isMaximized
 
+	for _, card in ipairs({avatarCard, nickCard, trialCard, zeroCard}) do
+		if isMaximized then
+			card.Visible = true
+			card.BackgroundTransparency = 1
+			TweenService:Create(card, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+				BackgroundTransparency = 0
+			}):Play()
+		else
+			card.Visible = false
+			card.BackgroundTransparency = 1
+		end
+	end
+
 	TweenService:Create(Main, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
 		Size = isMaximized and UDim2.new(0, 620, 0, 390) or UDim2.new(0, 480, 0, 300),
 		Position = UDim2.new(0.5, 0, 0.5, 0)
 	}):Play()
-
-	-- Fade in/out ID Card (Trial & 000)
-	for _, card in ipairs({trialCard, zeroCard}) do
-		if isMaximized then
-			card.Visible = true
-			card.BackgroundTransparency = 1
-			TweenService:Create(card, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-				BackgroundTransparency = 0
-			}):Play()
-		else
-			TweenService:Create(card, TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
-				BackgroundTransparency = 1
-			}):Play()
-			task.delay(0.18, function()
-				if not isMaximized then card.Visible = false end
-			end)
-		end
-	end
 end)
 
 local frameCount = 0
