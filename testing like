@@ -1376,78 +1376,74 @@ local chatMessages = {}
 local function loadLiveChat()
     clearContent()
 
-    -- 1. CONTAINER UTAMA (Mengisi seluruh area panel)
+    -- Container Utama
     local chatContainer = Instance.new("Frame")
+    chatContainer.Name = "ChatContainer"
     chatContainer.Size = UDim2.new(1, 0, 1, 0)
     chatContainer.BackgroundTransparency = 1
     chatContainer.Parent = Scroll
 
-    -- 2. HEADER PANEL (Abu-abu)
-    local headerPanel = Instance.new("Frame")
-    headerPanel.Size = UDim2.new(1, 0, 0, 32)
-    headerPanel.BackgroundColor3 = Color3.fromRGB(180, 180, 180) -- Warna abu-abu terang
-    headerPanel.BorderSizePixel = 0
-    headerPanel.Parent = chatContainer
+    -- ===== 1. HEADER PANEL (ATAS) =====
+    local header = Instance.new("Frame")
+    header.Size = UDim2.new(1, 0, 0, 32)
+    header.BackgroundColor3 = Color3.fromRGB(30, 30, 36) -- Gelap
+    header.BorderSizePixel = 0
+    header.Parent = chatContainer
     
     local hCorner = Instance.new("UICorner")
     hCorner.CornerRadius = UDim.new(0, 6)
-    hCorner.Parent = headerPanel
+    hCorner.Parent = header
 
-    -- Dropdown #General (Kiri)
     local roomBtn = Instance.new("TextButton")
-    roomBtn.Size = UDim2.new(0, 90, 0, 22)
-    roomBtn.Position = UDim2.new(0, 8, 0.5, -11)
-    roomBtn.BackgroundColor3 = Color3.fromRGB(150, 150, 155)
-    roomBtn.Text = "#General ▼"
-    roomBtn.TextColor3 = Color3.fromRGB(30, 30, 30)
+    roomBtn.Size = UDim2.new(0, 100, 0, 20)
+    roomBtn.Position = UDim2.new(0, 8, 0.5, -10)
+    roomBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
+    roomBtn.Text = "# General ▼"
+    roomBtn.TextColor3 = Colors.Text
     roomBtn.Font = Enum.Font.GothamBold
-    roomBtn.TextSize = 11
-    roomBtn.AutoButtonColor = false
-    roomBtn.Parent = headerPanel
-    
+    roomBtn.TextSize = 10
+    roomBtn.Parent = header
     local rCorner = Instance.new("UICorner")
     rCorner.CornerRadius = UDim.new(0, 4)
     rCorner.Parent = roomBtn
 
-    -- Online Status (Kanan)
+    -- Online Status (Titik Hijau + Teks)
     local onlineDot = Instance.new("Frame")
     onlineDot.Size = UDim2.new(0, 8, 0, 8)
-    onlineDot.Position = UDim2.new(1, -85, 0.5, -4)
-    onlineDot.BackgroundColor3 = Color3.fromRGB(50, 220, 50)
-    onlineDot.Parent = headerPanel
+    onlineDot.Position = UDim2.new(1, -80, 0.5, -4)
+    onlineDot.BackgroundColor3 = Color3.fromRGB(60, 220, 60)
+    onlineDot.Parent = header
     Instance.new("UICorner").Parent = onlineDot
 
     local onlineTxt = Instance.new("TextLabel")
     onlineTxt.Size = UDim2.new(0, 50, 1, 0)
-    onlineTxt.Position = UDim2.new(1, -72, 0, 0)
+    onlineTxt.Position = UDim2.new(1, -68, 0, 0)
     onlineTxt.BackgroundTransparency = 1
     onlineTxt.Text = #Players:GetPlayers() .. " online"
-    onlineTxt.TextColor3 = Color3.fromRGB(30, 30, 30)
-    onlineTxt.Font = Enum.Font.GothamMedium
-    onlineTxt.TextSize = 10
+    onlineTxt.TextColor3 = Color3.fromRGB(200, 200, 200)
+    onlineTxt.Font = Enum.Font.Gotham
+    onlineTxt.TextSize = 9
     onlineTxt.TextXAlignment = Enum.TextXAlignment.Left
-    onlineTxt.Parent = headerPanel
+    onlineTxt.Parent = header
 
-    -- Tombol Titik Tiga (Paling Kanan)
+    -- Tombol Oranye Titik Tiga
     local dotsBtn = Instance.new("TextButton")
-    dotsBtn.Size = UDim2.new(0, 24, 0, 22)
-    dotsBtn.Position = UDim2.new(1, -32, 0.5, -11)
-    dotsBtn.BackgroundColor3 = Color3.fromRGB(230, 140, 40) -- Warna oranye
+    dotsBtn.Size = UDim2.new(0, 20, 0, 20)
+    dotsBtn.Position = UDim2.new(1, -26, 0.5, -10)
+    dotsBtn.BackgroundColor3 = Color3.fromRGB(230, 130, 20)
     dotsBtn.Text = "..."
     dotsBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
     dotsBtn.Font = Enum.Font.GothamBold
-    dotsBtn.TextSize = 14
-    dotsBtn.AutoButtonColor = false
-    dotsBtn.Parent = headerPanel
-    
+    dotsBtn.TextSize = 12
+    dotsBtn.Parent = header
     local dCorner = Instance.new("UICorner")
     dCorner.CornerRadius = UDim.new(0, 4)
     dCorner.Parent = dotsBtn
 
-    -- 3. AREA CHAT (Tengah - Hitam Gelap)
+    -- ===== 2. AREA CHAT (TENGAH) =====
     local msgScroll = Instance.new("ScrollingFrame")
-    msgScroll.Size = UDim2.new(1, -8, 1, -80) -- Dikurangi tinggi header & input
-    msgScroll.Position = UDim2.new(0, 4, 0, 36)
+    msgScroll.Size = UDim2.new(1, 0, 1, -78)
+    msgScroll.Position = UDim2.new(0, 0, 0, 36)
     msgScroll.BackgroundTransparency = 1
     msgScroll.BorderSizePixel = 0
     msgScroll.ScrollBarThickness = 3
@@ -1458,46 +1454,46 @@ local function loadLiveChat()
 
     local msgList = Instance.new("UIListLayout")
     msgList.SortOrder = Enum.SortOrder.LayoutOrder
-    msgList.Padding = UDim.new(0, 8)
+    msgList.Padding = UDim.new(0, 6)
     msgList.Parent = msgScroll
 
     local msgPad = Instance.new("UIPadding")
-    msgPad.PaddingTop = UDim.new(0, 6)
-    msgPad.PaddingLeft = UDim.new(0, 4)
+    msgPad.PaddingTop = UDim.new(0, 4)
+    msgPad.PaddingLeft = UDim.new(0, 6)
+    msgPad.PaddingRight = UDim.new(0, 6)
     msgPad.Parent = msgScroll
 
-    -- 4. FOOTER INPUT (Bawah - Abu-abu)
-    local footerPanel = Instance.new("Frame")
-    footerPanel.Size = UDim2.new(1, 0, 0, 36)
-    footerPanel.Position = UDim2.new(0, 0, 1, -36)
-    footerPanel.BackgroundColor3 = Color3.fromRGB(35, 35, 40)
-    footerPanel.BorderSizePixel = 0
-    footerPanel.Parent = chatContainer
+    -- ===== 3. FOOTER INPUT (BAWAH) =====
+    local footer = Instance.new("Frame")
+    footer.Size = UDim2.new(1, 0, 0, 34)
+    footer.Position = UDim2.new(0, 0, 1, -34)
+    footer.BackgroundColor3 = Color3.fromRGB(30, 30, 36)
+    footer.BorderSizePixel = 0
+    footer.Parent = chatContainer
     
     local fCorner = Instance.new("UICorner")
     fCorner.CornerRadius = UDim.new(0, 6)
-    fCorner.Parent = footerPanel
-    
+    fCorner.Parent = footer
+
     local inputBox = Instance.new("TextBox")
-    inputBox.Size = UDim2.new(1, -40, 1, 0)
+    inputBox.Size = UDim2.new(1, -50, 1, 0)
     inputBox.Position = UDim2.new(0, 10, 0, 0)
     inputBox.BackgroundTransparency = 1
     inputBox.PlaceholderText = "Message #general /help"
-    inputBox.PlaceholderColor3 = Color3.fromRGB(140, 140, 150)
+    inputBox.PlaceholderColor3 = Color3.fromRGB(150, 150, 150)
     inputBox.TextColor3 = Colors.Text
     inputBox.Font = Enum.Font.Gotham
     inputBox.TextSize = 11
     inputBox.TextXAlignment = Enum.TextXAlignment.Left
     inputBox.ClearTextOnFocus = false
-    inputBox.Parent = footerPanel
+    inputBox.Parent = footer
 
     local sendBtn = Instance.new("ImageButton")
-    sendBtn.Size = UDim2.new(0, 24, 0, 24)
-    sendBtn.Position = UDim2.new(1, -32, 0.5, -12)
-    sendBtn.BackgroundColor3 = Colors.Slot
+    sendBtn.Size = UDim2.new(0, 22, 0, 22)
+    sendBtn.Position = UDim2.new(1, -32, 0.5, -11)
+    sendBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 70)
     sendBtn.Image = "rbxassetid://103326784032850"
-    sendBtn.Parent = footerPanel
-    
+    sendBtn.Parent = footer
     local sCorner = Instance.new("UICorner")
     sCorner.CornerRadius = UDim.new(0, 4)
     sCorner.Parent = sendBtn
@@ -1525,40 +1521,40 @@ local function loadLiveChat()
             local senderId = senderPlayer and senderPlayer.UserId or 1
 
             local av = Instance.new("ImageLabel")
-            av.Size = UDim2.new(0, 26, 0, 26)
-            av.BackgroundColor3 = Colors.Slot
+            av.Size = UDim2.new(0, 24, 0, 24)
+            av.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
             av.Image = "https://www.roblox.com/headshot-thumbnail/image?userId=" .. senderId .. "&width=150&height=150&format=png"
             av.Parent = msgFrame
             local avC = Instance.new("UICorner")
             avC.CornerRadius = UDim.new(1, 0)
             avC.Parent = av
 
-            -- Nama
+            -- Nama Pengirim (Warna dinamis)
             local hash = 0
             for j = 1, #msgData.Sender do hash = hash + string.byte(msgData.Sender, j) end
             local hue = (hash % 100) / 100
 
             local nameLbl = Instance.new("TextLabel")
-            nameLbl.Size = UDim2.new(1, -34, 0, 12)
-            nameLbl.Position = UDim2.new(0, 34, 0, 0)
+            nameLbl.Size = UDim2.new(1, -30, 0, 12)
+            nameLbl.Position = UDim2.new(0, 30, 0, 0)
             nameLbl.BackgroundTransparency = 1
             nameLbl.Text = msgData.Sender
             nameLbl.TextColor3 = Color3.fromHSV(hue, 0.7, 1)
             nameLbl.Font = Enum.Font.GothamBold
-            nameLbl.TextSize = 10
+            nameLbl.TextSize = 9
             nameLbl.TextXAlignment = Enum.TextXAlignment.Left
             nameLbl.Parent = msgFrame
 
-            -- Pesan
+            -- Isi Pesan
             local txt = Instance.new("TextLabel")
-            txt.Size = UDim2.new(1, -34, 0, 0)
-            txt.Position = UDim2.new(0, 34, 0, 13)
+            txt.Size = UDim2.new(1, -30, 0, 0)
+            txt.Position = UDim2.new(0, 30, 0, 12)
             txt.AutomaticSize = Enum.AutomaticSize.Y
             txt.BackgroundTransparency = 1
             txt.Text = msgData.Message
             txt.TextColor3 = Colors.Text
             txt.Font = Enum.Font.Gotham
-            txt.TextSize = 11
+            txt.TextSize = 10
             txt.TextWrapped = true
             txt.TextXAlignment = Enum.TextXAlignment.Left
             txt.Parent = msgFrame
