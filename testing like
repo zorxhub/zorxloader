@@ -1376,18 +1376,18 @@ local chatMessages = {}
 local function loadLiveChat()
     clearContent()
 
-    -- Variabel State Chat
     local currentRoom = "General"
-    local currentDMTarget = nil -- Kalau nil, berarti lagi di Public Chat
+    local currentDMTarget = nil 
     local chatMessages = {}
+    local isRoomOpen = true -- State buat buka/tutup list room
 
-    -- Layout Utama Chat (Dibagi 2: Sidebar Kiri & Area Chat Kanan)
+    -- Layout Utama Chat
     local mainChatFrame = Instance.new("Frame")
     mainChatFrame.Size = UDim2.new(1, 0, 1, 0)
     mainChatFrame.BackgroundTransparency = 1
     mainChatFrame.Parent = Scroll
 
-    -- 1. SIDEBAR CHAT (Kiri) - Daftar Room & PM
+    -- 1. SIDEBAR CHAT (Kiri)
     local chatSidebar = Instance.new("Frame")
     chatSidebar.Size = UDim2.new(0, 100, 1, 0)
     chatSidebar.BackgroundColor3 = Colors.Sidebar
@@ -1418,7 +1418,7 @@ local function loadLiveChat()
     chatArea.BackgroundTransparency = 1
     chatArea.Parent = mainChatFrame
 
-    -- Header Room (Nama Room yang lagi dibuka)
+    -- Header Room
     local roomHeader = Instance.new("TextLabel")
     roomHeader.Size = UDim2.new(1, 0, 0, 20)
     roomHeader.BackgroundTransparency = 1
@@ -1428,6 +1428,21 @@ local function loadLiveChat()
     roomHeader.TextSize = 12
     roomHeader.TextXAlignment = Enum.TextXAlignment.Left
     roomHeader.Parent = chatArea
+
+    -- Tombol Back (Kembali ke General) - Cuma muncul saat di DM
+    local backBtn = Instance.new("TextButton")
+    backBtn.Size = UDim2.new(0, 40, 0, 16)
+    backBtn.Position = UDim2.new(1, -45, 0, 2)
+    backBtn.BackgroundColor3 = Colors.Red
+    backBtn.Text = "BACK"
+    backBtn.TextColor3 = Color3.fromRGB(255,255,255)
+    backBtn.Font = Enum.Font.GothamBold
+    backBtn.TextSize = 8
+    backBtn.Visible = false
+    backBtn.Parent = chatArea
+    local backCorner = Instance.new("UICorner")
+    backCorner.CornerRadius = UDim.new(0, 3)
+    backCorner.Parent = backBtn
 
     -- Area Tampilan Pesan
     local msgScroll = Instance.new("ScrollingFrame")
@@ -1480,8 +1495,28 @@ local function loadLiveChat()
     sendCorner.CornerRadius = UDim.new(0, 4)
     sendCorner.Parent = sendBtn
 
+    -- FUNGSI GANTI ROOM
+    local function changeRoom(roomName, dmTarget)
+        if dmTarget then
+            currentRoom = nil
+            currentDMTarget = dmTarget
+            roomHeader.Text = "@" .. dmTarget .. " (Private)"
+            backBtn.Visible = true
+        else
+            currentRoom = roomName
+            currentDMTarget = nil
+            roomHeader.Text = "# " .. roomName
+            backBtn.Visible = false
+        end
+
+        -- Clear chat sementara
+        for _, child in pairs(msgScroll:GetChildren()) do
+            if child:IsA("Frame") then child:Destroy() end
+        end
+    end
+
     -- FUNGSI BIKIN TOMBOL ROOM
-    local function createRoomBtn(roomName, isDM, targetName)
+    local function createRoomBtn(roomName)
         local btn = Instance.new("TextButton")
         btn.Size = UDim2.new(1, 0, 0, 22)
         btn.BackgroundColor3 = Colors.Slot
@@ -1498,56 +1533,84 @@ local function loadLiveChat()
         txt.Size = UDim2.new(1, -6, 1, 0)
         txt.Position = UDim2.new(0, 6, 0, 0)
         txt.BackgroundTransparency = 1
-        txt.Text = (isDM and "@" or "#") .. roomName
-        txt.TextColor3 = isDM and Color3.fromRGB(200, 150, 255) or Colors.SubText
+        txt.Text = "# " .. roomName
+        txt.TextColor3 = Colors.SubText
         txt.Font = Enum.Font.GothamBold
         txt.TextSize = 9
         txt.TextXAlignment = Enum.TextXAlignment.Left
-        txt.TextTruncate = Enum.TextTruncate.AtEnd
         txt.Parent = btn
 
         btn.MouseButton1Click:Connect(function()
-            -- Reset highlight
-            for _, child in pairs(sbScroll:GetChildren()) do
-                if child:IsA("TextButton") then child.BackgroundTransparency = 0.5 end
-            end
-            btn.BackgroundTransparency = 0.2
-            
-            if isDM then
-                currentRoom = nil
-                currentDMTarget = targetName
-                roomHeader.Text = "@" .. targetName .. " (Private)"
-            else
-                currentRoom = targetName
-                currentDMTarget = nil
-                roomHeader.Text = "# " .. targetName
-            end
-            
-            -- Clear area chat sementara nunggu load
-            for _, child in pairs(msgScroll:GetChildren()) do
-                if child:IsA("Frame") then child:Destroy() end
-            end
+            changeRoom(roomName, nil)
         end)
     end
 
-    -- Generate Public Rooms
-    local publicRooms = {"General", "Indonesia", "Brazil", "Philippines", "Vietnam"}
+    -- Bikin Tombol #General
+    createRoomBtn("General")
+
+    -- Fungsi buat render list room di bawah General (Accordion)
+    local roomContainer = Instance.new("Frame")
+    roomContainer.Size = UDim2.new(1, 0, 0, 0)
+    roomContainer.AutomaticSize = Enum.AutomaticSize.Y
+    roomContainer.BackgroundTransparency = 1
+    roomContainer.ClipsDescendants = true
+    roomContainer.Parent = sbScroll
+    
+    local roomContainerList = Instance.new("UIListLayout")
+    roomContainerList.Padding = UDim.new(0, 2)
+    roomContainerList.Parent = roomContainer
+
+    -- Bikin list negara
+    local publicRooms = {"Indonesia", "Brazil", "Philippines", "Vietnam"}
     for _, room in ipairs(publicRooms) do
-        createRoomBtn(room, false, room)
+        local btn = Instance.new("TextButton")
+        btn.Size = UDim2.new(1, 0, 0, 20)
+        btn.BackgroundTransparency = 1
+        btn.Text = ""
+        btn.Parent = roomContainer
+        
+        local txt = Instance.new("TextLabel")
+        txt.Size = UDim2.new(1, -10, 1, 0)
+        txt.Position = UDim2.new(0, 10, 0, 0)
+        txt.BackgroundTransparency = 1
+        txt.Text = "# " .. room
+        txt.TextColor3 = Colors.SubText
+        txt.Font = Enum.Font.Gotham
+        txt.TextSize = 9
+        txt.TextXAlignment = Enum.TextXAlignment.Left
+        txt.Parent = btn
+
+        btn.MouseButton1Click:Connect(function()
+            changeRoom(room, nil)
+        end)
     end
 
-    -- Garis Pemisah
-    local divider = Instance.new("Frame")
-    divider.Size = UDim2.new(1, 0, 0, 1)
-    divider.BackgroundColor3 = Colors.Stroke
-    divider.Parent = sbScroll
+    -- Tombol Toggle Buka/Tutup Room
+    local toggleBtn = Instance.new("TextButton")
+    toggleBtn.Size = UDim2.new(1, 0, 0, 18)
+    toggleBtn.BackgroundTransparency = 1
+    toggleBtn.Text = "▼ Show Rooms"
+    toggleBtn.TextColor3 = Colors.SubText
+    toggleBtn.Font = Enum.Font.GothamBold
+    toggleBtn.TextSize = 8
+    toggleBtn.Parent = sbScroll
 
-    -- Generate Private Messages (List Player di Server)
-    for _, plr in ipairs(Players:GetPlayers()) do
-        if plr ~= player then
-            createRoomBtn(plr.Name, true, plr.Name)
+    -- Logika Buka Tutup
+    toggleBtn.MouseButton1Click:Connect(function()
+        isRoomOpen = not isRoomOpen
+        if isRoomOpen then
+            toggleBtn.Text = "▼ Show Rooms"
+            roomContainer.Visible = true
+        else
+            toggleBtn.Text = "▶ Show Rooms"
+            roomContainer.Visible = false
         end
-    end
+    end)
+
+    -- Tombol Back (Buat balik ke General)
+    backBtn.MouseButton1Click:Connect(function()
+        changeRoom("General", nil)
+    end)
 
     -- FUNGSI RENDER PESAN
     local function renderMessages()
@@ -1579,17 +1642,25 @@ local function loadLiveChat()
             avC.CornerRadius = UDim.new(1, 0)
             avC.Parent = av
 
-            -- Nama
-            local nameLbl = Instance.new("TextLabel")
-            nameLbl.Size = UDim2.new(1, -26, 0, 10)
-            nameLbl.Position = UDim2.new(0, 26, 0, 0)
-            nameLbl.BackgroundTransparency = 1
-            nameLbl.Text = msgData.Sender
-            nameLbl.TextColor3 = isMe and Color3.fromRGB(100, 255, 100) or Color3.fromRGB(150, 150, 255)
-            nameLbl.Font = Enum.Font.GothamBold
-            nameLbl.TextSize = 9
-            nameLbl.TextXAlignment = Enum.TextXAlignment.Left
-            nameLbl.Parent = msgFrame
+            -- Nama (Dibikin Button biar bisa diklik buat DM)
+            local nameBtn = Instance.new("TextButton")
+            nameBtn.Size = UDim2.new(1, -26, 0, 12)
+            nameBtn.Position = UDim2.new(0, 26, 0, 0)
+            nameBtn.BackgroundTransparency = 1
+            nameBtn.Text = msgData.Sender
+            nameBtn.TextColor3 = isMe and Color3.fromRGB(100, 255, 100) or Color3.fromRGB(150, 150, 255)
+            nameBtn.Font = Enum.Font.GothamBold
+            nameBtn.TextSize = 9
+            nameBtn.TextXAlignment = Enum.TextXAlignment.Left
+            nameBtn.AutoButtonColor = false
+            nameBtn.Parent = msgFrame
+
+            -- FUNGSI KLIK NAMA BUAT DM
+            nameBtn.MouseButton1Click:Connect(function()
+                if msgData.Sender ~= player.Name then
+                    changeRoom(nil, msgData.Sender)
+                end
+            end)
 
             -- Pesan
             local txt = Instance.new("TextLabel")
@@ -1611,7 +1682,7 @@ local function loadLiveChat()
         end)
     end
 
-    -- FUNGSI KIRIM PESAN (Public / Private)
+    -- FUNGSI KIRIM PESAN
     sendBtn.MouseButton1Click:Connect(function()
         local text = chatBox.Text:gsub("^%s*(.-)%s*$", "%1")
         if text == "" or #text > 100 then return end
@@ -1619,12 +1690,10 @@ local function loadLiveChat()
 
         local path = ""
         if currentDMTarget then
-            -- Private Message (Urutin nama biar roomnya sama)
             local names = {player.Name, currentDMTarget}
             table.sort(names)
             path = "chat/private/" .. names[1] .. "_" .. names[2]
         else
-            -- Public Message
             path = "chat/public/" .. currentRoom
         end
 
@@ -1645,7 +1714,7 @@ local function loadLiveChat()
         end
     end)
 
-    -- FUNGSI FETCH PESAN (Loop tiap 2 detik)
+    -- FUNGSI FETCH PESAN
     task.spawn(function()
         while mainChatFrame and mainChatFrame.Parent do
             if reqFunc then
