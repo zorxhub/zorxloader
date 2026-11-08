@@ -880,6 +880,15 @@ if userRole == "Owner" then
 else
     -- SELAIN OWNER: Pill Angka Countdown
     zeroCard, zeroText = createPill("000", 40, "", 3, false)
+    
+    -- Atur warna berdasarkan Role
+    if userRole == "Donatur" then
+        trialText.TextColor3 = Color3.fromRGB(255, 215, 0)
+        zeroText.TextColor3 = Color3.fromRGB(255, 215, 0)
+    elseif userRole == "Trial" then
+        trialText.TextColor3 = Color3.fromRGB(60, 150, 255)
+        zeroText.TextColor3 = Color3.fromRGB(60, 150, 255)
+    end
 end
 
 -- 5. Pill Utama (Game, FPS, Executor)
@@ -903,14 +912,13 @@ local function FormatTime(seconds)
 	local d = math.floor(seconds / 86400)
 	local h = math.floor((seconds % 86400) / 3600)
 	local m = math.floor((seconds % 3600) / 60)
-	local s = math.floor(seconds % 60)
 	
 	if d > 0 then
-		return string.format("%dD %02dH %02dM", d, h, m)
+		return string.format("%dd %dh %dm", d, h, m)
 	elseif h > 0 then
-		return string.format("%02dH %02dM %02dS", h, m, s)
+		return string.format("%dh %dm", h, m)
 	else
-		return string.format("%02dM %02dS", m, s)
+		return string.format("%dm", m)
 	end
 end
 
@@ -930,12 +938,13 @@ local function StartCountdown()
 				trialText.Text = userRole
 				
 				-- Jika BUKAN Owner, update angka countdown-nya
-				if userRole ~= "Owner" then
-					zeroText.Text = formattedTime
-					if zeroCard then
-						zeroCard.Size = UDim2.new(0, zeroText.TextBounds.X + 16, 0, 22)
-					end
-				end
+if userRole ~= "Owner" then
+	zeroText.Text = formattedTime
+	if zeroCard then
+		-- Lebarkan pill biar teks nggak kepotong titik-titik
+		zeroCard.Size = UDim2.new(0, zeroText.TextBounds.X + 30, 0, 22)
+	end
+end
 			end
 		else
 			licenseConnection:Disconnect()
@@ -944,6 +953,46 @@ local function StartCountdown()
 	end)
 end
 StartCountdown()
+
+-- ============================================================
+-- AUTO-CHECK LICENSE (ANTI NYANGKUT)
+-- ============================================================
+task.spawn(function()
+    while task.wait(5) do -- Ngecek ke Firebase tiap 5 detik
+        if reqFunc then
+            local isStillValid = false
+            pcall(function()
+                -- Cek apakah masih Owner
+                local urlOwner = "https://zorx-broadcast-default-rtdb.firebaseio.com/owners/" .. player.Name .. ".json"
+                local resOwner = reqFunc({ Url = urlOwner, Method = "GET" })
+                if resOwner and (resOwner.StatusCode == 200 or resOwner.Status == 200) then
+                    if HttpService:JSONDecode(resOwner.Body) == true then
+                        isStillValid = true
+                    end
+                end
+                
+                -- Kalau bukan Owner, cek apakah masih punya Lisensi
+                if not isStillValid then
+                    local url = "https://zorx-broadcast-default-rtdb.firebaseio.com/licenses/" .. player.Name .. ".json"
+                    local res = reqFunc({ Url = url, Method = "GET" })
+                    if res and (res.StatusCode == 200 or res.Status == 200) then
+                        local data = HttpService:JSONDecode(res.Body)
+                        if data and data.ExpireTime and data.ExpireTime > (os.time() * 1000) then
+                            isStillValid = true
+                        end
+                    end
+                end
+            end)
+
+            -- JIKA LISENSI DICABUT / DI-RESET DARI WEB
+            if not isStillValid then
+                warn("[ZORX] Lisensi kamu telah dicabut / di-reset oleh Admin!")
+                DestroyEverything() -- Fungsi ini udah ada di atas buat ngehapus UI dan script
+                break
+            end
+        end
+    end
+end)
 
 -- ============================================================
 -- TOMBOL LONCENG & ANNOUNCEMENT
@@ -1025,19 +1074,20 @@ local isMaximized = false
 MaximizeBtn.MouseButton1Click:Connect(function()
 	isMaximized = not isMaximized
 
-	-- ===== HIDE/SHOW TITLE "ZORX" SAJA (LOGO TETAP) =====
-	if isMaximized then
-		TweenService:Create(Title, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-			TextTransparency = 1
-		}):Play()
+	-- ===== HIDE/SHOW TITLE "ZORX" =====
+if isMaximized then
+	-- SAAT DIPERBESAR: Cuma Owner yang tulisan ZORX-nya tetap muncul
+	if userRole ~= "Owner" then
 		Title.Visible = false
 	else
 		Title.Visible = true
-		Title.TextTransparency = 1
-		TweenService:Create(Title, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-			TextTransparency = 0
-		}):Play()
+		Title.TextTransparency = 0
 	end
+else
+	-- SAAT UI NORMAL: Semua role (Owner, Trial, Donatur) tulisan ZORX-nya MUNCUL
+	Title.Visible = true
+	Title.TextTransparency = 0
+end
 
 	-- ===== SHOW/HIDE PILL KARTU =====
 	for _, card in ipairs({avatarCard, nickCard, trialCard, zeroCard}) do
@@ -1303,6 +1353,334 @@ ScrollList.Parent = Scroll
 local sidebarButtons = {}
 local activeTab = nil
 
+local function clearContent()
+    if Scroll then
+        for _, child in pairs(Scroll:GetChildren()) do
+            if not child:IsA("UIListLayout") and not child:IsA("UIPadding") then
+                child:Destroy()
+            end
+        end
+    end
+    if PopupLayer then
+        for _, child in pairs(PopupLayer:GetChildren()) do
+            child.Visible = false
+        end
+    end
+end
+
+-- ============================================================
+-- LIVE CHAT SYSTEM (FIREBASE)
+-- ============================================================
+local chatMessages = {}
+
+local function loadLiveChat()
+    clearContent()
+
+    -- Variabel State Chat
+    local currentRoom = "General"
+    local currentDMTarget = nil -- Kalau nil, berarti lagi di Public Chat
+    local chatMessages = {}
+
+    -- Layout Utama Chat (Dibagi 2: Sidebar Kiri & Area Chat Kanan)
+    local mainChatFrame = Instance.new("Frame")
+    mainChatFrame.Size = UDim2.new(1, 0, 1, 0)
+    mainChatFrame.BackgroundTransparency = 1
+    mainChatFrame.Parent = Scroll
+
+    -- 1. SIDEBAR CHAT (Kiri) - Daftar Room & PM
+    local chatSidebar = Instance.new("Frame")
+    chatSidebar.Size = UDim2.new(0, 100, 1, 0)
+    chatSidebar.BackgroundColor3 = Colors.Sidebar
+    chatSidebar.BorderSizePixel = 0
+    chatSidebar.Parent = mainChatFrame
+    
+    local sbCorner = Instance.new("UICorner")
+    sbCorner.CornerRadius = UDim.new(0, 6)
+    sbCorner.Parent = chatSidebar
+
+    local sbScroll = Instance.new("ScrollingFrame")
+    sbScroll.Size = UDim2.new(1, -4, 1, -4)
+    sbScroll.Position = UDim2.new(0, 2, 0, 2)
+    sbScroll.BackgroundTransparency = 1
+    sbScroll.BorderSizePixel = 0
+    sbScroll.ScrollBarThickness = 2
+    sbScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
+    sbScroll.Parent = chatSidebar
+
+    local sbList = Instance.new("UIListLayout")
+    sbList.Padding = UDim.new(0, 4)
+    sbList.Parent = sbScroll
+
+    -- 2. AREA CHAT (Kanan)
+    local chatArea = Instance.new("Frame")
+    chatArea.Size = UDim2.new(1, -105, 1, 0)
+    chatArea.Position = UDim2.new(0, 105, 0, 0)
+    chatArea.BackgroundTransparency = 1
+    chatArea.Parent = mainChatFrame
+
+    -- Header Room (Nama Room yang lagi dibuka)
+    local roomHeader = Instance.new("TextLabel")
+    roomHeader.Size = UDim2.new(1, 0, 0, 20)
+    roomHeader.BackgroundTransparency = 1
+    roomHeader.Text = "# General"
+    roomHeader.TextColor3 = Colors.Text
+    roomHeader.Font = Enum.Font.GothamBold
+    roomHeader.TextSize = 12
+    roomHeader.TextXAlignment = Enum.TextXAlignment.Left
+    roomHeader.Parent = chatArea
+
+    -- Area Tampilan Pesan
+    local msgScroll = Instance.new("ScrollingFrame")
+    msgScroll.Size = UDim2.new(1, 0, 1, -60)
+    msgScroll.Position = UDim2.new(0, 0, 0, 24)
+    msgScroll.BackgroundTransparency = 1
+    msgScroll.BorderSizePixel = 0
+    msgScroll.ScrollBarThickness = 3
+    msgScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
+    msgScroll.Parent = chatArea
+
+    local msgList = Instance.new("UIListLayout")
+    msgList.Padding = UDim.new(0, 6)
+    msgList.Parent = msgScroll
+
+    -- Input Chat
+    local inputFrame = Instance.new("Frame")
+    inputFrame.Size = UDim2.new(1, 0, 0, 30)
+    inputFrame.Position = UDim2.new(0, 0, 1, -30)
+    inputFrame.BackgroundColor3 = Colors.Slot
+    inputFrame.Parent = chatArea
+
+    local inCorner = Instance.new("UICorner")
+    inCorner.CornerRadius = UDim.new(0, 6)
+    inCorner.Parent = inputFrame
+    
+    local inStroke = Instance.new("UIStroke")
+    inStroke.Color = ThemeColors[ActiveTheme].border
+    inStroke.Parent = inputFrame
+    registerBorder(inStroke)
+
+    local chatBox = Instance.new("TextBox")
+    chatBox.Size = UDim2.new(1, -40, 1, 0)
+    chatBox.Position = UDim2.new(0, 8, 0, 0)
+    chatBox.BackgroundTransparency = 1
+    chatBox.PlaceholderText = "Ketik pesan..."
+    chatBox.TextColor3 = Colors.Text
+    chatBox.Font = Enum.Font.Gotham
+    chatBox.TextSize = 10
+    chatBox.TextXAlignment = Enum.TextXAlignment.Left
+    chatBox.Parent = inputFrame
+
+    local sendBtn = Instance.new("ImageButton")
+    sendBtn.Size = UDim2.new(0, 22, 0, 22)
+    sendBtn.Position = UDim2.new(1, -26, 0.5, -11)
+    sendBtn.BackgroundColor3 = ThemeColors[ActiveTheme].border
+    sendBtn.Image = "rbxassetid://103326784032850"
+    sendBtn.Parent = inputFrame
+    local sendCorner = Instance.new("UICorner")
+    sendCorner.CornerRadius = UDim.new(0, 4)
+    sendCorner.Parent = sendBtn
+
+    -- FUNGSI BIKIN TOMBOL ROOM
+    local function createRoomBtn(roomName, isDM, targetName)
+        local btn = Instance.new("TextButton")
+        btn.Size = UDim2.new(1, 0, 0, 22)
+        btn.BackgroundColor3 = Colors.Slot
+        btn.BackgroundTransparency = 0.5
+        btn.Text = ""
+        btn.AutoButtonColor = false
+        btn.Parent = sbScroll
+
+        local c = Instance.new("UICorner")
+        c.CornerRadius = UDim.new(0, 4)
+        c.Parent = btn
+
+        local txt = Instance.new("TextLabel")
+        txt.Size = UDim2.new(1, -6, 1, 0)
+        txt.Position = UDim2.new(0, 6, 0, 0)
+        txt.BackgroundTransparency = 1
+        txt.Text = (isDM and "@" or "#") .. roomName
+        txt.TextColor3 = isDM and Color3.fromRGB(200, 150, 255) or Colors.SubText
+        txt.Font = Enum.Font.GothamBold
+        txt.TextSize = 9
+        txt.TextXAlignment = Enum.TextXAlignment.Left
+        txt.TextTruncate = Enum.TextTruncate.AtEnd
+        txt.Parent = btn
+
+        btn.MouseButton1Click:Connect(function()
+            -- Reset highlight
+            for _, child in pairs(sbScroll:GetChildren()) do
+                if child:IsA("TextButton") then child.BackgroundTransparency = 0.5 end
+            end
+            btn.BackgroundTransparency = 0.2
+            
+            if isDM then
+                currentRoom = nil
+                currentDMTarget = targetName
+                roomHeader.Text = "@" .. targetName .. " (Private)"
+            else
+                currentRoom = targetName
+                currentDMTarget = nil
+                roomHeader.Text = "# " .. targetName
+            end
+            
+            -- Clear area chat sementara nunggu load
+            for _, child in pairs(msgScroll:GetChildren()) do
+                if child:IsA("Frame") then child:Destroy() end
+            end
+        end)
+    end
+
+    -- Generate Public Rooms
+    local publicRooms = {"General", "Indonesia", "Brazil", "Philippines", "Vietnam"}
+    for _, room in ipairs(publicRooms) do
+        createRoomBtn(room, false, room)
+    end
+
+    -- Garis Pemisah
+    local divider = Instance.new("Frame")
+    divider.Size = UDim2.new(1, 0, 0, 1)
+    divider.BackgroundColor3 = Colors.Stroke
+    divider.Parent = sbScroll
+
+    -- Generate Private Messages (List Player di Server)
+    for _, plr in ipairs(Players:GetPlayers()) do
+        if plr ~= player then
+            createRoomBtn(plr.Name, true, plr.Name)
+        end
+    end
+
+    -- FUNGSI RENDER PESAN
+    local function renderMessages()
+        for _, child in pairs(msgScroll:GetChildren()) do
+            if child:IsA("Frame") then child:Destroy() end
+        end
+
+        table.sort(chatMessages, function(a, b) return (a.Time or 0) < (b.Time or 0) end)
+
+        for i, msgData in ipairs(chatMessages) do
+            local isMe = (msgData.Sender == player.Name)
+            local msgFrame = Instance.new("Frame")
+            msgFrame.Size = UDim2.new(1, 0, 0, 0)
+            msgFrame.AutomaticSize = Enum.AutomaticSize.Y
+            msgFrame.BackgroundTransparency = 1
+            msgFrame.LayoutOrder = i
+            msgFrame.Parent = msgScroll
+
+            -- Foto Profil
+            local senderPlayer = Players:FindFirstChild(msgData.Sender)
+            local senderId = senderPlayer and senderPlayer.UserId or 1
+
+            local av = Instance.new("ImageLabel")
+            av.Size = UDim2.new(0, 20, 0, 20)
+            av.BackgroundColor3 = Colors.Slot
+            av.Image = "https://www.roblox.com/headshot-thumbnail/image?userId=" .. senderId .. "&width=150&height=150&format=png"
+            av.Parent = msgFrame
+            local avC = Instance.new("UICorner")
+            avC.CornerRadius = UDim.new(1, 0)
+            avC.Parent = av
+
+            -- Nama
+            local nameLbl = Instance.new("TextLabel")
+            nameLbl.Size = UDim2.new(1, -26, 0, 10)
+            nameLbl.Position = UDim2.new(0, 26, 0, 0)
+            nameLbl.BackgroundTransparency = 1
+            nameLbl.Text = msgData.Sender
+            nameLbl.TextColor3 = isMe and Color3.fromRGB(100, 255, 100) or Color3.fromRGB(150, 150, 255)
+            nameLbl.Font = Enum.Font.GothamBold
+            nameLbl.TextSize = 9
+            nameLbl.TextXAlignment = Enum.TextXAlignment.Left
+            nameLbl.Parent = msgFrame
+
+            -- Pesan
+            local txt = Instance.new("TextLabel")
+            txt.Size = UDim2.new(1, -26, 0, 0)
+            txt.Position = UDim2.new(0, 26, 0, 12)
+            txt.AutomaticSize = Enum.AutomaticSize.Y
+            txt.BackgroundTransparency = 1
+            txt.Text = msgData.Message
+            txt.TextColor3 = Colors.Text
+            txt.Font = Enum.Font.Gotham
+            txt.TextSize = 10
+            txt.TextWrapped = true
+            txt.TextXAlignment = Enum.TextXAlignment.Left
+            txt.Parent = msgFrame
+        end
+
+        task.defer(function()
+            msgScroll.CanvasPosition = Vector2.new(0, msgScroll.AbsoluteCanvasSize.Y)
+        end)
+    end
+
+    -- FUNGSI KIRIM PESAN (Public / Private)
+    sendBtn.MouseButton1Click:Connect(function()
+        local text = chatBox.Text:gsub("^%s*(.-)%s*$", "%1")
+        if text == "" or #text > 100 then return end
+        chatBox.Text = ""
+
+        local path = ""
+        if currentDMTarget then
+            -- Private Message (Urutin nama biar roomnya sama)
+            local names = {player.Name, currentDMTarget}
+            table.sort(names)
+            path = "chat/private/" .. names[1] .. "_" .. names[2]
+        else
+            -- Public Message
+            path = "chat/public/" .. currentRoom
+        end
+
+        if reqFunc then
+            pcall(function()
+                local url = "https://zorx-broadcast-default-rtdb.firebaseio.com/" .. path .. "/" .. tostring(os.time()) .. player.UserId .. ".json"
+                reqFunc({
+                    Url = url,
+                    Method = "PUT",
+                    Headers = { ["Content-Type"] = "application/json" },
+                    Body = HttpService:JSONEncode({
+                        Sender = player.Name,
+                        Message = text,
+                        Time = os.time()
+                    })
+                })
+            end)
+        end
+    end)
+
+    -- FUNGSI FETCH PESAN (Loop tiap 2 detik)
+    task.spawn(function()
+        while mainChatFrame and mainChatFrame.Parent do
+            if reqFunc then
+                local path = ""
+                if currentDMTarget then
+                    local names = {player.Name, currentDMTarget}
+                    table.sort(names)
+                    path = "chat/private/" .. names[1] .. "_" .. names[2]
+                else
+                    path = "chat/public/" .. currentRoom
+                end
+
+                pcall(function()
+                    local url = "https://zorx-broadcast-default-rtdb.firebaseio.com/" .. path .. ".json"
+                    local res = reqFunc({ Url = url, Method = "GET" })
+                    if res and (res.StatusCode == 200 or res.Status == 200) then
+                        local data = HttpService:JSONDecode(res.Body)
+                        local newMsgs = {}
+                        if data then
+                            for _, v in pairs(data) do
+                                if type(v) == "table" and v.Sender and v.Message then
+                                    table.insert(newMsgs, v)
+                                end
+                            end
+                        end
+                        chatMessages = newMsgs
+                        renderMessages()
+                    end
+                end)
+            end
+            task.wait(2)
+        end
+    end)
+end
+
 local function createSidebarButton(text, order, iconId, onClick)
 	local btn = Instance.new("TextButton")
 	btn.Name = text
@@ -1369,17 +1747,6 @@ local function createSidebarButton(text, order, iconId, onClick)
 
 	table.insert(sidebarButtons, btn)
 	return btn
-end
-
-local function clearContent()
-	for _, child in pairs(Scroll:GetChildren()) do
-		if not child:IsA("UIListLayout") and not child:IsA("UIPadding") then
-			child:Destroy()
-		end
-	end
-	for _, child in pairs(PopupLayer:GetChildren()) do
-		child.Visible = false
-	end
 end
 
 SearchBox:GetPropertyChangedSignal("Text"):Connect(function()
@@ -1971,8 +2338,26 @@ local miscLockedText = "M\226\128\139i\226\128\139s\226\128\139c"
 createSidebarButton("About", 1, "135090089738327", loadAboutPanel)
 createSidebarButton("Farm", 2, "98852406765639", function() end)
 createSidebarButton(miscLockedText, 3, "112245774650566", function() end)
-createSidebarButton("Setings", 4, "117852848591099", loadSetingsPanel)
-createSidebarButton("Info", 5, "117372440865704", loadInfoPanel)
+
+-- ===== GARIS PEMISAH =====
+local sideDivider = Instance.new("Frame")
+sideDivider.Size = UDim2.new(1, 0, 0, 1)
+sideDivider.BackgroundColor3 = DefaultBorder
+sideDivider.BorderSizePixel = 0
+sideDivider.LayoutOrder = 4
+sideDivider.Parent = SidebarButtonContainer
+
+-- ===== TAB LIVE CHAT =====
+local chatBtn = createSidebarButton("Live Chat", 5, "105588735802729", loadLiveChat)
+-- Beri jarak dikit setelah garis
+local spacer = Instance.new("Frame")
+spacer.Size = UDim2.new(1, 0, 0, 4)
+spacer.BackgroundTransparency = 1
+spacer.LayoutOrder = 5
+spacer.Parent = SidebarButtonContainer
+
+createSidebarButton("Setings", 6, "117852848591099", loadSetingsPanel)
+createSidebarButton("Info", 7, "117372440865704", loadInfoPanel)
 
 task.wait(0.1)
 
