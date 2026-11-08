@@ -881,8 +881,16 @@ else
     -- SELAIN OWNER: Pill Angka Countdown
     zeroCard, zeroText = createPill("000", 40, "", 3, false)
     
-    -- Bikin warnanya KUNING terang
-    zeroText.TextColor3 = Color3.fromRGB(255, 215, 0)
+    -- Atur warna berdasarkan Role
+    if userRole == "Donatur" then
+        -- Donatur: Kuning
+        trialText.TextColor3 = Color3.fromRGB(255, 215, 0)
+        zeroText.TextColor3 = Color3.fromRGB(255, 215, 0)
+    elseif userRole == "Trial" then
+        -- Trial: Biru
+        trialText.TextColor3 = Color3.fromRGB(60, 150, 255)
+        zeroText.TextColor3 = Color3.fromRGB(60, 150, 255)
+    end
 end
 
 -- 5. Pill Utama (Game, FPS, Executor)
