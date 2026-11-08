@@ -955,6 +955,46 @@ end
 StartCountdown()
 
 -- ============================================================
+-- AUTO-CHECK LICENSE (ANTI NYANGKUT)
+-- ============================================================
+task.spawn(function()
+    while task.wait(5) do -- Ngecek ke Firebase tiap 5 detik
+        if reqFunc then
+            local isStillValid = false
+            pcall(function()
+                -- Cek apakah masih Owner
+                local urlOwner = "https://zorx-broadcast-default-rtdb.firebaseio.com/owners/" .. player.Name .. ".json"
+                local resOwner = reqFunc({ Url = urlOwner, Method = "GET" })
+                if resOwner and (resOwner.StatusCode == 200 or resOwner.Status == 200) then
+                    if HttpService:JSONDecode(resOwner.Body) == true then
+                        isStillValid = true
+                    end
+                end
+                
+                -- Kalau bukan Owner, cek apakah masih punya Lisensi
+                if not isStillValid then
+                    local url = "https://zorx-broadcast-default-rtdb.firebaseio.com/licenses/" .. player.Name .. ".json"
+                    local res = reqFunc({ Url = url, Method = "GET" })
+                    if res and (res.StatusCode == 200 or res.Status == 200) then
+                        local data = HttpService:JSONDecode(res.Body)
+                        if data and data.ExpireTime and data.ExpireTime > (os.time() * 1000) then
+                            isStillValid = true
+                        end
+                    end
+                end
+            end)
+
+            -- JIKA LISENSI DICABUT / DI-RESET DARI WEB
+            if not isStillValid then
+                warn("[ZORX] Lisensi kamu telah dicabut / di-reset oleh Admin!")
+                DestroyEverything() -- Fungsi ini udah ada di atas buat ngehapus UI dan script
+                break
+            end
+        end
+    end
+end)
+
+-- ============================================================
 -- TOMBOL LONCENG & ANNOUNCEMENT
 -- ============================================================
 local AnnouncBtn = Instance.new("TextButton")
