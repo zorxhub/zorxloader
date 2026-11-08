@@ -2355,7 +2355,6 @@ end)
 -- LIVE CHAT SYSTEM (FIREBASE)
 -- ============================================================
 local chatMessages = {}
-local lastChatFetch = 0
 
 local function loadLiveChat()
     clearContent()
@@ -2376,11 +2375,12 @@ local function loadLiveChat()
     msgScroll.ScrollBarThickness = 4
     msgScroll.ScrollBarImageColor3 = Colors.Stroke
     msgScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
+    msgScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
     msgScroll.Parent = chatContainer
 
     local msgList = Instance.new("UIListLayout")
     msgList.SortOrder = Enum.SortOrder.LayoutOrder
-    msgList.Padding = UDim.new(0, 8) -- Jarak antar pesan
+    msgList.Padding = UDim.new(0, 8)
     msgList.Parent = msgScroll
 
     local msgPad = Instance.new("UIPadding")
@@ -2463,15 +2463,16 @@ local function loadLiveChat()
             avatarImg.Position = UDim2.new(0, 0, 0, 0)
             avatarImg.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
             avatarImg.BorderSizePixel = 0
-            avatarImg.Image = "https://www.roblox.com/headshot-thumbnail/image?userId=105588735802729&width=150&height=150&format=png"
+            -- PAKAI RBXASSETID KARENA INI ASSET ID
+            avatarImg.Image = "rbxassetid://105588735802729" 
             avatarImg.ScaleType = Enum.ScaleType.Crop
             avatarImg.Parent = msgFrame
 
             local avCorner = Instance.new("UICorner")
-            avCorner.CornerRadius = UDim.new(1, 0) -- Bulat
+            avCorner.CornerRadius = UDim.new(1, 0) 
             avCorner.Parent = avatarImg
 
-            -- 2. NAMA PENGIRIM (Kanan Atas)
+            -- 2. NAMA PENGIRIM
             local nameLbl = Instance.new("TextLabel")
             nameLbl.Size = UDim2.new(1, -32, 0, 14)
             nameLbl.Position = UDim2.new(0, 32, 0, 0)
@@ -2483,7 +2484,7 @@ local function loadLiveChat()
             nameLbl.TextXAlignment = Enum.TextXAlignment.Left
             nameLbl.Parent = msgFrame
 
-            -- 3. ISI PESAN (Kanan Bawah)
+            -- 3. ISI PESAN
             local textLbl = Instance.new("TextLabel")
             textLbl.Size = UDim2.new(1, -32, 0, 0)
             textLbl.Position = UDim2.new(0, 32, 0, 14)
@@ -2498,7 +2499,7 @@ local function loadLiveChat()
             textLbl.Parent = msgFrame
         end
 
-        -- Auto scroll ke bawah
+        -- Auto scroll ke paling bawah
         task.defer(function()
             msgScroll.CanvasPosition = Vector2.new(0, msgScroll.AbsoluteCanvasSize.Y)
         end)
@@ -2548,6 +2549,9 @@ local function loadLiveChat()
             end
         end)
     end
+
+    -- Panggil fetch pertama kali biar langsung muncul chat lama
+    fetchChat()
 
     -- Loop Fetch tiap 3 detik
     task.spawn(function()
