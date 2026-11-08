@@ -832,29 +832,53 @@ local trialCard, trialText = createPill(userRole, 50, "", 2, false)
 local zeroCard, zeroText
 
 if userRole == "Owner" then
-    -- KHUSUS OWNER: Pill Kanan diganti jadi Foto ID 71266966320368
-    zeroCard = createAvatarPill(3, false)
+    -- KHUSUS OWNER: Pill Kotak (bukan bulat) berisi Logo Asset ID
+    local ownerLogoId = "101333861338829"
     
-    -- Timpa gambar avatar-nya jadi ID Owner
-    local ownerAv = zeroCard:FindFirstChild("Avatar")
-    if ownerAv then
-        ownerAv.Image = "https://www.roblox.com/headshot-thumbnail/image?userId=71266966320368&width=150&height=150&format=png"
-    end
+    zeroCard = Instance.new("Frame")
+    zeroCard.Size = UDim2.new(0, 32, 0, 22) -- Ukuran 32x22 (Kotak memanjang)
+    zeroCard.BackgroundColor3 = DefaultPillBg
+    zeroCard.BorderSizePixel = 0
+    zeroCard.LayoutOrder = 3
+    zeroCard.Visible = false
+    zeroCard.Parent = PillContainer
+
+    -- Pinggiran kotak melengkung standar (bukan full bulat)
+    local pCorner = Instance.new("UICorner")
+    pCorner.CornerRadius = UDim.new(0, 5)
+    pCorner.Parent = zeroCard
+
+    local pStroke = Instance.new("UIStroke")
+    pStroke.Color = DefaultPillStroke
+    pStroke.Thickness = 1
+    pStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+    pStroke.Parent = zeroCard
+
+    -- Gambar Asset ID di dalamnya
+    local ownerLogo = Instance.new("ImageLabel")
+    ownerLogo.Name = "OwnerLogo"
+    ownerLogo.Size = UDim2.new(0, 16, 0, 16) -- Ukuran gambar
+    ownerLogo.Position = UDim2.new(0.5, 0, 0.5, 0)
+    ownerLogo.AnchorPoint = Vector2.new(0.5, 0.5)
+    ownerLogo.BackgroundTransparency = 1
+    ownerLogo.Image = "rbxassetid://" .. ownerLogoId
+    ownerLogo.ScaleType = Enum.ScaleType.Fit
+    ownerLogo.Parent = zeroCard
+
+    -- (Opsional) Bikin gambar di dalamnya tetap bulat, luar kotak
+    local imgCorner = Instance.new("UICorner")
+    imgCorner.CornerRadius = UDim.new(1, 0)
+    imgCorner.Parent = ownerLogo
+
+    -- Masukkan ke list biar ikut ganti warna tema
+    table.insert(allPills, zeroCard)
+    table.insert(allPillStrokes, pStroke)
     
-    -- Timpa fungsi klik biar nge-copy link profil Owner
-    zeroCard.MouseButton1Click:Connect(function()
-        pcall(function()
-            if setclipboard then setclipboard("https://www.roblox.com/users/71266966320368/profile")
-            elseif toclipboard then toclipboard("https://www.roblox.com/users/71266966320368/profile") end
-        end)
-        createTopRightNotification("Owner Profile", "Link profil Owner berhasil di-copy!", "82414580295798", 4)
-    end)
-    
-    -- Dummy teks biar StartCountdown nggak error
+    -- Dummy teks
     zeroText = Instance.new("TextLabel")
     zeroText.Visible = false
 else
-    -- SELAIN OWNER: Pill Kanan isinya Angka Countdown
+    -- SELAIN OWNER: Pill Angka Countdown
     zeroCard, zeroText = createPill("000", 40, "", 3, false)
 end
 
