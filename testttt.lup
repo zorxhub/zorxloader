@@ -1422,14 +1422,18 @@ local function createSidebarButton(text, order, iconId, onClick)
 end
 
 local function clearContent()
-	for _, child in pairs(Scroll:GetChildren()) do
-		if not child:IsA("UIListLayout") and not child:IsA("UIPadding") then
-			child:Destroy()
-		end
-	end
-	for _, child in pairs(PopupLayer:GetChildren()) do
-		child.Visible = false
-	end
+    if Scroll then
+        for _, child in pairs(Scroll:GetChildren()) do
+            if not child:IsA("UIListLayout") and not child:IsA("UIPadding") then
+                child:Destroy()
+            end
+        end
+    end
+    if PopupLayer then
+        for _, child in pairs(PopupLayer:GetChildren()) do
+            child.Visible = false
+        end
+    end
 end
 
 SearchBox:GetPropertyChangedSignal("Text"):Connect(function()
