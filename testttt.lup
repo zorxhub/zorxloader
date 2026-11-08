@@ -1386,7 +1386,7 @@ local function loadLiveChat()
     -- Area Tampilan Pesan (Scrolling)
     local msgScroll = Instance.new("ScrollingFrame")
     msgScroll.Name = "MsgScroll"
-    msgScroll.Size = UDim2.new(1, 0, 1, -40)
+    msgScroll.Size = UDim2.new(1, 0, 1, -48)
     msgScroll.BackgroundTransparency = 1
     msgScroll.BorderSizePixel = 0
     msgScroll.ScrollBarThickness = 4
@@ -1405,11 +1405,11 @@ local function loadLiveChat()
     msgPad.PaddingRight = UDim.new(0, 4)
     msgPad.Parent = msgScroll
 
-    -- Input Chat (Bawah)
+    -- Input Chat (Bawah) - Dinaikin dikit
     local inputFrame = Instance.new("Frame")
     inputFrame.Name = "InputFrame"
-    inputFrame.Size = UDim2.new(1, 0, 0, 32)
-    inputFrame.Position = UDim2.new(0, 0, 1, -32)
+    inputFrame.Size = UDim2.new(1, 0, 0, 34)
+    inputFrame.Position = UDim2.new(0, 0, 1, -42)
     inputFrame.BackgroundColor3 = Colors.Slot
     inputFrame.BorderSizePixel = 0
     inputFrame.Parent = chatContainer
@@ -1440,15 +1440,14 @@ local function loadLiveChat()
     chatBox.ClearTextOnFocus = false
     chatBox.Parent = inputFrame
 
-    local sendBtn = Instance.new("TextButton")
-    sendBtn.Size = UDim2.new(0, 36, 0, 22)
-    sendBtn.Position = UDim2.new(1, -42, 0.5, -11)
+    -- TOMBOL KIRIM (Pakai ImageButton + ID Baru)
+    local sendBtn = Instance.new("ImageButton")
+    sendBtn.Size = UDim2.new(0, 24, 0, 24)
+    sendBtn.Position = UDim2.new(1, -32, 0.5, -12)
     sendBtn.BackgroundColor3 = ThemeColors[ActiveTheme].border
     sendBtn.BorderSizePixel = 0
-    sendBtn.Text = "➤"
-    sendBtn.TextColor3 = Colors.Text
-    sendBtn.Font = Enum.Font.GothamBold
-    sendBtn.TextSize = 14
+    sendBtn.Image = "rbxassetid://103326784032850"
+    sendBtn.ScaleType = Enum.ScaleType.Fit
     sendBtn.AutoButtonColor = false
     sendBtn.Parent = inputFrame
 
@@ -1456,7 +1455,7 @@ local function loadLiveChat()
     sbCorner.CornerRadius = UDim.new(0, 4)
     sbCorner.Parent = sendBtn
 
-    -- FUNGSI RENDER PESAN KE UI (DENGAN FOTO)
+    -- FUNGSI RENDER PESAN KE UI (PAKAI FOTO ASLI PLAYER)
     local function renderMessages()
         for _, child in pairs(msgScroll:GetChildren()) do
             if child:IsA("Frame") then child:Destroy() end
@@ -1474,14 +1473,19 @@ local function loadLiveChat()
             msgFrame.LayoutOrder = i
             msgFrame.Parent = msgScroll
 
-            -- 1. FOTO PROFIL (Kiri)
+            -- 1. FOTO PROFIL (PAKAI HEADSHOT ASLI PLAYER)
+            local senderPlayer = Players:FindFirstChild(msgData.Sender)
+            local senderId = player.UserId -- Default
+            if senderPlayer then
+                senderId = senderPlayer.UserId
+            end
+
             local avatarImg = Instance.new("ImageLabel")
             avatarImg.Size = UDim2.new(0, 24, 0, 24)
             avatarImg.Position = UDim2.new(0, 0, 0, 0)
             avatarImg.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
             avatarImg.BorderSizePixel = 0
-            -- PAKAI RBXASSETID KARENA INI ASSET ID
-            avatarImg.Image = "rbxassetid://105588735802729" 
+            avatarImg.Image = "https://www.roblox.com/headshot-thumbnail/image?userId=" .. senderId .. "&width=150&height=150&format=png"
             avatarImg.ScaleType = Enum.ScaleType.Crop
             avatarImg.Parent = msgFrame
 
@@ -1516,7 +1520,6 @@ local function loadLiveChat()
             textLbl.Parent = msgFrame
         end
 
-        -- Auto scroll ke paling bawah
         task.defer(function()
             msgScroll.CanvasPosition = Vector2.new(0, msgScroll.AbsoluteCanvasSize.Y)
         end)
@@ -1545,7 +1548,7 @@ local function loadLiveChat()
         end
     end)
 
-    -- FUNGSI FETCH PESAN DARI FIREBASE
+    -- FUNGSI FETCH PESAN
     local function fetchChat()
         if not reqFunc then return end
         pcall(function()
@@ -1567,10 +1570,8 @@ local function loadLiveChat()
         end)
     end
 
-    -- Panggil fetch pertama kali biar langsung muncul chat lama
     fetchChat()
 
-    -- Loop Fetch tiap 3 detik
     task.spawn(function()
         while chatContainer and chatContainer.Parent do
             fetchChat()
@@ -2246,7 +2247,7 @@ sideDivider.LayoutOrder = 4
 sideDivider.Parent = SidebarButtonContainer
 
 -- ===== TAB LIVE CHAT =====
-local chatBtn = createSidebarButton("Live Chat", 5, "111339431180386", loadLiveChat)
+local chatBtn = createSidebarButton("Live Chat", 5, "105588735802729", loadLiveChat)
 -- Beri jarak dikit setelah garis
 local spacer = Instance.new("Frame")
 spacer.Size = UDim2.new(1, 0, 0, 4)
