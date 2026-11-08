@@ -808,30 +808,16 @@ local function createPill(textText, width, iconId, layoutOrder, visible)
 	return pill, txt
 end
 
--- 1. Profil Roblox (Avatar bulat)
-local avatarCard
+-- ============================================================
+-- BAGIAN TOP BAR (FOTO, NAMA, ROLE, FOTO OWNER/COUNTDOWN)
+-- ============================================================
 
-if userRole == "Owner" then
-    -- KHUSUS OWNER: Pakai ID Roblox Spesifik
-    local ownerUserId = "71266966320368"
-    
-    avatarCard = createAvatarPill(0, false)
-    local avImg = avatarCard:FindFirstChild("Avatar")
-    if avImg then
-        avImg.Image = "https://www.roblox.com/headshot-thumbnail/image?userId=" .. ownerUserId .. "&width=150&height=150&format=png"
-    end
-    
-    avatarCard.MouseButton1Click:Connect(function()
-        local profileUrl = "https://www.roblox.com/users/" .. ownerUserId .. "/profile"
-        pcall(function()
-            if setclipboard then setclipboard(profileUrl)
-            elseif toclipboard then toclipboard(profileUrl) end
-        end)
-        createTopRightNotification("Owner Profile", "Link profil Owner berhasil di-copy!", "82414580295798", 4)
-    end)
-else
-    -- SELAIN OWNER: Pakai foto & ID milik player itu sendiri
-    avatarCard = createAvatarPill(0, false)
+-- 1. Profil Roblox (Avatar bulat ASLI player) - Fix gambar muncul
+local avatarCard = createAvatarPill(0, false)
+-- Paksa gambar profil muncul setelah dibuat
+local myAvatarImg = avatarCard:FindFirstChild("Avatar")
+if myAvatarImg then
+    myAvatarImg.Image = "https://www.roblox.com/headshot-thumbnail/image?userId=" .. player.UserId .. "&width=150&height=150&format=png"
 end
 
 -- 2. Nickname User (Lebar dinamis menyesuaikan nama)
@@ -839,11 +825,40 @@ local nameLength = #player.Name
 local namePillWidth = math.clamp(nameLength * 6 + 16, 40, 120)
 local nickCard, nickText = createPill(player.Name, namePillWidth, "", 1, false)
 
--- 3. ID Card (Tanpa Ikon, Teks Ke Tengah)
+-- 3. ID Card Role (Owner/Trial/Donatur)
 local trialCard, trialText = createPill(userRole, 50, "", 2, false)
-local zeroCard, zeroText   = createPill("000",   40, "", 3, false)
 
--- 4. Pill Utama
+-- 4. Pill Kanan: Foto ID 71266966320368 (Owner) ATAU Countdown (Trial/Donatur)
+local zeroCard, zeroText
+
+if userRole == "Owner" then
+    -- KHUSUS OWNER: Pill Kanan diganti jadi Foto ID 71266966320368
+    zeroCard = createAvatarPill(3, false)
+    
+    -- Timpa gambar avatar-nya jadi ID Owner
+    local ownerAv = zeroCard:FindFirstChild("Avatar")
+    if ownerAv then
+        ownerAv.Image = "https://www.roblox.com/headshot-thumbnail/image?userId=71266966320368&width=150&height=150&format=png"
+    end
+    
+    -- Timpa fungsi klik biar nge-copy link profil Owner
+    zeroCard.MouseButton1Click:Connect(function()
+        pcall(function()
+            if setclipboard then setclipboard("https://www.roblox.com/users/71266966320368/profile")
+            elseif toclipboard then toclipboard("https://www.roblox.com/users/71266966320368/profile") end
+        end)
+        createTopRightNotification("Owner Profile", "Link profil Owner berhasil di-copy!", "82414580295798", 4)
+    end)
+    
+    -- Dummy teks biar StartCountdown nggak error
+    zeroText = Instance.new("TextLabel")
+    zeroText.Visible = false
+else
+    -- SELAIN OWNER: Pill Kanan isinya Angka Countdown
+    zeroCard, zeroText = createPill("000", 40, "", 3, false)
+end
+
+-- 5. Pill Utama (Game, FPS, Executor)
 local gamePill, gameText = createPill(getGameName(), 145, "83907651602856", 4, true)
 local fpsPill, fpsText = createPill("0", 48, "87621836182790", 5, true)
 local execPill, execText = createPill(detectedExecutor, 68, "76551269066313", 6, true)
@@ -858,7 +873,7 @@ task.spawn(function()
 end)
 
 -- ============================================================
--- REAL-TIME COUNTDOWN UNTUK [TRIAL] & [000]
+-- REAL-TIME COUNTDOWN
 -- ============================================================
 local function FormatTime(seconds)
 	local d = math.floor(seconds / 86400)
@@ -888,16 +903,14 @@ local function StartCountdown()
 			local formattedTime = FormatTime(timeLeftSec)
 			
 			if trialText and zeroText then
-				if userRole == "Owner" then
-					trialText.Text = "Owner"
-					zeroText.Text = "Unlimited"
-				else
-					trialText.Text = userRole -- Donatur / Trial
-					zeroText.Text = formattedTime
-				end
+				trialText.Text = userRole
 				
-				if zeroCard then
-					zeroCard.Size = UDim2.new(0, zeroText.TextBounds.X + 16, 0, 22)
+				-- Jika BUKAN Owner, update angka countdown-nya
+				if userRole ~= "Owner" then
+					zeroText.Text = formattedTime
+					if zeroCard then
+						zeroCard.Size = UDim2.new(0, zeroText.TextBounds.X + 16, 0, 22)
+					end
 				end
 			end
 		else
