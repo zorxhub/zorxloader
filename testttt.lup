@@ -1,5 +1,5 @@
 --============================================================
--- ZORX HUB - FULL UI + LICENSE SYSTEM (FIXED INCOMING MESSAGES CARD)
+-- ZORX HUB - FULL UI + LICENSE SYSTEM (FIXED INCOMING CARD)
 --============================================================
 
 local Players = game:GetService("Players")
@@ -1424,7 +1424,7 @@ local function clearContent()
 end
 
 -- ============================================================
--- LIVE CHAT SYSTEM (FIREBASE) - INCOMING MESSAGES CARD
+-- LIVE CHAT SYSTEM (FIREBASE) - FIX CARD & ICON POSITION
 -- ============================================================
 local chatMessages = {}
 
@@ -1460,14 +1460,13 @@ local function loadLiveChat()
     msgPad.PaddingRight = UDim.new(0, 4)
     msgPad.Parent = msgScroll
 
-    -- 3. Panel Privat (Kanan) - "Incoming Messages" Card
+    -- 3. Panel Privat (Kanan) - "Incoming Messages" Card (DIPINDAH KE BAWAH)
     local privatePanel = Instance.new("Frame")
     privatePanel.Name = "PrivatePanel"
-    -- Lebar 160, Tinggi 110 (Disesuaikan dengan desain baru)
     privatePanel.Size = UDim2.new(0, 160, 0, 110) 
-    -- Posisi di tengah kanan
-    privatePanel.Position = UDim2.new(1, -105, 0.5, -55) 
-    privatePanel.BackgroundColor3 = Color3.fromRGB(22, 22, 27) -- Warna dasar card gelap
+    -- POSISI BARU: Di bawah (sejajar dengan bawah chat)
+    privatePanel.Position = UDim2.new(1, -105, 1, -155) 
+    privatePanel.BackgroundColor3 = Color3.fromRGB(22, 22, 27) 
     privatePanel.Visible = false
     privatePanel.Parent = chatContainer
     
@@ -1476,7 +1475,7 @@ local function loadLiveChat()
     pCorner.Parent = privatePanel
 
     local pStroke = Instance.new("UIStroke")
-    pStroke.Color = Color3.fromRGB(50, 50, 55) -- Garis pinggir
+    pStroke.Color = Color3.fromRGB(50, 50, 55)
     pStroke.Parent = privatePanel
     registerBorder(pStroke)
 
@@ -1492,7 +1491,7 @@ local function loadLiveChat()
     titleIncoming.TextXAlignment = Enum.TextXAlignment.Center
     titleIncoming.Parent = privatePanel
 
-    -- Garis pemisah horizontal di bawah judul
+    -- Garis pemisah
     local titleDivider = Instance.new("Frame")
     titleDivider.Size = UDim2.new(1, -16, 0, 1)
     titleDivider.Position = UDim2.new(0, 8, 0, 26)
@@ -1504,7 +1503,7 @@ local function loadLiveChat()
     local innerBox = Instance.new("Frame")
     innerBox.Size = UDim2.new(1, -16, 0, 52)
     innerBox.Position = UDim2.new(0, 8, 0, 34)
-    innerBox.BackgroundColor3 = Color3.fromRGB(28, 28, 34) -- Warna sedikit lebih terang
+    innerBox.BackgroundColor3 = Color3.fromRGB(28, 28, 34) 
     innerBox.BorderSizePixel = 0
     innerBox.Parent = privatePanel
 
@@ -1517,13 +1516,17 @@ local function loadLiveChat()
     ibStroke.Thickness = 1
     ibStroke.Parent = innerBox
 
-    -- Ikon Amplop di kiri kotak kecil
+    -- FOTO DI KIRI (Menggantikan ikon amplop, pakai ID 139991340829976)
     local iconEnvelope = Instance.new("ImageLabel")
     iconEnvelope.Size = UDim2.new(0, 20, 0, 20)
     iconEnvelope.Position = UDim2.new(0, 10, 0.5, -10)
     iconEnvelope.BackgroundTransparency = 1
-    iconEnvelope.Image = "rbxassetid://10734945215" -- Amplop
+    iconEnvelope.Image = "rbxassetid://139991340829976" -- FOTO BARU
     iconEnvelope.ScaleType = Enum.ScaleType.Fit
+    -- Kasih border melengkung biar rapi
+    local iconCorner = Instance.new("UICorner")
+    iconCorner.CornerRadius = UDim.new(0, 4)
+    iconCorner.Parent = iconEnvelope
     iconEnvelope.Parent = innerBox
 
     -- Teks di dalam kotak kecil
@@ -1551,13 +1554,11 @@ local function loadLiveChat()
 
     -- FOTO DI BAGIAN KANAN CARD (Sesuai request pakai ID 139991340829976)
     local rightPhoto = Instance.new("ImageLabel")
-    -- Ukuran disesuaikan biar pas di kanan card
     rightPhoto.Size = UDim2.new(0, 40, 0, 40) 
-    rightPhoto.Position = UDim2.new(1, -45, 0.5, -20) -- Nempel kanan tengah
+    rightPhoto.Position = UDim2.new(1, -45, 0.5, -20) 
     rightPhoto.BackgroundTransparency = 1
     rightPhoto.Image = "rbxassetid://139991340829976"
     rightPhoto.ScaleType = Enum.ScaleType.Fit
-    -- Sengaja tidak di kasih UICorner biar gambar aslinya kelihatan
     rightPhoto.Parent = privatePanel
 
     -- Simpan referensi ke panel global
@@ -2731,4 +2732,4 @@ apCloseBtn.MouseButton1Click:Connect(function()
 	AnnouncPanel.Size = UDim2.new(0, 260, 0, 42)
 end)
 
-print("ZORX Hub - Full UI (FIXED INCOMING MESSAGES CARD) Loaded Successfully!")
+print("ZORX Hub - Full UI (FIXED INCOMING CARD POSITION & ICON) Loaded Successfully!")
