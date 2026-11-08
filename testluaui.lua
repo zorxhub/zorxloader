@@ -880,6 +880,9 @@ if userRole == "Owner" then
 else
     -- SELAIN OWNER: Pill Angka Countdown
     zeroCard, zeroText = createPill("000", 40, "", 3, false)
+    
+    -- Bikin warnanya KUNING terang
+    zeroText.TextColor3 = Color3.fromRGB(255, 215, 0)
 end
 
 -- 5. Pill Utama (Game, FPS, Executor)
@@ -903,14 +906,13 @@ local function FormatTime(seconds)
 	local d = math.floor(seconds / 86400)
 	local h = math.floor((seconds % 86400) / 3600)
 	local m = math.floor((seconds % 3600) / 60)
-	local s = math.floor(seconds % 60)
 	
 	if d > 0 then
-		return string.format("%d Hari %02d Jam %02d Menit", d, h, m)
+		return string.format("%dd %dh %dm", d, h, m)
 	elseif h > 0 then
-		return string.format("%02d Jam %02d Menit %02d Detik", h, m, s)
+		return string.format("%dh %dm", h, m)
 	else
-		return string.format("%02d Menit %02d Detik", m, s)
+		return string.format("%dm", m)
 	end
 end
 
@@ -930,12 +932,13 @@ local function StartCountdown()
 				trialText.Text = userRole
 				
 				-- Jika BUKAN Owner, update angka countdown-nya
-				if userRole ~= "Owner" then
-					zeroText.Text = formattedTime
-					if zeroCard then
-						zeroCard.Size = UDim2.new(0, zeroText.TextBounds.X + 16, 0, 22)
-					end
-				end
+if userRole ~= "Owner" then
+	zeroText.Text = formattedTime
+	if zeroCard then
+		-- Lebarkan pill biar teks nggak kepotong titik-titik
+		zeroCard.Size = UDim2.new(0, zeroText.TextBounds.X + 30, 0, 22)
+	end
+end
 			end
 		else
 			licenseConnection:Disconnect()
