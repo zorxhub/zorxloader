@@ -883,11 +883,9 @@ else
     
     -- Atur warna berdasarkan Role
     if userRole == "Donatur" then
-        -- Donatur: Kuning
         trialText.TextColor3 = Color3.fromRGB(255, 215, 0)
         zeroText.TextColor3 = Color3.fromRGB(255, 215, 0)
     elseif userRole == "Trial" then
-        -- Trial: Biru
         trialText.TextColor3 = Color3.fromRGB(60, 150, 255)
         zeroText.TextColor3 = Color3.fromRGB(60, 150, 255)
     end
