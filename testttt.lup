@@ -1,5 +1,5 @@
 --============================================================
--- ZORX HUB - FULL UI + LICENSE SYSTEM (FIXED CHAT LAYOUT)
+-- ZORX HUB - FULL UI + LICENSE SYSTEM (FIXED PRIVATE PANEL)
 --============================================================
 
 local Players = game:GetService("Players")
@@ -1424,7 +1424,7 @@ local function clearContent()
 end
 
 -- ============================================================
--- LIVE CHAT SYSTEM (FIREBASE) - FIX LAYOUT INPUT
+-- LIVE CHAT SYSTEM (FIREBASE) - FIX PRIVATE PANEL LAYOUT
 -- ============================================================
 local chatMessages = {}
 
@@ -1441,7 +1441,7 @@ local function loadLiveChat()
     -- 2. Area Chat (Kiri)
     local msgScroll = Instance.new("ScrollingFrame")
     msgScroll.Name = "MsgScroll"
-    msgScroll.Size = UDim2.new(1, 0, 1, -42) -- Dikurangi tinggi input biar ga nabrak
+    msgScroll.Size = UDim2.new(1, -110, 1, -42) -- Dikurangi 110 pixel biar ada ruang buat panel privat
     msgScroll.BackgroundTransparency = 1
     msgScroll.BorderSizePixel = 0
     msgScroll.ScrollBarThickness = 4
@@ -1460,12 +1460,12 @@ local function loadLiveChat()
     msgPad.PaddingRight = UDim.new(0, 4)
     msgPad.Parent = msgScroll
 
-    -- 3. Panel Privat (Kanan) - Tersembunyi dulu (Sekarang di-set duluan biar ga nabrak)
+    -- 3. Panel Privat (Kanan) - Didesain jadi Card seperti di foto
     local privatePanel = Instance.new("Frame")
     privatePanel.Name = "PrivatePanel"
-    privatePanel.Size = UDim2.new(0, 100, 1, -42) -- Dikurangi tinggi input biar ga nabrak
-    privatePanel.Position = UDim2.new(1, -100, 0, 0) -- Nempel mentok kanan
-    privatePanel.BackgroundColor3 = Colors.Slot
+    privatePanel.Size = UDim2.new(0, 200, 0, 70) -- Ukuran kotak card
+    privatePanel.Position = UDim2.new(1, -105, 0.5, -35) -- Posisi di tengah kanan
+    privatePanel.BackgroundColor3 = Colors.Slot 
     privatePanel.Visible = false
     privatePanel.Parent = chatContainer
     
@@ -1478,43 +1478,46 @@ local function loadLiveChat()
     pStroke.Parent = privatePanel
     registerBorder(pStroke)
 
-    local noMsgLabel = Instance.new("TextLabel")
-    noMsgLabel.Size = UDim2.new(1, -8, 0, 16)
-    noMsgLabel.Position = UDim2.new(0, 4, 0, 8)
-    noMsgLabel.BackgroundTransparency = 1
-    noMsgLabel.Text = "No private message yet"
-    noMsgLabel.TextColor3 = Colors.SubText
-    noMsgLabel.Font = Enum.Font.Gotham
-    noMsgLabel.TextSize = 8
-    noMsgLabel.TextXAlignment = Enum.TextXAlignment.Left
-    noMsgLabel.Parent = privatePanel
+    -- Ikon Amplop (Kiri)
+    local iconEnvelope = Instance.new("ImageLabel")
+    iconEnvelope.Size = UDim2.new(0, 24, 0, 24)
+    iconEnvelope.Position = UDim2.new(0, 12, 0.5, -12)
+    iconEnvelope.BackgroundTransparency = 1
+    -- Asset ID amplop (bisa diganti kalau kurang pas)
+    iconEnvelope.Image = "rbxassetid://10734945215" 
+    iconEnvelope.ScaleType = Enum.ScaleType.Fit
+    iconEnvelope.Parent = privatePanel
 
-    local tapMsgLabel = Instance.new("TextLabel")
-    tapMsgLabel.Size = UDim2.new(1, -8, 0, 12)
-    tapMsgLabel.Position = UDim2.new(0, 4, 0, 26)
-    tapMsgLabel.BackgroundTransparency = 1
-    tapMsgLabel.Text = "Tap a message, then Privat"
-    tapMsgLabel.TextColor3 = Colors.SubText
-    tapMsgLabel.Font = Enum.Font.Gotham
-    tapMsgLabel.TextSize = 8
-    tapMsgLabel.TextXAlignment = Enum.TextXAlignment.Left
-    tapMsgLabel.Parent = privatePanel
+    -- Teks Utama (Tebal)
+    local titleMsg = Instance.new("TextLabel")
+    titleMsg.Size = UDim2.new(1, -50, 0, 16)
+    titleMsg.Position = UDim2.new(0, 44, 0, 16)
+    titleMsg.BackgroundTransparency = 1
+    titleMsg.Text = "No privat massage yet."
+    titleMsg.TextColor3 = Color3.fromRGB(180, 180, 190) 
+    titleMsg.Font = Enum.Font.GothamBold
+    titleMsg.TextSize = 11
+    titleMsg.TextXAlignment = Enum.TextXAlignment.Left
+    titleMsg.Parent = privatePanel
 
-    local privatePhoto = Instance.new("ImageLabel")
-    privatePhoto.Size = UDim2.new(0, 40, 0, 40)
-    privatePhoto.Position = UDim2.new(1, -45, 0, 8)
-    privatePhoto.BackgroundTransparency = 1
-    privatePhoto.Image = "rbxassetid://139991340829976"
-    privatePhoto.ScaleType = Enum.ScaleType.Fit
-    privatePhoto.Parent = privatePanel
+    -- Teks Kecil (Bawah)
+    local subMsg = Instance.new("TextLabel")
+    subMsg.Size = UDim2.new(1, -50, 0, 12)
+    subMsg.Position = UDim2.new(0, 44, 0, 34)
+    subMsg.BackgroundTransparency = 1
+    subMsg.Text = "Tap a massage, then Privat.."
+    subMsg.TextColor3 = Colors.SubText
+    subMsg.Font = Enum.Font.Gotham
+    subMsg.TextSize = 9
+    subMsg.TextXAlignment = Enum.TextXAlignment.Left
+    subMsg.Parent = privatePanel
 
-    -- 4. Input Chat (Bawah) - FIX: Memanjang ke kanan penuh
+    -- 4. Input Chat (Bawah) - Full width
     local inputFrame = Instance.new("Frame")
     inputFrame.Name = "InputFrame"
-    -- Ukuran disesuaikan biar rapi (full width tanpa ngurangin 110 pixel kayak sebelumnya)
     inputFrame.Size = UDim2.new(1, 0, 0, 34) 
     inputFrame.Position = UDim2.new(0, 0, 1, -34) 
-    inputFrame.AnchorPoint = Vector2.new(0, 1) -- Nempel di bawah
+    inputFrame.AnchorPoint = Vector2.new(0, 1) 
     inputFrame.BackgroundColor3 = Colors.Slot
     inputFrame.BorderSizePixel = 0
     inputFrame.Parent = chatContainer
@@ -2680,4 +2683,4 @@ apCloseBtn.MouseButton1Click:Connect(function()
 	AnnouncPanel.Size = UDim2.new(0, 260, 0, 42)
 end)
 
-print("ZORX Hub - Full UI (FIXED CHAT LAYOUT) Loaded Successfully!")
+print("ZORX Hub - Full UI (FIXED PRIVATE PANEL) Loaded Successfully!")
