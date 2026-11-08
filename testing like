@@ -18,6 +18,17 @@ local reqFunc = (type(request) == "function" and request)
 	or (type(http_request) == "function" and http_request) 
 	or nil
 
+-- ===== AUTO-CLEAR CHAT SAAT EXECUTE ULANG =====
+if reqFunc then
+    pcall(function()
+        reqFunc({
+            Url = "https://zorx-broadcast-default-rtdb.firebaseio.com/chat.json",
+            Method = "DELETE"
+        })
+    end)
+end
+-- ==============================================
+
 -- ============================================================
 -- SYSTEM BLOKIR / DESTROY (JIKA WAKTU HABIS)
 -- ============================================================
@@ -1375,17 +1386,6 @@ local chatMessages = {}
 
 local function loadLiveChat()
     clearContent()
-
--- ===== FITUR HAPUS CHAT SETIAP EXECUTE =====
-if reqFunc then
-    pcall(function()
-        reqFunc({
-            Url = "https://zorx-broadcast-default-rtdb.firebaseio.com/chat.json",
-            Method = "DELETE"
-        })
-    end)
-end
--- ===========================================
 
     -- Container Utama Chat
     local chatContainer = Instance.new("Frame")
