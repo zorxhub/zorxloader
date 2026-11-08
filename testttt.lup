@@ -18,6 +18,17 @@ local reqFunc = (type(request) == "function" and request)
 	or (type(http_request) == "function" and http_request) 
 	or nil
 
+-- ===== AUTO-CLEAR CHAT SAAT EXECUTE ULANG =====
+if reqFunc then
+    pcall(function()
+        reqFunc({
+            Url = "https://zorx-broadcast-default-rtdb.firebaseio.com/chat.json",
+            Method = "DELETE"
+        })
+    end)
+end
+-- ==============================================
+
 -- ============================================================
 -- SYSTEM BLOKIR / DESTROY (JIKA WAKTU HABIS)
 -- ============================================================
@@ -896,6 +907,56 @@ local gamePill, gameText = createPill(getGameName(), 145, "83907651602856", 4, t
 local fpsPill, fpsText = createPill("0", 48, "87621836182790", 5, true)
 local execPill, execText = createPill(detectedExecutor, 68, "76551269066313", 6, true)
 
+local chatPill = Instance.new("Frame")
+chatPill.Name = "ChatPill"
+chatPill.Size = UDim2.new(0, 68, 0, 22)
+chatPill.BackgroundColor3 = DefaultPillBg
+chatPill.BorderSizePixel = 0
+chatPill.LayoutOrder = 6
+chatPill.Visible = false
+chatPill.Parent = PillContainer
+
+local cpCorner = Instance.new("UICorner")
+cpCorner.CornerRadius = UDim.new(0, 5)
+cpCorner.Parent = chatPill
+
+local cpStroke = Instance.new("UIStroke")
+cpStroke.Color = DefaultPillStroke
+cpStroke.Thickness = 1
+cpStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+cpStroke.Parent = chatPill
+table.insert(allPills, chatPill)
+table.insert(allPillStrokes, cpStroke)
+
+local cpIcon = Instance.new("ImageLabel")
+cpIcon.Size = UDim2.new(0, 15, 0, 15)
+cpIcon.Position = UDim2.new(0, 9, 0.5, -7.5)
+cpIcon.BackgroundTransparency = 1
+cpIcon.Image = "rbxassetid://139991340829976"
+cpIcon.ScaleType = Enum.ScaleType.Fit
+cpIcon.Parent = chatPill
+
+local cpText = Instance.new("TextLabel")
+cpText.Size = UDim2.new(1, -24, 1, 0)
+cpText.Position = UDim2.new(0, 22, 0, 0)
+cpText.BackgroundTransparency = 1
+cpText.Text = "Privat"
+cpText.TextColor3 = DefaultPillText
+cpText.Font = Enum.Font.GothamBold
+cpText.TextSize = 10
+cpText.TextXAlignment = Enum.TextXAlignment.Center
+cpText.Parent = chatPill
+table.insert(allPillTexts, cpText)
+
+-- Klik pill buat buka/tutup panel privat
+chatPill.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        if _G.TogglePrivatePanel then
+            _G.TogglePrivatePanel()
+        end
+    end
+end)
+
 task.spawn(function()
 	while task.wait(5) do
 		local newName = getGameName()
@@ -1376,17 +1437,17 @@ local chatMessages = {}
 local function loadLiveChat()
     clearContent()
 
-    -- Container Utama Chat
+    -- 1. Container Utama Chat
     local chatContainer = Instance.new("Frame")
     chatContainer.Name = "ChatContainer"
     chatContainer.Size = UDim2.new(1, 0, 1, 0)
     chatContainer.BackgroundTransparency = 1
     chatContainer.Parent = Scroll
 
-    -- Area Tampilan Pesan (Scrolling)
+    -- 2. Area Chat (Kiri)
     local msgScroll = Instance.new("ScrollingFrame")
     msgScroll.Name = "MsgScroll"
-    msgScroll.Size = UDim2.new(1, 0, 1, -48)
+    msgScroll.Size = UDim2.new(1, -110, 1, -48)
     msgScroll.BackgroundTransparency = 1
     msgScroll.BorderSizePixel = 0
     msgScroll.ScrollBarThickness = 4
@@ -1397,7 +1458,7 @@ local function loadLiveChat()
 
     local msgList = Instance.new("UIListLayout")
     msgList.SortOrder = Enum.SortOrder.LayoutOrder
-    msgList.Padding = UDim.new(0, 8)
+    msgList.Padding = UDim.new(0, 6)
     msgList.Parent = msgScroll
 
     local msgPad = Instance.new("UIPadding")
@@ -1405,10 +1466,58 @@ local function loadLiveChat()
     msgPad.PaddingRight = UDim.new(0, 4)
     msgPad.Parent = msgScroll
 
-    -- Input Chat (Bawah) - Dinaikin dikit
+    -- 3. Panel Privat (Kanan) - Tersembunyi dulu
+    local privatePanel = Instance.new("Frame")
+    privatePanel.Name = "PrivatePanel"
+    privatePanel.Size = UDim2.new(0, 100, 1, -48)
+    privatePanel.Position = UDim2.new(1, -105, 0, 0)
+    privatePanel.BackgroundColor3 = Colors.Slot
+    privatePanel.Visible = false
+    privatePanel.Parent = chatContainer
+    
+    local pCorner = Instance.new("UICorner")
+    pCorner.CornerRadius = UDim.new(0, 6)
+    pCorner.Parent = privatePanel
+
+    local pStroke = Instance.new("UIStroke")
+    pStroke.Color = ThemeColors[ActiveTheme].border
+    pStroke.Parent = privatePanel
+    registerBorder(pStroke)
+
+    local noMsgLabel = Instance.new("TextLabel")
+    noMsgLabel.Size = UDim2.new(1, -8, 0, 16)
+    noMsgLabel.Position = UDim2.new(0, 4, 0, 8)
+    noMsgLabel.BackgroundTransparency = 1
+    noMsgLabel.Text = "No private message yet"
+    noMsgLabel.TextColor3 = Colors.SubText
+    noMsgLabel.Font = Enum.Font.Gotham
+    noMsgLabel.TextSize = 8
+    noMsgLabel.TextXAlignment = Enum.TextXAlignment.Left
+    noMsgLabel.Parent = privatePanel
+
+    local tapMsgLabel = Instance.new("TextLabel")
+    tapMsgLabel.Size = UDim2.new(1, -8, 0, 12)
+    tapMsgLabel.Position = UDim2.new(0, 4, 0, 26)
+    tapMsgLabel.BackgroundTransparency = 1
+    tapMsgLabel.Text = "Tap a message, then Privat"
+    tapMsgLabel.TextColor3 = Colors.SubText
+    tapMsgLabel.Font = Enum.Font.Gotham
+    tapMsgLabel.TextSize = 8
+    tapMsgLabel.TextXAlignment = Enum.TextXAlignment.Left
+    tapMsgLabel.Parent = privatePanel
+
+    local privatePhoto = Instance.new("ImageLabel")
+    privatePhoto.Size = UDim2.new(0, 40, 0, 40)
+    privatePhoto.Position = UDim2.new(1, -45, 0, 8)
+    privatePhoto.BackgroundTransparency = 1
+    privatePhoto.Image = "rbxassetid://139991340829976"
+    privatePhoto.ScaleType = Enum.ScaleType.Fit
+    privatePhoto.Parent = privatePanel
+
+    -- 4. Input Chat (Bawah)
     local inputFrame = Instance.new("Frame")
     inputFrame.Name = "InputFrame"
-    inputFrame.Size = UDim2.new(1, 0, 0, 34)
+    inputFrame.Size = UDim2.new(1, -110, 0, 34)
     inputFrame.Position = UDim2.new(0, 0, 1, -42)
     inputFrame.BackgroundColor3 = Colors.Slot
     inputFrame.BorderSizePixel = 0
@@ -1431,7 +1540,7 @@ local function loadLiveChat()
     chatBox.Position = UDim2.new(0, 8, 0, 0)
     chatBox.BackgroundTransparency = 1
     chatBox.Text = ""
-    chatBox.PlaceholderText = "Ketik pesan..."
+    chatBox.PlaceholderText = "Message #general /help"
     chatBox.PlaceholderColor3 = Colors.SubText
     chatBox.TextColor3 = Colors.Text
     chatBox.Font = Enum.Font.Gotham
@@ -1440,7 +1549,6 @@ local function loadLiveChat()
     chatBox.ClearTextOnFocus = false
     chatBox.Parent = inputFrame
 
-    -- TOMBOL KIRIM (Pakai ImageButton + ID Baru)
     local sendBtn = Instance.new("ImageButton")
     sendBtn.Size = UDim2.new(0, 24, 0, 24)
     sendBtn.Position = UDim2.new(1, -32, 0.5, -12)
@@ -1455,7 +1563,36 @@ local function loadLiveChat()
     sbCorner.CornerRadius = UDim.new(0, 4)
     sbCorner.Parent = sendBtn
 
-    -- FUNGSI RENDER PESAN KE UI (PAKAI FOTO ASLI PLAYER)
+    -- 5. TOMBOL FOTO (Kotak melengkung, bukan bulat)
+    local openPrivateBtn = Instance.new("ImageButton")
+    openPrivateBtn.Size = UDim2.new(0, 40, 0, 24)
+    openPrivateBtn.Position = UDim2.new(1, -50, 1, -40)
+    openPrivateBtn.BackgroundColor3 = Colors.Slot
+    openPrivateBtn.BorderSizePixel = 0
+    openPrivateBtn.Image = "rbxassetid://139991340829976"
+    openPrivateBtn.ScaleType = Enum.ScaleType.Fit
+    openPrivateBtn.AutoButtonColor = false
+    openPrivateBtn.Parent = chatContainer
+
+    local opCorner = Instance.new("UICorner")
+    opCorner.CornerRadius = UDim.new(0, 5)
+    opCorner.Parent = openPrivateBtn
+
+    local opStroke = Instance.new("UIStroke")
+    opStroke.Color = ThemeColors[ActiveTheme].border
+    opStroke.Parent = openPrivateBtn
+    registerBorder(opStroke)
+
+    -- Simpan referensi ke panel global
+    _G.TogglePrivatePanel = function()
+        privatePanel.Visible = not privatePanel.Visible
+    end
+
+    openPrivateBtn.MouseButton1Click:Connect(function()
+        _G.TogglePrivatePanel()
+    end)
+
+    -- FUNGSI RENDER PESAN
     local function renderMessages()
         for _, child in pairs(msgScroll:GetChildren()) do
             if child:IsA("Frame") then child:Destroy() end
@@ -1473,19 +1610,15 @@ local function loadLiveChat()
             msgFrame.LayoutOrder = i
             msgFrame.Parent = msgScroll
 
-            -- 1. FOTO PROFIL (PAKAI HEADSHOT ASLI PLAYER)
             local senderPlayer = Players:FindFirstChild(msgData.Sender)
-            local senderId = player.UserId -- Default
-            if senderPlayer then
-                senderId = senderPlayer.UserId
-            end
+            local senderId = msgData.SenderId or 1
 
             local avatarImg = Instance.new("ImageLabel")
             avatarImg.Size = UDim2.new(0, 24, 0, 24)
             avatarImg.Position = UDim2.new(0, 0, 0, 0)
             avatarImg.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
             avatarImg.BorderSizePixel = 0
-            avatarImg.Image = "https://www.roblox.com/headshot-thumbnail/image?userId=" .. senderId .. "&width=150&height=150&format=png"
+            avatarImg.Image = "https://www.roblox.com/headshot-thumbnail/image?userId=" .. tostring(senderId) .. "&width=150&height=150&format=png"
             avatarImg.ScaleType = Enum.ScaleType.Crop
             avatarImg.Parent = msgFrame
 
@@ -1493,19 +1626,21 @@ local function loadLiveChat()
             avCorner.CornerRadius = UDim.new(1, 0) 
             avCorner.Parent = avatarImg
 
-            -- 2. NAMA PENGIRIM
+            local hash = 0
+            for j = 1, #msgData.Sender do hash = hash + string.byte(msgData.Sender, j) end
+            local hue = (hash % 100) / 100
+
             local nameLbl = Instance.new("TextLabel")
             nameLbl.Size = UDim2.new(1, -32, 0, 14)
             nameLbl.Position = UDim2.new(0, 32, 0, 0)
             nameLbl.BackgroundTransparency = 1
             nameLbl.Text = msgData.Sender
-            nameLbl.TextColor3 = isMe and Color3.fromRGB(100, 255, 100) or Color3.fromRGB(150, 150, 255)
+            nameLbl.TextColor3 = isMe and Color3.fromRGB(100, 255, 100) or Color3.fromHSV(hue, 0.7, 1)
             nameLbl.Font = Enum.Font.GothamBold
             nameLbl.TextSize = 10
             nameLbl.TextXAlignment = Enum.TextXAlignment.Left
             nameLbl.Parent = msgFrame
 
-            -- 3. ISI PESAN
             local textLbl = Instance.new("TextLabel")
             textLbl.Size = UDim2.new(1, -32, 0, 0)
             textLbl.Position = UDim2.new(0, 32, 0, 14)
@@ -1533,13 +1668,14 @@ local function loadLiveChat()
 
         if reqFunc then
             pcall(function()
-                local url = "https://zorx-broadcast-default-rtdb.firebaseio.com/chat/" .. tostring(os.time()) .. player.UserId .. ".json"
+                local url = "https://zorx-broadcast-default-rtdb.firebaseio.com/chat/public/General/" .. tostring(os.time()) .. player.UserId .. ".json"
                 reqFunc({
                     Url = url,
                     Method = "PUT",
                     Headers = { ["Content-Type"] = "application/json" },
                     Body = HttpService:JSONEncode({
                         Sender = player.Name,
+                        SenderId = player.UserId,
                         Message = text,
                         Time = os.time()
                     })
@@ -1552,7 +1688,7 @@ local function loadLiveChat()
     local function fetchChat()
         if not reqFunc then return end
         pcall(function()
-            local url = "https://zorx-broadcast-default-rtdb.firebaseio.com/chat.json"
+            local url = "https://zorx-broadcast-default-rtdb.firebaseio.com/chat/public/General.json"
             local res = reqFunc({ Url = url, Method = "GET" })
             if res and (res.StatusCode == 200 or res.Status == 200) then
                 local data = HttpService:JSONDecode(res.Body)
@@ -1640,7 +1776,16 @@ local function createSidebarButton(text, order, iconId, onClick)
 		end
 		activeTab = btn
 		TweenService:Create(btn, TweenInfo.new(0.15), { BackgroundTransparency = 0.5, BackgroundColor3 = Colors.SlotHover }):Play()
-		TweenService:Create(textLabel, TweenInfo.new(0.15), { TextColor3 = Colors.Text }):Play()
+		TweenService:Create(textLabel, TweenInfo.new(0.15), { TextColor3 = Colors.Text }):Play() 
+
+-- === GANTI PILL: Live Chat = Pill Privat, Tab Lain = Pill Delta ===
+if text == "Live Chat" then
+    if execPill then execPill.Visible = false end
+    if chatPill then chatPill.Visible = true end
+else
+    if execPill then execPill.Visible = true end
+    if chatPill then chatPill.Visible = false end
+end
 		if onClick then onClick() end
 	end)
 
