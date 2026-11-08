@@ -907,9 +907,10 @@ local gamePill, gameText = createPill(getGameName(), 145, "83907651602856", 4, t
 local fpsPill, fpsText = createPill("0", 48, "87621836182790", 5, true)
 local execPill, execText = createPill(detectedExecutor, 68, "76551269066313", 6, true)
 
+-- ===== PILL PRIVAT (KHUSUS LIVE CHAT) =====
 local chatPill = Instance.new("Frame")
 chatPill.Name = "ChatPill"
-chatPill.Size = UDim2.new(0, 68, 0, 22)
+chatPill.Size = UDim2.new(0, 22, 0, 22) -- Bulat 22x22 kayak avatar
 chatPill.BackgroundColor3 = DefaultPillBg
 chatPill.BorderSizePixel = 0
 chatPill.LayoutOrder = 6
@@ -917,7 +918,7 @@ chatPill.Visible = false
 chatPill.Parent = PillContainer
 
 local cpCorner = Instance.new("UICorner")
-cpCorner.CornerRadius = UDim.new(0, 5)
+cpCorner.CornerRadius = UDim.new(1, 0) -- Bulat
 cpCorner.Parent = chatPill
 
 local cpStroke = Instance.new("UIStroke")
@@ -929,24 +930,17 @@ table.insert(allPills, chatPill)
 table.insert(allPillStrokes, cpStroke)
 
 local cpIcon = Instance.new("ImageLabel")
-cpIcon.Size = UDim2.new(0, 15, 0, 15)
-cpIcon.Position = UDim2.new(0, 9, 0.5, -7.5)
+cpIcon.Size = UDim2.new(1, -2, 1, -2)
+cpIcon.Position = UDim2.new(0.5, 0, 0.5, 0)
+cpIcon.AnchorPoint = Vector2.new(0.5, 0.5)
 cpIcon.BackgroundTransparency = 1
 cpIcon.Image = "rbxassetid://139991340829976"
-cpIcon.ScaleType = Enum.ScaleType.Fit
+cpIcon.ScaleType = Enum.ScaleType.Crop
 cpIcon.Parent = chatPill
 
-local cpText = Instance.new("TextLabel")
-cpText.Size = UDim2.new(1, -24, 1, 0)
-cpText.Position = UDim2.new(0, 22, 0, 0)
-cpText.BackgroundTransparency = 1
-cpText.Text = "Privat"
-cpText.TextColor3 = DefaultPillText
-cpText.Font = Enum.Font.GothamBold
-cpText.TextSize = 10
-cpText.TextXAlignment = Enum.TextXAlignment.Center
-cpText.Parent = chatPill
-table.insert(allPillTexts, cpText)
+local cpIconCorner = Instance.new("UICorner")
+cpIconCorner.CornerRadius = UDim.new(1, 0)
+cpIconCorner.Parent = cpIcon
 
 -- Klik pill buat buka/tutup panel privat
 chatPill.InputBegan:Connect(function(input)
@@ -1563,34 +1557,10 @@ local function loadLiveChat()
     sbCorner.CornerRadius = UDim.new(0, 4)
     sbCorner.Parent = sendBtn
 
-    -- 5. TOMBOL FOTO (Kotak melengkung, bukan bulat)
-    local openPrivateBtn = Instance.new("ImageButton")
-    openPrivateBtn.Size = UDim2.new(0, 40, 0, 24)
-    openPrivateBtn.Position = UDim2.new(1, -50, 1, -40)
-    openPrivateBtn.BackgroundColor3 = Colors.Slot
-    openPrivateBtn.BorderSizePixel = 0
-    openPrivateBtn.Image = "rbxassetid://139991340829976"
-    openPrivateBtn.ScaleType = Enum.ScaleType.Fit
-    openPrivateBtn.AutoButtonColor = false
-    openPrivateBtn.Parent = chatContainer
-
-    local opCorner = Instance.new("UICorner")
-    opCorner.CornerRadius = UDim.new(0, 5)
-    opCorner.Parent = openPrivateBtn
-
-    local opStroke = Instance.new("UIStroke")
-    opStroke.Color = ThemeColors[ActiveTheme].border
-    opStroke.Parent = openPrivateBtn
-    registerBorder(opStroke)
-
     -- Simpan referensi ke panel global
     _G.TogglePrivatePanel = function()
         privatePanel.Visible = not privatePanel.Visible
     end
-
-    openPrivateBtn.MouseButton1Click:Connect(function()
-        _G.TogglePrivatePanel()
-    end)
 
     -- FUNGSI RENDER PESAN
     local function renderMessages()
