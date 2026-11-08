@@ -1,5 +1,5 @@
 --============================================================
--- ZORX HUB - FULL UI + LICENSE SYSTEM (FIXED CHAT LAYOUT & PILL)
+-- ZORX HUB - FULL UI + LICENSE SYSTEM (FIXED CHAT LAYOUT)
 --============================================================
 
 local Players = game:GetService("Players")
@@ -907,10 +907,10 @@ local gamePill, gameText = createPill(getGameName(), 145, "83907651602856", 4, t
 local fpsPill, fpsText = createPill("0", 48, "87621836182790", 5, true)
 local execPill, execText = createPill(detectedExecutor, 68, "76551269066313", 6, true)
 
--- ===== PILL PRIVAT (KHUSUS LIVE CHAT) - FIX: KOTAK BUKAN BULAT =====
+-- ===== PILL PRIVAT (KHUSUS LIVE CHAT) - KOTAK BUKAN BULAT =====
 local chatPill = Instance.new("Frame")
 chatPill.Name = "ChatPill"
-chatPill.Size = UDim2.new(0, 32, 0, 22) -- Ukuran kotak (bukan 22x22 bulat)
+chatPill.Size = UDim2.new(0, 32, 0, 22) -- Ukuran kotak
 chatPill.BackgroundColor3 = DefaultPillBg
 chatPill.BorderSizePixel = 0
 chatPill.LayoutOrder = 6
@@ -918,7 +918,7 @@ chatPill.Visible = false
 chatPill.Parent = PillContainer
 
 local cpCorner = Instance.new("UICorner")
-cpCorner.CornerRadius = UDim.new(0, 5) -- Sudut melengkung standar, bukan bulat penuh
+cpCorner.CornerRadius = UDim.new(0, 5) -- Sudut melengkung standar
 cpCorner.Parent = chatPill
 
 local cpStroke = Instance.new("UIStroke")
@@ -930,7 +930,7 @@ table.insert(allPills, chatPill)
 table.insert(allPillStrokes, cpStroke)
 
 local cpIcon = Instance.new("ImageLabel")
-cpIcon.Size = UDim2.new(0, 16, 0, 16) -- Ukuran gambar
+cpIcon.Size = UDim2.new(0, 16, 0, 16)
 cpIcon.Position = UDim2.new(0.5, 0, 0.5, 0)
 cpIcon.AnchorPoint = Vector2.new(0.5, 0.5)
 cpIcon.BackgroundTransparency = 1
@@ -939,7 +939,7 @@ cpIcon.ScaleType = Enum.ScaleType.Fit
 cpIcon.Parent = chatPill
 
 local cpIconCorner = Instance.new("UICorner")
-cpIconCorner.CornerRadius = UDim.new(0, 4) -- Gambar di dalam kotak melengkung
+cpIconCorner.CornerRadius = UDim.new(0, 4)
 cpIconCorner.Parent = cpIcon
 
 -- Klik pill buat buka/tutup panel privat
@@ -1424,7 +1424,7 @@ local function clearContent()
 end
 
 -- ============================================================
--- LIVE CHAT SYSTEM (FIREBASE) - PERBAIKAN LAYOUT
+-- LIVE CHAT SYSTEM (FIREBASE) - FIX LAYOUT INPUT
 -- ============================================================
 local chatMessages = {}
 
@@ -1438,11 +1438,33 @@ local function loadLiveChat()
     chatContainer.BackgroundTransparency = 1
     chatContainer.Parent = Scroll
 
-    -- 2. Panel Privat (Kanan) - Tersembunyi dulu (Sekarang di-set duluan biar ga nabrak)
+    -- 2. Area Chat (Kiri)
+    local msgScroll = Instance.new("ScrollingFrame")
+    msgScroll.Name = "MsgScroll"
+    msgScroll.Size = UDim2.new(1, 0, 1, -42) -- Dikurangi tinggi input biar ga nabrak
+    msgScroll.BackgroundTransparency = 1
+    msgScroll.BorderSizePixel = 0
+    msgScroll.ScrollBarThickness = 4
+    msgScroll.ScrollBarImageColor3 = Colors.Stroke
+    msgScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
+    msgScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+    msgScroll.Parent = chatContainer
+
+    local msgList = Instance.new("UIListLayout")
+    msgList.SortOrder = Enum.SortOrder.LayoutOrder
+    msgList.Padding = UDim.new(0, 6)
+    msgList.Parent = msgScroll
+
+    local msgPad = Instance.new("UIPadding")
+    msgPad.PaddingTop = UDim.new(0, 4)
+    msgPad.PaddingRight = UDim.new(0, 4)
+    msgPad.Parent = msgScroll
+
+    -- 3. Panel Privat (Kanan) - Tersembunyi dulu (Sekarang di-set duluan biar ga nabrak)
     local privatePanel = Instance.new("Frame")
     privatePanel.Name = "PrivatePanel"
     privatePanel.Size = UDim2.new(0, 100, 1, -42) -- Dikurangi tinggi input biar ga nabrak
-    privatePanel.Position = UDim2.new(1, -105, 0, 0)
+    privatePanel.Position = UDim2.new(1, -100, 0, 0) -- Nempel mentok kanan
     privatePanel.BackgroundColor3 = Colors.Slot
     privatePanel.Visible = false
     privatePanel.Parent = chatContainer
@@ -1486,33 +1508,11 @@ local function loadLiveChat()
     privatePhoto.ScaleType = Enum.ScaleType.Fit
     privatePhoto.Parent = privatePanel
 
-    -- 3. Area Chat (Kiri)
-    local msgScroll = Instance.new("ScrollingFrame")
-    msgScroll.Name = "MsgScroll"
-    msgScroll.Size = UDim2.new(1, -110, 1, -42) -- Dikurangi tinggi input biar ga nabrak
-    msgScroll.BackgroundTransparency = 1
-    msgScroll.BorderSizePixel = 0
-    msgScroll.ScrollBarThickness = 4
-    msgScroll.ScrollBarImageColor3 = Colors.Stroke
-    msgScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
-    msgScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
-    msgScroll.Parent = chatContainer
-
-    local msgList = Instance.new("UIListLayout")
-    msgList.SortOrder = Enum.SortOrder.LayoutOrder
-    msgList.Padding = UDim.new(0, 6)
-    msgList.Parent = msgScroll
-
-    local msgPad = Instance.new("UIPadding")
-    msgPad.PaddingTop = UDim.new(0, 4)
-    msgPad.PaddingRight = UDim.new(0, 4)
-    msgPad.Parent = msgScroll
-
-    -- 4. Input Chat (Bawah)
+    -- 4. Input Chat (Bawah) - FIX: Memanjang ke kanan penuh
     local inputFrame = Instance.new("Frame")
     inputFrame.Name = "InputFrame"
-    -- FIX: Lebar disesuaikan (nggak ngambil -110), posisi di bawah pake AnchorPoint
-    inputFrame.Size = UDim2.new(1, -110, 0, 34) 
+    -- Ukuran disesuaikan biar rapi (full width tanpa ngurangin 110 pixel kayak sebelumnya)
+    inputFrame.Size = UDim2.new(1, 0, 0, 34) 
     inputFrame.Position = UDim2.new(0, 0, 1, -34) 
     inputFrame.AnchorPoint = Vector2.new(0, 1) -- Nempel di bawah
     inputFrame.BackgroundColor3 = Colors.Slot
@@ -2680,4 +2680,4 @@ apCloseBtn.MouseButton1Click:Connect(function()
 	AnnouncPanel.Size = UDim2.new(0, 260, 0, 42)
 end)
 
-print("ZORX Hub - Full UI (FIXED CHAT LAYOUT & PILL) Loaded Successfully!")
+print("ZORX Hub - Full UI (FIXED CHAT LAYOUT) Loaded Successfully!")
