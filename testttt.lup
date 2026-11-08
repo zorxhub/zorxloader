@@ -1,5 +1,5 @@
 --============================================================
--- ZORX HUB - FULL UI + LICENSE SYSTEM (FIXED PRIVATE PANEL)
+-- ZORX HUB - FULL UI + LICENSE SYSTEM (FIXED INCOMING MESSAGES CARD)
 --============================================================
 
 local Players = game:GetService("Players")
@@ -1424,7 +1424,7 @@ local function clearContent()
 end
 
 -- ============================================================
--- LIVE CHAT SYSTEM (FIREBASE) - FIX PRIVATE PANEL LAYOUT
+-- LIVE CHAT SYSTEM (FIREBASE) - INCOMING MESSAGES CARD
 -- ============================================================
 local chatMessages = {}
 
@@ -1441,7 +1441,7 @@ local function loadLiveChat()
     -- 2. Area Chat (Kiri)
     local msgScroll = Instance.new("ScrollingFrame")
     msgScroll.Name = "MsgScroll"
-    msgScroll.Size = UDim2.new(1, -110, 1, -42) -- Dikurangi 110 pixel biar ada ruang buat panel privat
+    msgScroll.Size = UDim2.new(1, -110, 1, -42) 
     msgScroll.BackgroundTransparency = 1
     msgScroll.BorderSizePixel = 0
     msgScroll.ScrollBarThickness = 4
@@ -1460,12 +1460,14 @@ local function loadLiveChat()
     msgPad.PaddingRight = UDim.new(0, 4)
     msgPad.Parent = msgScroll
 
-    -- 3. Panel Privat (Kanan) - Didesain jadi Card seperti di foto
+    -- 3. Panel Privat (Kanan) - "Incoming Messages" Card
     local privatePanel = Instance.new("Frame")
     privatePanel.Name = "PrivatePanel"
-    privatePanel.Size = UDim2.new(0, 200, 0, 70) -- Ukuran kotak card
-    privatePanel.Position = UDim2.new(1, -105, 0.5, -35) -- Posisi di tengah kanan
-    privatePanel.BackgroundColor3 = Colors.Slot 
+    -- Lebar 160, Tinggi 110 (Disesuaikan dengan desain baru)
+    privatePanel.Size = UDim2.new(0, 160, 0, 110) 
+    -- Posisi di tengah kanan
+    privatePanel.Position = UDim2.new(1, -105, 0.5, -55) 
+    privatePanel.BackgroundColor3 = Color3.fromRGB(22, 22, 27) -- Warna dasar card gelap
     privatePanel.Visible = false
     privatePanel.Parent = chatContainer
     
@@ -1474,43 +1476,94 @@ local function loadLiveChat()
     pCorner.Parent = privatePanel
 
     local pStroke = Instance.new("UIStroke")
-    pStroke.Color = ThemeColors[ActiveTheme].border
+    pStroke.Color = Color3.fromRGB(50, 50, 55) -- Garis pinggir
     pStroke.Parent = privatePanel
     registerBorder(pStroke)
 
-    -- Ikon Amplop (Kiri)
+    -- Judul "Incoming messages"
+    local titleIncoming = Instance.new("TextLabel")
+    titleIncoming.Size = UDim2.new(1, -16, 0, 18)
+    titleIncoming.Position = UDim2.new(0, 8, 0, 6)
+    titleIncoming.BackgroundTransparency = 1
+    titleIncoming.Text = "Incoming messages"
+    titleIncoming.TextColor3 = Color3.fromRGB(140, 140, 150)
+    titleIncoming.Font = Enum.Font.GothamBold
+    titleIncoming.TextSize = 10
+    titleIncoming.TextXAlignment = Enum.TextXAlignment.Center
+    titleIncoming.Parent = privatePanel
+
+    -- Garis pemisah horizontal di bawah judul
+    local titleDivider = Instance.new("Frame")
+    titleDivider.Size = UDim2.new(1, -16, 0, 1)
+    titleDivider.Position = UDim2.new(0, 8, 0, 26)
+    titleDivider.BackgroundColor3 = Color3.fromRGB(50, 50, 55)
+    titleDivider.BorderSizePixel = 0
+    titleDivider.Parent = privatePanel
+
+    -- Kotak kecil di dalam "Incoming messages"
+    local innerBox = Instance.new("Frame")
+    innerBox.Size = UDim2.new(1, -16, 0, 52)
+    innerBox.Position = UDim2.new(0, 8, 0, 34)
+    innerBox.BackgroundColor3 = Color3.fromRGB(28, 28, 34) -- Warna sedikit lebih terang
+    innerBox.BorderSizePixel = 0
+    innerBox.Parent = privatePanel
+
+    local ibCorner = Instance.new("UICorner")
+    ibCorner.CornerRadius = UDim.new(0, 4)
+    ibCorner.Parent = innerBox
+
+    local ibStroke = Instance.new("UIStroke")
+    ibStroke.Color = Color3.fromRGB(50, 50, 55)
+    ibStroke.Thickness = 1
+    ibStroke.Parent = innerBox
+
+    -- Ikon Amplop di kiri kotak kecil
     local iconEnvelope = Instance.new("ImageLabel")
-    iconEnvelope.Size = UDim2.new(0, 24, 0, 24)
-    iconEnvelope.Position = UDim2.new(0, 12, 0.5, -12)
+    iconEnvelope.Size = UDim2.new(0, 20, 0, 20)
+    iconEnvelope.Position = UDim2.new(0, 10, 0.5, -10)
     iconEnvelope.BackgroundTransparency = 1
-    -- Asset ID amplop (bisa diganti kalau kurang pas)
-    iconEnvelope.Image = "rbxassetid://10734945215" 
+    iconEnvelope.Image = "rbxassetid://10734945215" -- Amplop
     iconEnvelope.ScaleType = Enum.ScaleType.Fit
-    iconEnvelope.Parent = privatePanel
+    iconEnvelope.Parent = innerBox
 
-    -- Teks Utama (Tebal)
-    local titleMsg = Instance.new("TextLabel")
-    titleMsg.Size = UDim2.new(1, -50, 0, 16)
-    titleMsg.Position = UDim2.new(0, 44, 0, 16)
-    titleMsg.BackgroundTransparency = 1
-    titleMsg.Text = "No privat massage yet."
-    titleMsg.TextColor3 = Color3.fromRGB(180, 180, 190) 
-    titleMsg.Font = Enum.Font.GothamBold
-    titleMsg.TextSize = 11
-    titleMsg.TextXAlignment = Enum.TextXAlignment.Left
-    titleMsg.Parent = privatePanel
+    -- Teks di dalam kotak kecil
+    local txtNoPrivate = Instance.new("TextLabel")
+    txtNoPrivate.Size = UDim2.new(1, -40, 0, 14)
+    txtNoPrivate.Position = UDim2.new(0, 36, 0, 10)
+    txtNoPrivate.BackgroundTransparency = 1
+    txtNoPrivate.Text = "No privat massage yet."
+    txtNoPrivate.TextColor3 = Color3.fromRGB(180, 180, 190)
+    txtNoPrivate.Font = Enum.Font.GothamBold
+    txtNoPrivate.TextSize = 9
+    txtNoPrivate.TextXAlignment = Enum.TextXAlignment.Left
+    txtNoPrivate.Parent = innerBox
 
-    -- Teks Kecil (Bawah)
-    local subMsg = Instance.new("TextLabel")
-    subMsg.Size = UDim2.new(1, -50, 0, 12)
-    subMsg.Position = UDim2.new(0, 44, 0, 34)
-    subMsg.BackgroundTransparency = 1
-    subMsg.Text = "Tap a massage, then Privat.."
-    subMsg.TextColor3 = Colors.SubText
-    subMsg.Font = Enum.Font.Gotham
-    subMsg.TextSize = 9
-    subMsg.TextXAlignment = Enum.TextXAlignment.Left
-    subMsg.Parent = privatePanel
+    local txtTapPrivate = Instance.new("TextLabel")
+    txtTapPrivate.Size = UDim2.new(1, -40, 0, 12)
+    txtTapPrivate.Position = UDim2.new(0, 36, 0, 26)
+    txtTapPrivate.BackgroundTransparency = 1
+    txtTapPrivate.Text = "Tap a massage, then Privat.."
+    txtTapPrivate.TextColor3 = Color3.fromRGB(120, 120, 130)
+    txtTapPrivate.Font = Enum.Font.Gotham
+    txtTapPrivate.TextSize = 8
+    txtTapPrivate.TextXAlignment = Enum.TextXAlignment.Left
+    txtTapPrivate.Parent = innerBox
+
+    -- FOTO DI BAGIAN KANAN CARD (Sesuai request pakai ID 139991340829976)
+    local rightPhoto = Instance.new("ImageLabel")
+    -- Ukuran disesuaikan biar pas di kanan card
+    rightPhoto.Size = UDim2.new(0, 40, 0, 40) 
+    rightPhoto.Position = UDim2.new(1, -45, 0.5, -20) -- Nempel kanan tengah
+    rightPhoto.BackgroundTransparency = 1
+    rightPhoto.Image = "rbxassetid://139991340829976"
+    rightPhoto.ScaleType = Enum.ScaleType.Fit
+    -- Sengaja tidak di kasih UICorner biar gambar aslinya kelihatan
+    rightPhoto.Parent = privatePanel
+
+    -- Simpan referensi ke panel global
+    _G.TogglePrivatePanel = function()
+        privatePanel.Visible = not privatePanel.Visible
+    end
 
     -- 4. Input Chat (Bawah) - Full width
     local inputFrame = Instance.new("Frame")
@@ -1561,11 +1614,6 @@ local function loadLiveChat()
     local sbCorner = Instance.new("UICorner")
     sbCorner.CornerRadius = UDim.new(0, 4)
     sbCorner.Parent = sendBtn
-
-    -- Simpan referensi ke panel global
-    _G.TogglePrivatePanel = function()
-        privatePanel.Visible = not privatePanel.Visible
-    end
 
     -- FUNGSI RENDER PESAN
     local function renderMessages()
@@ -2683,4 +2731,4 @@ apCloseBtn.MouseButton1Click:Connect(function()
 	AnnouncPanel.Size = UDim2.new(0, 260, 0, 42)
 end)
 
-print("ZORX Hub - Full UI (FIXED PRIVATE PANEL) Loaded Successfully!")
+print("ZORX Hub - Full UI (FIXED INCOMING MESSAGES CARD) Loaded Successfully!")
