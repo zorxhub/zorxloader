@@ -1376,77 +1376,31 @@ local chatMessages = {}
 local function loadLiveChat()
     clearContent()
 
-    -- Container Utama
+-- ===== FITUR HAPUS CHAT SETIAP EXECUTE =====
+if reqFunc then
+    pcall(function()
+        reqFunc({
+            Url = "https://zorx-broadcast-default-rtdb.firebaseio.com/chat.json",
+            Method = "DELETE"
+        })
+    end)
+end
+-- ===========================================
+
+    -- Container Utama Chat
     local chatContainer = Instance.new("Frame")
     chatContainer.Name = "ChatContainer"
     chatContainer.Size = UDim2.new(1, 0, 1, 0)
     chatContainer.BackgroundTransparency = 1
     chatContainer.Parent = Scroll
 
-    -- ===== 1. HEADER PANEL (ATAS) =====
-    local header = Instance.new("Frame")
-    header.Size = UDim2.new(1, 0, 0, 32)
-    header.BackgroundColor3 = Color3.fromRGB(30, 30, 36) -- Gelap
-    header.BorderSizePixel = 0
-    header.Parent = chatContainer
-    
-    local hCorner = Instance.new("UICorner")
-    hCorner.CornerRadius = UDim.new(0, 6)
-    hCorner.Parent = header
-
-    local roomBtn = Instance.new("TextButton")
-    roomBtn.Size = UDim2.new(0, 100, 0, 20)
-    roomBtn.Position = UDim2.new(0, 8, 0.5, -10)
-    roomBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
-    roomBtn.Text = "# General ▼"
-    roomBtn.TextColor3 = Colors.Text
-    roomBtn.Font = Enum.Font.GothamBold
-    roomBtn.TextSize = 10
-    roomBtn.Parent = header
-    local rCorner = Instance.new("UICorner")
-    rCorner.CornerRadius = UDim.new(0, 4)
-    rCorner.Parent = roomBtn
-
-    -- Online Status (Titik Hijau + Teks)
-    local onlineDot = Instance.new("Frame")
-    onlineDot.Size = UDim2.new(0, 8, 0, 8)
-    onlineDot.Position = UDim2.new(1, -80, 0.5, -4)
-    onlineDot.BackgroundColor3 = Color3.fromRGB(60, 220, 60)
-    onlineDot.Parent = header
-    Instance.new("UICorner").Parent = onlineDot
-
-    local onlineTxt = Instance.new("TextLabel")
-    onlineTxt.Size = UDim2.new(0, 50, 1, 0)
-    onlineTxt.Position = UDim2.new(1, -68, 0, 0)
-    onlineTxt.BackgroundTransparency = 1
-    onlineTxt.Text = #Players:GetPlayers() .. " online"
-    onlineTxt.TextColor3 = Color3.fromRGB(200, 200, 200)
-    onlineTxt.Font = Enum.Font.Gotham
-    onlineTxt.TextSize = 9
-    onlineTxt.TextXAlignment = Enum.TextXAlignment.Left
-    onlineTxt.Parent = header
-
-    -- Tombol Oranye Titik Tiga
-    local dotsBtn = Instance.new("TextButton")
-    dotsBtn.Size = UDim2.new(0, 20, 0, 20)
-    dotsBtn.Position = UDim2.new(1, -26, 0.5, -10)
-    dotsBtn.BackgroundColor3 = Color3.fromRGB(230, 130, 20)
-    dotsBtn.Text = "..."
-    dotsBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-    dotsBtn.Font = Enum.Font.GothamBold
-    dotsBtn.TextSize = 12
-    dotsBtn.Parent = header
-    local dCorner = Instance.new("UICorner")
-    dCorner.CornerRadius = UDim.new(0, 4)
-    dCorner.Parent = dotsBtn
-
-    -- ===== 2. AREA CHAT (TENGAH) =====
+    -- Area Tampilan Pesan (Scrolling)
     local msgScroll = Instance.new("ScrollingFrame")
-    msgScroll.Size = UDim2.new(1, 0, 1, -78)
-    msgScroll.Position = UDim2.new(0, 0, 0, 36)
+    msgScroll.Name = "MsgScroll"
+    msgScroll.Size = UDim2.new(1, 0, 1, -48)
     msgScroll.BackgroundTransparency = 1
     msgScroll.BorderSizePixel = 0
-    msgScroll.ScrollBarThickness = 3
+    msgScroll.ScrollBarThickness = 4
     msgScroll.ScrollBarImageColor3 = Colors.Stroke
     msgScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
     msgScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
@@ -1459,46 +1413,60 @@ local function loadLiveChat()
 
     local msgPad = Instance.new("UIPadding")
     msgPad.PaddingTop = UDim.new(0, 4)
-    msgPad.PaddingLeft = UDim.new(0, 6)
-    msgPad.PaddingRight = UDim.new(0, 6)
+    msgPad.PaddingRight = UDim.new(0, 4)
     msgPad.Parent = msgScroll
 
-    -- ===== 3. FOOTER INPUT (BAWAH) =====
-    local footer = Instance.new("Frame")
-    footer.Size = UDim2.new(1, 0, 0, 34)
-    footer.Position = UDim2.new(0, 0, 1, -34)
-    footer.BackgroundColor3 = Color3.fromRGB(30, 30, 36)
-    footer.BorderSizePixel = 0
-    footer.Parent = chatContainer
-    
-    local fCorner = Instance.new("UICorner")
-    fCorner.CornerRadius = UDim.new(0, 6)
-    fCorner.Parent = footer
+    -- Input Chat (Bawah)
+    local inputFrame = Instance.new("Frame")
+    inputFrame.Name = "InputFrame"
+    inputFrame.Size = UDim2.new(1, 0, 0, 34)
+    inputFrame.Position = UDim2.new(0, 0, 1, -42)
+    inputFrame.BackgroundColor3 = Colors.Slot
+    inputFrame.BorderSizePixel = 0
+    inputFrame.Parent = chatContainer
 
-    local inputBox = Instance.new("TextBox")
-    inputBox.Size = UDim2.new(1, -50, 1, 0)
-    inputBox.Position = UDim2.new(0, 10, 0, 0)
-    inputBox.BackgroundTransparency = 1
-    inputBox.PlaceholderText = "Message #general /help"
-    inputBox.PlaceholderColor3 = Color3.fromRGB(150, 150, 150)
-    inputBox.TextColor3 = Colors.Text
-    inputBox.Font = Enum.Font.Gotham
-    inputBox.TextSize = 11
-    inputBox.TextXAlignment = Enum.TextXAlignment.Left
-    inputBox.ClearTextOnFocus = false
-    inputBox.Parent = footer
+    local inCorner = Instance.new("UICorner")
+    inCorner.CornerRadius = UDim.new(0, 6)
+    inCorner.Parent = inputFrame
 
+    local inStroke = Instance.new("UIStroke")
+    inStroke.Color = ThemeColors[ActiveTheme].border
+    inStroke.Thickness = 1
+    inStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+    inStroke.Parent = inputFrame
+    registerBorder(inStroke)
+
+    local chatBox = Instance.new("TextBox")
+    chatBox.Name = "ChatBox"
+    chatBox.Size = UDim2.new(1, -50, 1, 0)
+    chatBox.Position = UDim2.new(0, 8, 0, 0)
+    chatBox.BackgroundTransparency = 1
+    chatBox.Text = ""
+    chatBox.PlaceholderText = "Ketik pesan..."
+    chatBox.PlaceholderColor3 = Colors.SubText
+    chatBox.TextColor3 = Colors.Text
+    chatBox.Font = Enum.Font.Gotham
+    chatBox.TextSize = 11
+    chatBox.TextXAlignment = Enum.TextXAlignment.Left
+    chatBox.ClearTextOnFocus = false
+    chatBox.Parent = inputFrame
+
+    -- TOMBOL KIRIM
     local sendBtn = Instance.new("ImageButton")
-    sendBtn.Size = UDim2.new(0, 22, 0, 22)
-    sendBtn.Position = UDim2.new(1, -32, 0.5, -11)
-    sendBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 70)
+    sendBtn.Size = UDim2.new(0, 24, 0, 24)
+    sendBtn.Position = UDim2.new(1, -32, 0.5, -12)
+    sendBtn.BackgroundColor3 = ThemeColors[ActiveTheme].border
+    sendBtn.BorderSizePixel = 0
     sendBtn.Image = "rbxassetid://103326784032850"
-    sendBtn.Parent = footer
-    local sCorner = Instance.new("UICorner")
-    sCorner.CornerRadius = UDim.new(0, 4)
-    sCorner.Parent = sendBtn
+    sendBtn.ScaleType = Enum.ScaleType.Fit
+    sendBtn.AutoButtonColor = false
+    sendBtn.Parent = inputFrame
 
-    -- FUNGSI RENDER PESAN
+    local sbCorner = Instance.new("UICorner")
+    sbCorner.CornerRadius = UDim.new(0, 4)
+    sbCorner.Parent = sendBtn
+
+    -- FUNGSI RENDER PESAN (FOTO FIX + NAMA WARNA)
     local function renderMessages()
         for _, child in pairs(msgScroll:GetChildren()) do
             if child:IsA("Frame") then child:Destroy() end
@@ -1516,48 +1484,51 @@ local function loadLiveChat()
             msgFrame.LayoutOrder = i
             msgFrame.Parent = msgScroll
 
-            -- Foto Profil
-            local senderPlayer = Players:FindFirstChild(msgData.Sender)
-            local senderId = senderPlayer and senderPlayer.UserId or 1
+            -- 1. FOTO PROFIL (PAKAI USERID DARI FIREBASE)
+            local senderId = msgData.SenderId or 1 -- Ambil ID dari database
+            local avatarImg = Instance.new("ImageLabel")
+            avatarImg.Size = UDim2.new(0, 24, 0, 24)
+            avatarImg.Position = UDim2.new(0, 0, 0, 0)
+            avatarImg.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+            avatarImg.BorderSizePixel = 0
+            -- Format URL foto profil
+            avatarImg.Image = "https://www.roblox.com/headshot-thumbnail/image?userId=" .. tostring(senderId) .. "&width=150&height=150&format=png"
+            avatarImg.ScaleType = Enum.ScaleType.Crop
+            avatarImg.Parent = msgFrame
 
-            local av = Instance.new("ImageLabel")
-            av.Size = UDim2.new(0, 24, 0, 24)
-            av.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-            av.Image = "https://www.roblox.com/headshot-thumbnail/image?userId=" .. senderId .. "&width=150&height=150&format=png"
-            av.Parent = msgFrame
-            local avC = Instance.new("UICorner")
-            avC.CornerRadius = UDim.new(1, 0)
-            avC.Parent = av
+            local avCorner = Instance.new("UICorner")
+            avCorner.CornerRadius = UDim.new(1, 0) 
+            avCorner.Parent = avatarImg
 
-            -- Nama Pengirim (Warna dinamis)
+            -- 2. NAMA PENGIRIM (WARNA HASH UNIK)
             local hash = 0
             for j = 1, #msgData.Sender do hash = hash + string.byte(msgData.Sender, j) end
             local hue = (hash % 100) / 100
 
             local nameLbl = Instance.new("TextLabel")
-            nameLbl.Size = UDim2.new(1, -30, 0, 12)
-            nameLbl.Position = UDim2.new(0, 30, 0, 0)
+            nameLbl.Size = UDim2.new(1, -32, 0, 14)
+            nameLbl.Position = UDim2.new(0, 32, 0, 0)
             nameLbl.BackgroundTransparency = 1
             nameLbl.Text = msgData.Sender
-            nameLbl.TextColor3 = Color3.fromHSV(hue, 0.7, 1)
+            nameLbl.TextColor3 = isMe and Color3.fromRGB(100, 255, 100) or Color3.fromHSV(hue, 0.7, 1)
             nameLbl.Font = Enum.Font.GothamBold
-            nameLbl.TextSize = 9
+            nameLbl.TextSize = 10
             nameLbl.TextXAlignment = Enum.TextXAlignment.Left
             nameLbl.Parent = msgFrame
 
-            -- Isi Pesan
-            local txt = Instance.new("TextLabel")
-            txt.Size = UDim2.new(1, -30, 0, 0)
-            txt.Position = UDim2.new(0, 30, 0, 12)
-            txt.AutomaticSize = Enum.AutomaticSize.Y
-            txt.BackgroundTransparency = 1
-            txt.Text = msgData.Message
-            txt.TextColor3 = Colors.Text
-            txt.Font = Enum.Font.Gotham
-            txt.TextSize = 10
-            txt.TextWrapped = true
-            txt.TextXAlignment = Enum.TextXAlignment.Left
-            txt.Parent = msgFrame
+            -- 3. ISI PESAN
+            local textLbl = Instance.new("TextLabel")
+            textLbl.Size = UDim2.new(1, -32, 0, 0)
+            textLbl.Position = UDim2.new(0, 32, 0, 14)
+            textLbl.AutomaticSize = Enum.AutomaticSize.Y
+            textLbl.BackgroundTransparency = 1
+            textLbl.Text = msgData.Message
+            textLbl.TextColor3 = Colors.Text
+            textLbl.Font = Enum.Font.Gotham
+            textLbl.TextSize = 11
+            textLbl.TextWrapped = true
+            textLbl.TextXAlignment = Enum.TextXAlignment.Left
+            textLbl.Parent = msgFrame
         end
 
         task.defer(function()
@@ -1565,37 +1536,66 @@ local function loadLiveChat()
         end)
     end
 
-    -- FUNGSI KIRIM
+    -- FUNGSI KIRIM PESAN (+ AUTO DELETE LAMA)
     sendBtn.MouseButton1Click:Connect(function()
-        local text = inputBox.Text:gsub("^%s*(.-)%s*$", "%1")
+        local text = chatBox.Text:gsub("^%s*(.-)%s*$", "%1")
         if text == "" or #text > 100 then return end
-        inputBox.Text = ""
+        chatBox.Text = ""
 
         if reqFunc then
             pcall(function()
-                local url = "https://zorx-broadcast-default-rtdb.firebaseio.com/chat/public/General/" .. tostring(os.time()) .. player.UserId .. ".json"
+                -- Simpan UserId biar fotonya bener
+                local url = "https://zorx-broadcast-default-rtdb.firebaseio.com/chat/" .. tostring(os.time()) .. player.UserId .. ".json"
                 reqFunc({
                     Url = url,
                     Method = "PUT",
                     Headers = { ["Content-Type"] = "application/json" },
-                    Body = HttpService:JSONEncode({ Sender = player.Name, Message = text, Time = os.time() })
+                    Body = HttpService:JSONEncode({
+                        Sender = player.Name,
+                        SenderId = player.UserId, -- <--- INI KUNCI FIX FOTONYA
+                        Message = text,
+                        Time = os.time()
+                    })
                 })
+
+                -- (Opsional) Auto-Hapus 50 chat terlama biar gak numpuk
+                local res = reqFunc({ Url = "https://zorx-broadcast-default-rtdb.firebaseio.com/chat.json", Method = "GET" })
+                if res and (res.StatusCode == 200 or res.Status == 200) then
+                    local data = HttpService:JSONDecode(res.Body)
+                    local count = 0
+                    local keys = {}
+                    for k, v in pairs(data) do
+                        table.insert(keys, k)
+                        count += 1
+                    end
+                    if count > 50 then
+                        table.sort(keys) -- Urutin dari yang lama
+                        local deleted = 0
+                        for _, key in ipairs(keys) do
+                            if deleted >= (count - 50) then break end
+                            reqFunc({ Url = "https://zorx-broadcast-default-rtdb.firebaseio.com/chat/" .. key .. ".json", Method = "DELETE" })
+                            deleted += 1
+                        end
+                    end
+                end
             end)
         end
     end)
 
-    -- FUNGSI FETCH
+    -- FUNGSI FETCH PESAN
     local function fetchChat()
         if not reqFunc then return end
         pcall(function()
-            local url = "https://zorx-broadcast-default-rtdb.firebaseio.com/chat/public/General.json"
+            local url = "https://zorx-broadcast-default-rtdb.firebaseio.com/chat.json"
             local res = reqFunc({ Url = url, Method = "GET" })
             if res and (res.StatusCode == 200 or res.Status == 200) then
                 local data = HttpService:JSONDecode(res.Body)
                 local newMessages = {}
                 if data then
                     for _, v in pairs(data) do
-                        if type(v) == "table" and v.Sender and v.Message then table.insert(newMessages, v) end
+                        if type(v) == "table" and v.Sender and v.Message then
+                            table.insert(newMessages, v)
+                        end
                     end
                 end
                 chatMessages = newMessages
