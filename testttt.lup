@@ -1364,7 +1364,7 @@ local function clearContent()
 end
 
 -- ============================================================
--- LIVE CHAT SYSTEM - REVISI FINAL POSISI & TOGGLE PANEL
+-- LIVE CHAT SYSTEM - REVISI FINAL FIX (PERSISTENT & ICON FIX)
 -- ============================================================
 local chatMessages = {}
 local currentPrivateTarget = nil 
@@ -1388,14 +1388,17 @@ _G.ShowIncomingCard = function(senderName, senderId, hasUnread)
     local targetName = chatUI.targetName
     local targetAvatar = chatUI.targetAvatar
     local privateRedDot = chatUI.privateRedDot
+    local iconEnvelope = chatUI.iconEnvelope
 
     if not senderName then
         defaultNoPrivate.Visible = true
         targetProfileBox.Visible = false
         privateRedDot.Visible = false
+        if iconEnvelope then iconEnvelope.Visible = true end
         return
     end
 
+    if iconEnvelope then iconEnvelope.Visible = false end
     defaultNoPrivate.Visible = false
     targetProfileBox.Visible = true
     targetName.Text = senderName
@@ -1410,7 +1413,11 @@ _G.OpenIncomingFromPill = function()
     chatUI.privatePanel.Visible = not chatUI.privatePanel.Visible
     
     if chatUI.privatePanel.Visible then
-        if #activeIncomingList > 0 then
+        -- Jika sedang dalam private mode atau ada target aktif, tampilkan target tersebut agar tidak hilang
+        if currentPrivateTarget then
+            local info = pendingIncoming[currentPrivateTarget] or { SenderId = currentPrivateTargetId }
+            _G.ShowIncomingCard(currentPrivateTarget, info.SenderId, false)
+        elseif #activeIncomingList > 0 then
             local lastTarget = activeIncomingList[#activeIncomingList]
             local info = pendingIncoming[lastTarget]
             if info then
@@ -1439,7 +1446,7 @@ local function loadLiveChat()
     privateHeader.Position = UDim2.new(0, 0, 0, 0)
     privateHeader.BackgroundColor3 = Color3.fromRGB(28, 28, 34) 
     privateHeader.BorderSizePixel = 0
-    privateHeader.Visible = false
+    privateHeader.Visible = isInPrivateMode -- Tetap pertahankan status jika sedang aktif
     privateHeader.ZIndex = 5
     privateHeader.Parent = chatContainer
 
@@ -1470,7 +1477,7 @@ local function loadLiveChat()
     phName.Size = UDim2.new(1, -100, 0, 14)
     phName.Position = UDim2.new(0, 42, 0, 5)
     phName.BackgroundTransparency = 1
-    phName.Text = "Private Chat"
+    phName.Text = currentPrivateTarget and ("Chatting with " .. currentPrivateTarget) or "Private Chat"
     phName.TextColor3 = Colors.Text
     phName.Font = Enum.Font.GothamBold
     phName.TextSize = 11
@@ -1512,7 +1519,7 @@ local function loadLiveChat()
     cpBtnIcon.ScaleType = Enum.ScaleType.Fit
     cpBtnIcon.Parent = closePrivateBtn
 
-    -- PANEL INCOMING MESSAGE (Posisi stabil di kanan atas area chat)
+    -- PANEL INCOMING MESSAGE
     local privatePanel = Instance.new("Frame")
     privatePanel.Name = "PrivatePanel"
     privatePanel.Size = UDim2.new(0, 180, 0, 105) 
@@ -1565,6 +1572,18 @@ local function loadLiveChat()
     ibStroke.Thickness = 1
     ibStroke.Parent = innerBox
 
+    -- Icon Foto di sebelah kiri (Asset ID: 139991340829976)
+    local iconEnvelope = Instance.new("ImageLabel")
+    iconEnvelope.Size = UDim2.new(0, 18, 0, 18)
+    iconEnvelope.Position = UDim2.new(0, 8, 0.5, -9)
+    iconEnvelope.BackgroundTransparency = 1
+    iconEnvelope.Image = "rbxassetid://139991340829976"
+    iconEnvelope.ScaleType = Enum.ScaleType.Fit
+    local iconCorner = Instance.new("UICorner")
+    iconCorner.CornerRadius = UDim.new(0, 4)
+    iconCorner.Parent = iconEnvelope
+    iconEnvelope.Parent = innerBox
+
     -- State DEFAULT (No privat massage yet)
     local defaultNoPrivate = Instance.new("Frame")
     defaultNoPrivate.Size = UDim2.new(1, 0, 1, 0)
@@ -1573,8 +1592,8 @@ local function loadLiveChat()
     defaultNoPrivate.Parent = innerBox
 
     local txtNoPrivate = Instance.new("TextLabel")
-    txtNoPrivate.Size = UDim2.new(1, -8, 0, 12)
-    txtNoPrivate.Position = UDim2.new(0, 6, 0, 10)
+    txtNoPrivate.Size = UDim2.new(1, -30, 0, 12)
+    txtNoPrivate.Position = UDim2.new(0, 30, 0, 10)
     txtNoPrivate.BackgroundTransparency = 1
     txtNoPrivate.Text = "No privat massage yet."
     txtNoPrivate.TextColor3 = Color3.fromRGB(180, 180, 190)
@@ -1584,10 +1603,10 @@ local function loadLiveChat()
     txtNoPrivate.Parent = defaultNoPrivate
 
     local txtTapPrivate = Instance.new("TextLabel")
-    txtTapPrivate.Size = UDim2.new(1, -8, 0, 10)
-    txtTapPrivate.Position = UDim2.new(0, 6, 0, 24)
+    txtTapPrivate.Size = UDim2.new(1, -30, 0, 10)
+    txtTapPrivate.Position = UDim2.new(0, 30, 0, 24)
     txtTapPrivate.BackgroundTransparency = 1
-    txtTapPrivate.Text = "Waiting for incoming chat..."
+    txtTapPrivate.Text = "Waiting for chat..."
     txtTapPrivate.TextColor3 = Color3.fromRGB(120, 120, 130)
     txtTapPrivate.Font = Enum.Font.Gotham
     txtTapPrivate.TextSize = 7
@@ -1653,7 +1672,8 @@ local function loadLiveChat()
     -- AREA PESAN
     local msgScroll = Instance.new("ScrollingFrame")
     msgScroll.Name = "MsgScroll"
-    msgScroll.Size = UDim2.new(1, 0, 1, -90) 
+    msgScroll.Size = isInPrivateMode and UDim2.new(1, 0, 1, -84) or UDim2.new(1, 0, 1, -90)
+    msgScroll.Position = isInPrivateMode and UDim2.new(0, 0, 0, 42) or UDim2.new(0, 0, 0, 0)
     msgScroll.BackgroundTransparency = 1
     msgScroll.BorderSizePixel = 0
     msgScroll.ScrollBarThickness = 4
@@ -1700,7 +1720,7 @@ local function loadLiveChat()
     chatBox.Position = UDim2.new(0, 8, 0, 0)
     chatBox.BackgroundTransparency = 1
     chatBox.Text = ""
-    chatBox.PlaceholderText = "Message #general /help"
+    chatBox.PlaceholderText = isInPrivateMode and ("Message @" .. tostring(currentPrivateTarget) .. "...") or "Message #general /help"
     chatBox.PlaceholderColor3 = Colors.SubText
     chatBox.TextColor3 = Colors.Text
     chatBox.Font = Enum.Font.Gotham
@@ -1734,8 +1754,20 @@ local function loadLiveChat()
         targetAvatar = targetAvatar,
         targetName = targetName,
         defaultNoPrivate = defaultNoPrivate,
+        iconEnvelope = iconEnvelope,
         chatBox = chatBox,
     }
+
+    -- Jika sudah ada target aktif sebelumnya, tampilkan langsung kartunya agar tidak hilang saat direfresh/dibuka ulang
+    if isInPrivateMode and currentPrivateTarget then
+        _G.ShowIncomingCard(currentPrivateTarget, currentPrivateTargetId, false)
+    elseif #activeIncomingList > 0 then
+        local lastTarget = activeIncomingList[#activeIncomingList]
+        local info = pendingIncoming[lastTarget]
+        if info then
+            _G.ShowIncomingCard(lastTarget, info.SenderId, true)
+        end
+    end
 
     local renderMessages
 
@@ -1751,12 +1783,11 @@ local function loadLiveChat()
         end
 
         privateHeader.Visible = true
+        phName.Text = "Chatting with " .. targetNameStr
+        phAvatar.Image = "https://www.roblox.com/headshot-thumbnail/image?userId=" .. tostring(targetId or 1) .. "&width=150&height=150&format=png"
+
         msgScroll.Position = UDim2.new(0, 0, 0, 42)
         msgScroll.Size = UDim2.new(1, 0, 1, -84)
-
-        phName.Text = "Chatting with " .. targetNameStr
-        phSub.Text = "Private mode • Tap X untuk keluar"
-        phAvatar.Image = "https://www.roblox.com/headshot-thumbnail/image?userId=" .. tostring(targetId or 1) .. "&width=150&height=150&format=png"
 
         _G.ShowIncomingCard(targetNameStr, targetId, false)
         chatBox.PlaceholderText = "Message @" .. targetNameStr .. "..."
@@ -1767,14 +1798,14 @@ local function loadLiveChat()
 
     local function exitPrivateMode()
         isInPrivateMode = false
+        currentPrivateTarget = nil
+        currentPrivateTargetId = nil
         privateHeader.Visible = false
         msgScroll.Position = UDim2.new(0, 0, 0, 0)
         msgScroll.Size = UDim2.new(1, 0, 1, -90)
         chatBox.PlaceholderText = "Message #general /help"
 
-        if currentPrivateTarget then
-            _G.ShowIncomingCard(currentPrivateTarget, currentPrivateTargetId, false)
-        elseif #activeIncomingList > 0 then
+        if #activeIncomingList > 0 then
             local lastTarget = activeIncomingList[#activeIncomingList]
             local info = pendingIncoming[lastTarget]
             if info then
@@ -1797,6 +1828,12 @@ local function loadLiveChat()
     targetProfileBox.MouseButton1Click:Connect(function()
         if currentPrivateTarget then
             enterPrivateMode(currentPrivateTarget, currentPrivateTargetId)
+        elseif #activeIncomingList > 0 then
+            local lastTarget = activeIncomingList[#activeIncomingList]
+            local info = pendingIncoming[lastTarget]
+            if info then
+                enterPrivateMode(lastTarget, info.SenderId)
+            end
         end
     end)
 
@@ -1808,8 +1845,8 @@ local function loadLiveChat()
         end
 
         local messagesToRender = chatMessages
-        if isInPrivateMode then
-            messagesToRender = privateChatHistory[currentPrivateTarget or ""] or {}
+        if isInPrivateMode and currentPrivateTarget then
+            messagesToRender = privateChatHistory[currentPrivateTarget] or {}
         end
 
         table.sort(messagesToRender, function(a, b) return (a.Time or 0) < (b.Time or 0) end)
