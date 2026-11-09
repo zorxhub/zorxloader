@@ -1,5 +1,5 @@
 --============================================================
--- ZORX HUB - FULL UI + LICENSE + PRIVATE CHAT (FINAL REVISI 3)
+-- ZORX HUB - FULL UI + LICENSE + PRIVATE CHAT (FINAL REVISI 4)
 --============================================================
 
 local Players = game:GetService("Players")
@@ -786,7 +786,8 @@ local function createPill(textText, width, iconId, layoutOrder, visible)
 	return pill, txt
 end
 
-local avatarCard = createAvatarPill(0, false)
+-- FIX: Ubah parameter 'visible' menjadi true agar ID Card / Foto / Nickname langsung muncul saat rejoin / execute tanpa nunggu interaksi
+local avatarCard = createAvatarPill(0, true)
 local myAvatarImg = avatarCard:FindFirstChild("Avatar")
 if myAvatarImg then
     myAvatarImg.Image = "https://www.roblox.com/headshot-thumbnail/image?userId=" .. player.UserId .. "&width=150&height=150&format=png"
@@ -794,9 +795,9 @@ end
 
 local nameLength = #player.Name
 local namePillWidth = math.clamp(nameLength * 6 + 16, 40, 120)
-local nickCard, nickText = createPill(player.Name, namePillWidth, "", 1, false)
+local nickCard, nickText = createPill(player.Name, namePillWidth, "", 1, true)
 
-local trialCard, trialText = createPill(userRole, 50, "", 2, false)
+local trialCard, trialText = createPill(userRole, 50, "", 2, true)
 
 local zeroCard, zeroText
 
@@ -808,7 +809,7 @@ if userRole == "Owner" then
     zeroCard.BackgroundColor3 = DefaultPillBg
     zeroCard.BorderSizePixel = 0
     zeroCard.LayoutOrder = 3
-    zeroCard.Visible = false
+    zeroCard.Visible = true -- FIX: Diubah jadi true agar langsung muncul
     zeroCard.Parent = PillContainer
 
     local pCorner = Instance.new("UICorner")
@@ -841,7 +842,7 @@ if userRole == "Owner" then
     zeroText = Instance.new("TextLabel")
     zeroText.Visible = false
 else
-    zeroCard, zeroText = createPill("000", 40, "", 3, false)
+    zeroCard, zeroText = createPill("000", 40, "", 3, true) -- FIX: Diubah jadi true agar langsung muncul
     
     if userRole == "Donatur" then
         trialText.TextColor3 = Color3.fromRGB(255, 215, 0)
@@ -1087,16 +1088,14 @@ MaximizeBtn.MouseButton1Click:Connect(function()
 		Title.TextTransparency = 0
 	end
 
+	-- Karena card sudah default visible, saat maximize kita pastikan transparasinya 0
 	for _, card in ipairs({avatarCard, nickCard, trialCard, zeroCard}) do
 		if isMaximized then
 			card.Visible = true
-			card.BackgroundTransparency = 1
-			TweenService:Create(card, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-				BackgroundTransparency = 0
-			}):Play()
+			card.BackgroundTransparency = 0
 		else
-			card.Visible = false
-			card.BackgroundTransparency = 1
+			card.Visible = true -- Tetap dibiarkan visible agar tidak hilang saat tidak dimaximize
+			card.BackgroundTransparency = 0
 		end
 	end
 
@@ -1364,7 +1363,7 @@ local function clearContent()
 end
 
 -- ============================================================
--- LIVE CHAT SYSTEM - REVISI FINAL CLOSE & UKURAN ICON
+-- LIVE CHAT SYSTEM
 -- ============================================================
 local chatMessages = {}
 local currentPrivateTarget = nil 
@@ -1517,11 +1516,11 @@ local function loadLiveChat()
     cpBtnIcon.ScaleType = Enum.ScaleType.Fit
     cpBtnIcon.Parent = closePrivateBtn
 
-    -- PANEL INCOMING MESSAGE
+    -- PANEL INCOMING MESSAGE (FIX: Posisi X diubah ke kiri agar tidak menabrak tombol Announcement/lonceng di kanan atas)
     local privatePanel = Instance.new("Frame")
     privatePanel.Name = "PrivatePanel"
     privatePanel.Size = UDim2.new(0, 180, 0, 105) 
-    privatePanel.Position = UDim2.new(1, -186, 0, 5)
+    privatePanel.Position = UDim2.new(1, -372, 0, 5) -- Diubah agar bergeser ke kiri dan aman dari tombol lonceng
     privatePanel.BackgroundColor3 = Color3.fromRGB(22, 22, 27) 
     privatePanel.Visible = false
     privatePanel.ZIndex = 10
@@ -1665,7 +1664,7 @@ local function loadLiveChat()
     prdCorner.Parent = privateRedDot
 
     -- AREA PESAN
-        local msgScroll = Instance.new("ScrollingFrame")
+    local msgScroll = Instance.new("ScrollingFrame")
     msgScroll.Name = "MsgScroll"
     msgScroll.Size = isInPrivateMode and UDim2.new(1, 0, 1, -50) or UDim2.new(1, 0, 1, -44)
     msgScroll.Position = isInPrivateMode and UDim2.new(0, 0, 0, 42) or UDim2.new(0, 0, 0, 0)
@@ -2127,7 +2126,7 @@ local function createSidebarButton(text, order, iconId, onClick)
 end
 
 -- ============================================================
--- PILL CHAT CLICK HANDLER (BUKA TUTUP PANEL INCOMING)
+-- PILL CHAT CLICK HANDLER
 -- ============================================================
 chatPill.MouseButton1Click:Connect(function()
     if _G.OpenIncomingFromPill then
