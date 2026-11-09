@@ -1,5 +1,5 @@
 --============================================================
--- ZORX HUB - FULL UI + LICENSE + PRIVATE CHAT (FINAL REVISI 2)
+-- ZORX HUB - FULL UI + LICENSE + PRIVATE CHAT (FINAL REVISI 3)
 --============================================================
 
 local Players = game:GetService("Players")
@@ -949,12 +949,12 @@ local function StartCountdown()
 			
 			if trialText and zeroText then
 				trialText.Text = userRole
-if userRole ~= "Owner" then
-	zeroText.Text = formattedTime
-	if zeroCard then
-		zeroCard.Size = UDim2.new(0, zeroText.TextBounds.X + 30, 0, 22)
-	end
-end
+				if userRole ~= "Owner" then
+					zeroText.Text = formattedTime
+					if zeroCard then
+						zeroCard.Size = UDim2.new(0, zeroText.TextBounds.X + 30, 0, 22)
+					end
+				end
 			end
 		else
 			licenseConnection:Disconnect()
@@ -1075,17 +1075,17 @@ local isMaximized = false
 MaximizeBtn.MouseButton1Click:Connect(function()
 	isMaximized = not isMaximized
 
-if isMaximized then
-	if userRole ~= "Owner" then
-		Title.Visible = false
+	if isMaximized then
+		if userRole ~= "Owner" then
+			Title.Visible = false
+		else
+			Title.Visible = true
+			Title.TextTransparency = 0
+		end
 	else
 		Title.Visible = true
 		Title.TextTransparency = 0
 	end
-else
-	Title.Visible = true
-	Title.TextTransparency = 0
-end
 
 	for _, card in ipairs({avatarCard, nickCard, trialCard, zeroCard}) do
 		if isMaximized then
@@ -1409,7 +1409,6 @@ end
 _G.OpenIncomingFromPill = function()
     if not chatUI then return false end
     
-    -- Toggle buka tutup panel incoming message
     chatUI.privatePanel.Visible = not chatUI.privatePanel.Visible
     
     if chatUI.privatePanel.Visible then
@@ -1571,7 +1570,6 @@ local function loadLiveChat()
     ibStroke.Thickness = 1
     ibStroke.Parent = innerBox
 
-    -- Icon Foto di sebelah kiri yang diperbesar (Ukuran 26x26, posisi pas di tengah vertikal)
     local iconEnvelope = Instance.new("ImageLabel")
     iconEnvelope.Size = UDim2.new(0, 26, 0, 26)
     iconEnvelope.Position = UDim2.new(0, 8, 0.5, -13)
@@ -1583,7 +1581,6 @@ local function loadLiveChat()
     iconCorner.Parent = iconEnvelope
     iconEnvelope.Parent = innerBox
 
-    -- State DEFAULT (No privat massage yet) - Disesuaikan dengan margin kiri icon yang lebih besar
     local defaultNoPrivate = Instance.new("Frame")
     defaultNoPrivate.Size = UDim2.new(1, 0, 1, 0)
     defaultNoPrivate.BackgroundTransparency = 1
@@ -1612,7 +1609,6 @@ local function loadLiveChat()
     txtTapPrivate.TextXAlignment = Enum.TextXAlignment.Left
     txtTapPrivate.Parent = defaultNoPrivate
 
-    -- State TARGET (ID foto profil Roblox & Nickname yang diperbesar)
     local targetProfileBox = Instance.new("TextButton")
     targetProfileBox.Size = UDim2.new(1, 0, 1, 0)
     targetProfileBox.BackgroundTransparency = 1
@@ -1795,8 +1791,6 @@ local function loadLiveChat()
     end
 
     local function exitPrivateMode()
-        -- Perubahan: Tombol close (X) HANYA menutup header private & kembali ke general chat,
-        -- TANPA menghapus data/target orang yang terakhir nge-chat agar kartu ID/nickname tetap ada di panel incoming.
         isInPrivateMode = false
         privateHeader.Visible = false
         msgScroll.Position = UDim2.new(0, 0, 0, 0)
@@ -2003,7 +1997,6 @@ local function loadLiveChat()
                                             lastPrivateSeen[key] = true
                                             local other = v.Sender
                                             privateChatHistory[other] = privateChatHistory[other] or {}
-                                            table.init = table.init or true
                                             table.insert(privateChatHistory[other], {
                                                 Sender = v.Sender,
                                                 SenderId = v.SenderId,
@@ -2119,13 +2112,13 @@ local function createSidebarButton(text, order, iconId, onClick)
 		TweenService:Create(btn, TweenInfo.new(0.15), { BackgroundTransparency = 0.5, BackgroundColor3 = Colors.SlotHover }):Play()
 		TweenService:Create(textLabel, TweenInfo.new(0.15), { TextColor3 = Colors.Text }):Play() 
 
-if text == "Live Chat" then
-    if execPill then execPill.Visible = false end
-    if chatPill then chatPill.Visible = true end
-else
-    if execPill then execPill.Visible = true end
-    if chatPill then chatPill.Visible = false end
-end
+		if text == "Live Chat" then
+			if execPill then execPill.Visible = false end
+			if chatPill then chatPill.Visible = true end
+		else
+			if execPill then execPill.Visible = true end
+			if chatPill then chatPill.Visible = false end
+		end
 		if onClick then onClick() end
 	end)
 
@@ -2137,12 +2130,10 @@ end
 -- PILL CHAT CLICK HANDLER (BUKA TUTUP PANEL INCOMING)
 -- ============================================================
 chatPill.MouseButton1Click:Connect(function()
-    -- Toggle Panel Incoming Messages
     if _G.OpenIncomingFromPill then
         _G.OpenIncomingFromPill()
     end
     
-    -- Pindah ke tab Live Chat
     for _, btn in pairs(sidebarButtons) do
         local lbl = btn:FindFirstChild("Label")
         if lbl and lbl.Text == "Live Chat" then
