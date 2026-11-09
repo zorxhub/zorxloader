@@ -1364,7 +1364,7 @@ local function clearContent()
 end
 
 -- ============================================================
--- LIVE CHAT SYSTEM - REVISI FINAL FIX (PERSISTENT & ICON FIX)
+-- LIVE CHAT SYSTEM - REVISI FINAL CLOSE & UKURAN ICON
 -- ============================================================
 local chatMessages = {}
 local currentPrivateTarget = nil 
@@ -1413,7 +1413,6 @@ _G.OpenIncomingFromPill = function()
     chatUI.privatePanel.Visible = not chatUI.privatePanel.Visible
     
     if chatUI.privatePanel.Visible then
-        -- Jika sedang dalam private mode atau ada target aktif, tampilkan target tersebut agar tidak hilang
         if currentPrivateTarget then
             local info = pendingIncoming[currentPrivateTarget] or { SenderId = currentPrivateTargetId }
             _G.ShowIncomingCard(currentPrivateTarget, info.SenderId, false)
@@ -1446,7 +1445,7 @@ local function loadLiveChat()
     privateHeader.Position = UDim2.new(0, 0, 0, 0)
     privateHeader.BackgroundColor3 = Color3.fromRGB(28, 28, 34) 
     privateHeader.BorderSizePixel = 0
-    privateHeader.Visible = isInPrivateMode -- Tetap pertahankan status jika sedang aktif
+    privateHeader.Visible = isInPrivateMode
     privateHeader.ZIndex = 5
     privateHeader.Parent = chatContainer
 
@@ -1572,19 +1571,19 @@ local function loadLiveChat()
     ibStroke.Thickness = 1
     ibStroke.Parent = innerBox
 
-    -- Icon Foto di sebelah kiri (Asset ID: 139991340829976)
+    -- Icon Foto di sebelah kiri yang diperbesar (Ukuran 26x26, posisi pas di tengah vertikal)
     local iconEnvelope = Instance.new("ImageLabel")
-    iconEnvelope.Size = UDim2.new(0, 18, 0, 18)
-    iconEnvelope.Position = UDim2.new(0, 8, 0.5, -9)
+    iconEnvelope.Size = UDim2.new(0, 26, 0, 26)
+    iconEnvelope.Position = UDim2.new(0, 8, 0.5, -13)
     iconEnvelope.BackgroundTransparency = 1
     iconEnvelope.Image = "rbxassetid://139991340829976"
     iconEnvelope.ScaleType = Enum.ScaleType.Fit
     local iconCorner = Instance.new("UICorner")
-    iconCorner.CornerRadius = UDim.new(0, 4)
+    iconCorner.CornerRadius = UDim.new(0, 6)
     iconCorner.Parent = iconEnvelope
     iconEnvelope.Parent = innerBox
 
-    -- State DEFAULT (No privat massage yet)
+    -- State DEFAULT (No privat massage yet) - Disesuaikan dengan margin kiri icon yang lebih besar
     local defaultNoPrivate = Instance.new("Frame")
     defaultNoPrivate.Size = UDim2.new(1, 0, 1, 0)
     defaultNoPrivate.BackgroundTransparency = 1
@@ -1592,8 +1591,8 @@ local function loadLiveChat()
     defaultNoPrivate.Parent = innerBox
 
     local txtNoPrivate = Instance.new("TextLabel")
-    txtNoPrivate.Size = UDim2.new(1, -30, 0, 12)
-    txtNoPrivate.Position = UDim2.new(0, 30, 0, 10)
+    txtNoPrivate.Size = UDim2.new(1, -38, 0, 12)
+    txtNoPrivate.Position = UDim2.new(0, 38, 0, 10)
     txtNoPrivate.BackgroundTransparency = 1
     txtNoPrivate.Text = "No privat massage yet."
     txtNoPrivate.TextColor3 = Color3.fromRGB(180, 180, 190)
@@ -1603,8 +1602,8 @@ local function loadLiveChat()
     txtNoPrivate.Parent = defaultNoPrivate
 
     local txtTapPrivate = Instance.new("TextLabel")
-    txtTapPrivate.Size = UDim2.new(1, -30, 0, 10)
-    txtTapPrivate.Position = UDim2.new(0, 30, 0, 24)
+    txtTapPrivate.Size = UDim2.new(1, -38, 0, 10)
+    txtTapPrivate.Position = UDim2.new(0, 38, 0, 24)
     txtTapPrivate.BackgroundTransparency = 1
     txtTapPrivate.Text = "Waiting for chat..."
     txtTapPrivate.TextColor3 = Color3.fromRGB(120, 120, 130)
@@ -1613,7 +1612,7 @@ local function loadLiveChat()
     txtTapPrivate.TextXAlignment = Enum.TextXAlignment.Left
     txtTapPrivate.Parent = defaultNoPrivate
 
-    -- State TARGET (Otomatis berubah jadi ID foto profil Roblox & Nickname)
+    -- State TARGET (ID foto profil Roblox & Nickname yang diperbesar)
     local targetProfileBox = Instance.new("TextButton")
     targetProfileBox.Size = UDim2.new(1, 0, 1, 0)
     targetProfileBox.BackgroundTransparency = 1
@@ -1623,8 +1622,8 @@ local function loadLiveChat()
     targetProfileBox.Parent = innerBox
 
     local targetAvatar = Instance.new("ImageLabel")
-    targetAvatar.Size = UDim2.new(0, 32, 0, 32)
-    targetAvatar.Position = UDim2.new(0, 6, 0.5, -16)
+    targetAvatar.Size = UDim2.new(0, 36, 0, 36)
+    targetAvatar.Position = UDim2.new(0, 6, 0.5, -18)
     targetAvatar.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
     targetAvatar.BorderSizePixel = 0
     targetAvatar.ScaleType = Enum.ScaleType.Crop
@@ -1635,8 +1634,8 @@ local function loadLiveChat()
     taCorner.Parent = targetAvatar
 
     local targetName = Instance.new("TextLabel")
-    targetName.Size = UDim2.new(1, -44, 0, 14)
-    targetName.Position = UDim2.new(0, 44, 0, 10)
+    targetName.Size = UDim2.new(1, -48, 0, 14)
+    targetName.Position = UDim2.new(0, 46, 0, 10)
     targetName.BackgroundTransparency = 1
     targetName.Text = "Target"
     targetName.TextColor3 = Color3.fromRGB(100, 255, 100)
@@ -1647,8 +1646,8 @@ local function loadLiveChat()
     targetName.Parent = targetProfileBox
 
     local targetSub = Instance.new("TextLabel")
-    targetSub.Size = UDim2.new(1, -44, 0, 10)
-    targetSub.Position = UDim2.new(0, 44, 0, 26)
+    targetSub.Size = UDim2.new(1, -48, 0, 10)
+    targetSub.Position = UDim2.new(0, 46, 0, 26)
     targetSub.BackgroundTransparency = 1
     targetSub.Text = "Click to open chat"
     targetSub.TextColor3 = Color3.fromRGB(140, 140, 150)
@@ -1758,7 +1757,6 @@ local function loadLiveChat()
         chatBox = chatBox,
     }
 
-    -- Jika sudah ada target aktif sebelumnya, tampilkan langsung kartunya agar tidak hilang saat direfresh/dibuka ulang
     if isInPrivateMode and currentPrivateTarget then
         _G.ShowIncomingCard(currentPrivateTarget, currentPrivateTargetId, false)
     elseif #activeIncomingList > 0 then
@@ -1797,15 +1795,18 @@ local function loadLiveChat()
     end
 
     local function exitPrivateMode()
+        -- Perubahan: Tombol close (X) HANYA menutup header private & kembali ke general chat,
+        -- TANPA menghapus data/target orang yang terakhir nge-chat agar kartu ID/nickname tetap ada di panel incoming.
         isInPrivateMode = false
-        currentPrivateTarget = nil
-        currentPrivateTargetId = nil
         privateHeader.Visible = false
         msgScroll.Position = UDim2.new(0, 0, 0, 0)
         msgScroll.Size = UDim2.new(1, 0, 1, -90)
         chatBox.PlaceholderText = "Message #general /help"
 
-        if #activeIncomingList > 0 then
+        if currentPrivateTarget then
+            local info = pendingIncoming[currentPrivateTarget] or { SenderId = currentPrivateTargetId }
+            _G.ShowIncomingCard(currentPrivateTarget, info.SenderId, false)
+        elseif #activeIncomingList > 0 then
             local lastTarget = activeIncomingList[#activeIncomingList]
             local info = pendingIncoming[lastTarget]
             if info then
@@ -2002,6 +2003,7 @@ local function loadLiveChat()
                                             lastPrivateSeen[key] = true
                                             local other = v.Sender
                                             privateChatHistory[other] = privateChatHistory[other] or {}
+                                            table.init = table.init or true
                                             table.insert(privateChatHistory[other], {
                                                 Sender = v.Sender,
                                                 SenderId = v.SenderId,
@@ -2009,26 +2011,25 @@ local function loadLiveChat()
                                                 Time = v.Time
                                             })
                                             
-                                            if not (isInPrivateMode and currentPrivateTarget == other) then
-                                                pendingIncoming[other] = {
-                                                    Sender = v.Sender,
-                                                    SenderId = v.SenderId,
-                                                    Message = v.Message,
-                                                    Time = v.Time
-                                                }
-                                                local already = false
-                                                for _, t in ipairs(activeIncomingList) do
-                                                    if t == other then already = true break end
-                                                end
-                                                if not already then
-                                                    table.insert(activeIncomingList, other)
-                                                end
+                                            pendingIncoming[other] = {
+                                                Sender = v.Sender,
+                                                SenderId = v.SenderId,
+                                                Message = v.Message,
+                                                Time = v.Time
+                                            }
+                                            local already = false
+                                            for _, t in ipairs(activeIncomingList) do
+                                                if t == other then already = true break end
+                                            end
+                                            if not already then
+                                                table.insert(activeIncomingList, other)
+                                            end
+
+                                            if not isInPrivateMode then
                                                 _G.ShowIncomingCard(other, v.SenderId, true)
                                                 if _G.SetChatPillDot then _G.SetChatPillDot(true) end
-                                                renderMessages()
-                                            else
-                                                renderMessages()
                                             end
+                                            renderMessages()
                                         end
                                     end
                                 end
