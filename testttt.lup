@@ -1,5 +1,5 @@
 --============================================================
--- ZORX HUB - FULL UI + LICENSE SYSTEM (FIXED INCOMING CARD)
+-- ZORX HUB - FULL UI + LICENSE SYSTEM (CARD UNDER TOPBAR)
 --============================================================
 
 local Players = game:GetService("Players")
@@ -1424,7 +1424,7 @@ local function clearContent()
 end
 
 -- ============================================================
--- LIVE CHAT SYSTEM (FIREBASE) - FIX CARD & ICON POSITION
+-- LIVE CHAT SYSTEM (FIREBASE) - FIX CARD POSITION (UNDER TOPBAR)
 -- ============================================================
 local chatMessages = {}
 
@@ -1460,12 +1460,12 @@ local function loadLiveChat()
     msgPad.PaddingRight = UDim.new(0, 4)
     msgPad.Parent = msgScroll
 
-    -- 3. Panel Privat (Kanan) - "Incoming Messages" Card (DIPINDAH KE BAWAH)
+    -- 3. Panel Privat (Kanan) - "Incoming Messages" Card (POSISI DI BAWAH ID FOTO)
     local privatePanel = Instance.new("Frame")
     privatePanel.Name = "PrivatePanel"
     privatePanel.Size = UDim2.new(0, 160, 0, 110) 
-    -- POSISI BARU: Di bawah (sejajar dengan bawah chat)
-    privatePanel.Position = UDim2.new(1, -105, 1, -155) 
+    -- POSISI BARU: Di bawah Pill Top Bar (Rata Kanan)
+    privatePanel.Position = UDim2.new(1, -180, 0, 10) 
     privatePanel.BackgroundColor3 = Color3.fromRGB(22, 22, 27) 
     privatePanel.Visible = false
     privatePanel.Parent = chatContainer
@@ -1523,7 +1523,6 @@ local function loadLiveChat()
     iconEnvelope.BackgroundTransparency = 1
     iconEnvelope.Image = "rbxassetid://139991340829976" -- FOTO BARU
     iconEnvelope.ScaleType = Enum.ScaleType.Fit
-    -- Kasih border melengkung biar rapi
     local iconCorner = Instance.new("UICorner")
     iconCorner.CornerRadius = UDim.new(0, 4)
     iconCorner.Parent = iconEnvelope
@@ -2732,4 +2731,4 @@ apCloseBtn.MouseButton1Click:Connect(function()
 	AnnouncPanel.Size = UDim2.new(0, 260, 0, 42)
 end)
 
-print("ZORX Hub - Full UI (FIXED INCOMING CARD POSITION & ICON) Loaded Successfully!")
+print("ZORX Hub - Full UI (CARD UNDER TOPBAR) Loaded Successfully!")
