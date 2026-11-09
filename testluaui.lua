@@ -1,5 +1,5 @@
 --============================================================
--- ZORX HUB - FULL UI + LICENSE SYSTEM
+-- ZORX HUB - FULL UI + LICENSE + PRIVATE CHAT (FINAL FIX TOTAL)
 --============================================================
 
 local Players = game:GetService("Players")
@@ -11,16 +11,21 @@ local HttpService = game:GetService("HttpService")
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
 
--- Penanganan fungsi HTTP Request
 local reqFunc = (type(request) == "function" and request) 
 	or (syn and type(syn.request) == "function" and syn.request) 
 	or (http and type(http.request) == "function" and http.request) 
 	or (type(http_request) == "function" and http_request) 
 	or nil
 
--- ============================================================
--- SYSTEM BLOKIR / DESTROY (JIKA WAKTU HABIS)
--- ============================================================
+if reqFunc then
+    pcall(function()
+        reqFunc({
+            Url = "https://zorx-broadcast-default-rtdb.firebaseio.com/chat.json",
+            Method = "DELETE"
+        })
+    end)
+end
+
 local function DestroyEverything()
 	for _, gui in pairs(playerGui:GetChildren()) do
 		if gui.Name == "ZorXHub" or gui.Name == "ZorxTopNotifContainer" then
@@ -30,16 +35,12 @@ local function DestroyEverything()
 	if script then script:Destroy() end
 end
 
--- ============================================================
--- CEK LICENSE (FIREBASE)
--- ============================================================
 local function CheckLicense()
 	local success = false
 	local expireTimestamp = 0
 	local role = "Trial"
 	
 	if reqFunc then
-		-- 1. Cek apakah dia Owner
 		pcall(function()
 			local urlOwner = "https://zorx-broadcast-default-rtdb.firebaseio.com/owners/" .. player.Name .. ".json"
 			local resOwner = reqFunc({ Url = urlOwner, Method = "GET" })
@@ -48,17 +49,15 @@ local function CheckLicense()
 				if dataOwner == true then
 					success = true
 					role = "Owner"
-					expireTimestamp = os.time() * 1000 + (3650 * 24 * 60 * 60 * 1000) -- 10 Tahun (Unlimited)
+					expireTimestamp = os.time() * 1000 + (3650 * 24 * 60 * 60 * 1000)
 				end
 			end
 		end)
 
-		-- 2. Cek Lisensi (Donatur/Trial) - Hanya jalan kalau BUKAN Owner
 		if not success then
 			pcall(function()
 				local url = "https://zorx-broadcast-default-rtdb.firebaseio.com/licenses/" .. player.Name .. ".json"
 				local res = reqFunc({ Url = url, Method = "GET" })
-				
 				if res and (res.StatusCode == 200 or res.Status == 200) then
 					local data = HttpService:JSONDecode(res.Body)
 					if data and data.ExpireTime then
@@ -70,15 +69,11 @@ local function CheckLicense()
 			end)
 		end
 	end
-	
 	return success, expireTimestamp, role
 end
 
 local isLicensed, expireTime, userRole = CheckLicense()
 
--- ============================================================
--- BERSIHKAN UI LAMA
--- ============================================================
 for _, gui in pairs(playerGui:GetChildren()) do
 	if gui.Name == "ZorXHub" or gui.Name == "ZorxTopNotifContainer" then
 		gui:Destroy()
@@ -104,7 +99,6 @@ local DefaultPillBg = Color3.fromRGB(28, 28, 34)
 local DefaultPillStroke = Color3.fromRGB(45, 45, 55)
 local DefaultPillText = Color3.fromRGB(240, 240, 240)
 local DefaultBorder = Color3.fromRGB(45, 45, 55)
-
 local InfoLogoBorder = Color3.fromRGB(160, 80, 255)
 local NoneDotColor = Color3.fromRGB(45, 45, 55)
 
@@ -135,7 +129,7 @@ local function getExecutorName()
 	if syn then return "Synapse X"
 	elseif fluxus then return "Fluxus"
 	elseif hydrogen then return "Hydrogen"
-	elseif delta or (identifyexecutor and pcall(identifyexecutor) and string.find(string.lower(identifyexecutor()), "delta")) then return "Delta"
+	elseif delta then return "Delta"
 	elseif codex then return "Codex"
 	elseif arceus then return "Arceus X"
 	elseif solara then return "Solara"
@@ -144,7 +138,6 @@ local function getExecutorName()
 end
 
 local detectedExecutor = getExecutorName()
-print("Executor yang terdeteksi: " .. detectedExecutor)
 
 local ThemeColors = {
 	None   = { bg = DefaultPillBg,       stroke = DefaultPillStroke,           text = DefaultPillText,           border = DefaultBorder,  infoLogo = InfoLogoBorder },
@@ -189,15 +182,9 @@ PopupLayer.BackgroundTransparency = 1
 PopupLayer.ZIndex = 50
 PopupLayer.Parent = ScreenGui
 
--- ============================================================
--- VARIABEL ANNOUNCEMENT
--- ============================================================
 local unreadAnnouncements = 0
 local UnreadDot 
 
--- ============================================================
--- NOTIF ATAS KANAN (BUAT COPY & REFRESH INFO)
--- ============================================================
 local function createTopRightNotification(titleText, messageText, iconId, duration)
 	duration = duration or 6
 	local container = playerGui:FindFirstChild("ZorxTopNotifContainer")
@@ -333,9 +320,6 @@ local function createTopRightNotification(titleText, messageText, iconId, durati
 	task.delay(duration, function() if notif and notif.Parent then dismiss() end end)
 end
 
--- ============================================================
--- SYSTEM NOTIFIKASI CUSTOM BROADCAST (TENGAH)
--- ============================================================
 local function sendNotification(titleText, messageText, iconId, duration)
 	duration = duration or 6
 
@@ -547,9 +531,6 @@ local function sendNotification(titleText, messageText, iconId, duration)
 	end)
 end
 
--- ============================================================
--- LIVE BROADCAST RECEIVER (TENGAH + BULATAN MERAH NYALA)
--- ============================================================
 task.spawn(function()
 	local lastTimeChecked = 0
 	while task.wait(3) do
@@ -585,7 +566,7 @@ task.spawn(function()
 end)
 
 -- ============================================================
--- MAIN UI SETUP
+-- MAIN UI
 -- ============================================================
 local Main = Instance.new("Frame")
 Main.Name = "Main"
@@ -679,7 +660,6 @@ Title.TextSize = 11
 Title.TextXAlignment = Enum.TextXAlignment.Left
 Title.Parent = TopBar
 
--- CONTAINER PILL UTAMA
 local PillContainer = Instance.new("Frame")
 PillContainer.Name = "PillContainer"
 PillContainer.Size = UDim2.new(0, 0, 0, 22)
@@ -706,7 +686,6 @@ local function registerInfoLogoBorder(stroke)
 	table.insert(infoLogoBorders, stroke)
 end
 
--- FUNGSI FOTO PROFIL (BULAT)
 local function createAvatarPill(layoutOrder, visible)
 	local pill = Instance.new("TextButton")
 	pill.Size = UDim2.new(0, 22, 0, 22)
@@ -742,7 +721,6 @@ local function createAvatarPill(layoutOrder, visible)
 	avCorner.CornerRadius = UDim.new(1, 0)
 	avCorner.Parent = avatar
 
-	-- Fitur interaksi klik (copy link profil)
 	pill.MouseButton1Click:Connect(function()
 		local profileUrl = "https://www.roblox.com/users/" .. player.UserId .. "/profile"
 		pcall(function()
@@ -808,42 +786,31 @@ local function createPill(textText, width, iconId, layoutOrder, visible)
 	return pill, txt
 end
 
--- ============================================================
--- BAGIAN TOP BAR (FOTO, NAMA, ROLE, FOTO OWNER/COUNTDOWN)
--- ============================================================
-
--- 1. Profil Roblox (Avatar bulat ASLI player) - Fix gambar muncul
 local avatarCard = createAvatarPill(0, false)
--- Paksa gambar profil muncul setelah dibuat
 local myAvatarImg = avatarCard:FindFirstChild("Avatar")
 if myAvatarImg then
     myAvatarImg.Image = "https://www.roblox.com/headshot-thumbnail/image?userId=" .. player.UserId .. "&width=150&height=150&format=png"
 end
 
--- 2. Nickname User (Lebar dinamis menyesuaikan nama)
 local nameLength = #player.Name
 local namePillWidth = math.clamp(nameLength * 6 + 16, 40, 120)
 local nickCard, nickText = createPill(player.Name, namePillWidth, "", 1, false)
 
--- 3. ID Card Role (Owner/Trial/Donatur)
 local trialCard, trialText = createPill(userRole, 50, "", 2, false)
 
--- 4. Pill Kanan: Foto ID 71266966320368 (Owner) ATAU Countdown (Trial/Donatur)
 local zeroCard, zeroText
 
 if userRole == "Owner" then
-    -- KHUSUS OWNER: Pill Kotak (bukan bulat) berisi Logo Asset ID
     local ownerLogoId = "101333861338829"
     
     zeroCard = Instance.new("Frame")
-    zeroCard.Size = UDim2.new(0, 32, 0, 22) -- Ukuran 32x22 (Kotak memanjang)
+    zeroCard.Size = UDim2.new(0, 32, 0, 22)
     zeroCard.BackgroundColor3 = DefaultPillBg
     zeroCard.BorderSizePixel = 0
     zeroCard.LayoutOrder = 3
     zeroCard.Visible = false
     zeroCard.Parent = PillContainer
 
-    -- Pinggiran kotak melengkung standar (bukan full bulat)
     local pCorner = Instance.new("UICorner")
     pCorner.CornerRadius = UDim.new(0, 5)
     pCorner.Parent = zeroCard
@@ -854,10 +821,9 @@ if userRole == "Owner" then
     pStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
     pStroke.Parent = zeroCard
 
-    -- Gambar Asset ID di dalamnya
     local ownerLogo = Instance.new("ImageLabel")
     ownerLogo.Name = "OwnerLogo"
-    ownerLogo.Size = UDim2.new(0, 16, 0, 16) -- Ukuran gambar
+    ownerLogo.Size = UDim2.new(0, 16, 0, 16)
     ownerLogo.Position = UDim2.new(0.5, 0, 0.5, 0)
     ownerLogo.AnchorPoint = Vector2.new(0.5, 0.5)
     ownerLogo.BackgroundTransparency = 1
@@ -865,23 +831,18 @@ if userRole == "Owner" then
     ownerLogo.ScaleType = Enum.ScaleType.Fit
     ownerLogo.Parent = zeroCard
 
-    -- (Opsional) Bikin gambar di dalamnya tetap bulat, luar kotak
     local imgCorner = Instance.new("UICorner")
     imgCorner.CornerRadius = UDim.new(1, 0)
     imgCorner.Parent = ownerLogo
 
-    -- Masukkan ke list biar ikut ganti warna tema
     table.insert(allPills, zeroCard)
     table.insert(allPillStrokes, pStroke)
     
-    -- Dummy teks
     zeroText = Instance.new("TextLabel")
     zeroText.Visible = false
 else
-    -- SELAIN OWNER: Pill Angka Countdown
     zeroCard, zeroText = createPill("000", 40, "", 3, false)
     
-    -- Atur warna berdasarkan Role
     if userRole == "Donatur" then
         trialText.TextColor3 = Color3.fromRGB(255, 215, 0)
         zeroText.TextColor3 = Color3.fromRGB(255, 215, 0)
@@ -891,10 +852,65 @@ else
     end
 end
 
--- 5. Pill Utama (Game, FPS, Executor)
 local gamePill, gameText = createPill(getGameName(), 145, "83907651602856", 4, true)
 local fpsPill, fpsText = createPill("0", 48, "87621836182790", 5, true)
 local execPill, execText = createPill(detectedExecutor, 68, "76551269066313", 6, true)
+
+-- PILL PRIVAT (139991340829976)
+local chatPill = Instance.new("TextButton")
+chatPill.Name = "ChatPill"
+chatPill.Size = UDim2.new(0, 32, 0, 22)
+chatPill.BackgroundColor3 = DefaultPillBg
+chatPill.BorderSizePixel = 0
+chatPill.Text = ""
+chatPill.AutoButtonColor = false
+chatPill.LayoutOrder = 7
+chatPill.Visible = false
+chatPill.Parent = PillContainer
+
+local cpCorner = Instance.new("UICorner")
+cpCorner.CornerRadius = UDim.new(0, 5)
+cpCorner.Parent = chatPill
+
+local cpStroke = Instance.new("UIStroke")
+cpStroke.Color = DefaultPillStroke
+cpStroke.Thickness = 1
+cpStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+cpStroke.Parent = chatPill
+table.insert(allPills, chatPill)
+table.insert(allPillStrokes, cpStroke)
+
+local cpIcon = Instance.new("ImageLabel")
+cpIcon.Size = UDim2.new(0, 16, 0, 16)
+cpIcon.Position = UDim2.new(0.5, 0, 0.5, 0)
+cpIcon.AnchorPoint = Vector2.new(0.5, 0.5)
+cpIcon.BackgroundTransparency = 1
+cpIcon.Image = "rbxassetid://139991340829976"
+cpIcon.ScaleType = Enum.ScaleType.Fit
+cpIcon.Parent = chatPill
+
+local cpIconCorner = Instance.new("UICorner")
+cpIconCorner.CornerRadius = UDim.new(0, 4)
+cpIconCorner.Parent = cpIcon
+
+-- Red dot pill chat
+local chatPillDot = Instance.new("Frame")
+chatPillDot.Name = "ChatRedDot"
+chatPillDot.Size = UDim2.new(0, 8, 0, 8)
+chatPillDot.Position = UDim2.new(1, -6, 0, -2)
+chatPillDot.BackgroundColor3 = Colors.Red
+chatPillDot.BorderSizePixel = 0
+chatPillDot.Visible = false
+chatPillDot.ZIndex = 10
+chatPillDot.Parent = chatPill
+
+local cpdCorner = Instance.new("UICorner")
+cpdCorner.CornerRadius = UDim.new(1, 0)
+cpdCorner.Parent = chatPillDot
+
+_G.SetChatPillDot = function(active)
+    if chatPillDot then chatPillDot.Visible = active end
+end
 
 task.spawn(function()
 	while task.wait(5) do
@@ -905,9 +921,6 @@ task.spawn(function()
 	end
 end)
 
--- ============================================================
--- REAL-TIME COUNTDOWN
--- ============================================================
 local function FormatTime(seconds)
 	local d = math.floor(seconds / 86400)
 	local h = math.floor((seconds % 86400) / 3600)
@@ -936,12 +949,9 @@ local function StartCountdown()
 			
 			if trialText and zeroText then
 				trialText.Text = userRole
-				
-				-- Jika BUKAN Owner, update angka countdown-nya
 if userRole ~= "Owner" then
 	zeroText.Text = formattedTime
 	if zeroCard then
-		-- Lebarkan pill biar teks nggak kepotong titik-titik
 		zeroCard.Size = UDim2.new(0, zeroText.TextBounds.X + 30, 0, 22)
 	end
 end
@@ -954,15 +964,11 @@ end
 end
 StartCountdown()
 
--- ============================================================
--- AUTO-CHECK LICENSE (ANTI NYANGKUT)
--- ============================================================
 task.spawn(function()
-    while task.wait(5) do -- Ngecek ke Firebase tiap 5 detik
+    while task.wait(5) do
         if reqFunc then
             local isStillValid = false
             pcall(function()
-                -- Cek apakah masih Owner
                 local urlOwner = "https://zorx-broadcast-default-rtdb.firebaseio.com/owners/" .. player.Name .. ".json"
                 local resOwner = reqFunc({ Url = urlOwner, Method = "GET" })
                 if resOwner and (resOwner.StatusCode == 200 or resOwner.Status == 200) then
@@ -971,7 +977,6 @@ task.spawn(function()
                     end
                 end
                 
-                -- Kalau bukan Owner, cek apakah masih punya Lisensi
                 if not isStillValid then
                     local url = "https://zorx-broadcast-default-rtdb.firebaseio.com/licenses/" .. player.Name .. ".json"
                     local res = reqFunc({ Url = url, Method = "GET" })
@@ -984,19 +989,15 @@ task.spawn(function()
                 end
             end)
 
-            -- JIKA LISENSI DICABUT / DI-RESET DARI WEB
             if not isStillValid then
                 warn("[ZORX] Lisensi kamu telah dicabut / di-reset oleh Admin!")
-                DestroyEverything() -- Fungsi ini udah ada di atas buat ngehapus UI dan script
+                DestroyEverything()
                 break
             end
         end
     end
 end)
 
--- ============================================================
--- TOMBOL LONCENG & ANNOUNCEMENT
--- ============================================================
 local AnnouncBtn = Instance.new("TextButton")
 AnnouncBtn.Name = "AnnouncBtn"
 AnnouncBtn.Size = UDim2.new(0, 24, 0, 24)
@@ -1074,9 +1075,7 @@ local isMaximized = false
 MaximizeBtn.MouseButton1Click:Connect(function()
 	isMaximized = not isMaximized
 
-	-- ===== HIDE/SHOW TITLE "ZORX" =====
 if isMaximized then
-	-- SAAT DIPERBESAR: Cuma Owner yang tulisan ZORX-nya tetap muncul
 	if userRole ~= "Owner" then
 		Title.Visible = false
 	else
@@ -1084,12 +1083,10 @@ if isMaximized then
 		Title.TextTransparency = 0
 	end
 else
-	-- SAAT UI NORMAL: Semua role (Owner, Trial, Donatur) tulisan ZORX-nya MUNCUL
 	Title.Visible = true
 	Title.TextTransparency = 0
 end
 
-	-- ===== SHOW/HIDE PILL KARTU =====
 	for _, card in ipairs({avatarCard, nickCard, trialCard, zeroCard}) do
 		if isMaximized then
 			card.Visible = true
@@ -1103,7 +1100,6 @@ end
 		end
 	end
 
-	-- ===== RESIZE MAIN UI =====
 	TweenService:Create(Main, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
 		Size = isMaximized and UDim2.new(0, 620, 0, 390) or UDim2.new(0, 480, 0, 300),
 		Position = UDim2.new(0.5, 0, 0.5, 0)
@@ -1299,7 +1295,6 @@ local ContentCorner = Instance.new("UICorner")
 ContentCorner.CornerRadius = UDim.new(0, 10)
 ContentCorner.Parent = Content
 
--- WATERMARK
 local WatermarkLogo = Instance.new("ImageLabel")
 WatermarkLogo.Name = "WatermarkLogo"
 WatermarkLogo.Size = UDim2.new(0, 240, 0, 240)
@@ -1353,6 +1348,701 @@ ScrollList.Parent = Scroll
 local sidebarButtons = {}
 local activeTab = nil
 
+local function clearContent()
+    if Scroll then
+        for _, child in pairs(Scroll:GetChildren()) do
+            if not child:IsA("UIListLayout") and not child:IsA("UIPadding") then
+                child:Destroy()
+            end
+        end
+    end
+    if PopupLayer then
+        for _, child in pairs(PopupLayer:GetChildren()) do
+            child.Visible = false
+        end
+    end
+end
+
+-- ============================================================
+-- LIVE CHAT SYSTEM - FINAL FIX
+-- ============================================================
+local chatMessages = {}
+local currentPrivateTarget = nil 
+local currentPrivateTargetId = nil
+local isInPrivateMode = false
+local privateChatHistory = {}
+local pendingIncoming = {}
+local activeIncomingList = {}
+local lastPrivateSeen = {}
+local chatUI = nil
+local isIncomingUIVisible = false
+
+_G.IsInPrivateMode = function() return isInPrivateMode end
+_G.GetPrivateTarget = function() return currentPrivateTarget end
+
+_G.ShowIncomingCard = function(senderName, senderId, hasUnread)
+    if not chatUI then return end
+    if not chatUI.privatePanel or not chatUI.privatePanel.Parent then return end
+
+    local defaultNoPrivate = chatUI.defaultNoPrivate
+    local targetProfileBox = chatUI.targetProfileBox
+    local targetName = chatUI.targetName
+    local targetAvatar = chatUI.targetAvatar
+    local privateRedDot = chatUI.privateRedDot
+
+    if not senderName then
+        defaultNoPrivate.Visible = true
+        targetProfileBox.Visible = false
+        privateRedDot.Visible = false
+        return
+    end
+
+    defaultNoPrivate.Visible = false
+    targetProfileBox.Visible = true
+    targetName.Text = senderName
+    targetAvatar.Image = "https://www.roblox.com/headshot-thumbnail/image?userId=" .. tostring(senderId or 1) .. "&width=150&height=150&format=png"
+    privateRedDot.Visible = hasUnread and true or false
+end
+
+_G.OpenIncomingFromPill = function()
+    if #activeIncomingList == 0 then return false end
+    local lastTarget = activeIncomingList[#activeIncomingList]
+    local info = pendingIncoming[lastTarget]
+    if info and chatUI then
+        _G.ShowIncomingCard(lastTarget, info.SenderId, true)
+        return true
+    end
+    return false
+end
+
+local function loadLiveChat()
+    clearContent()
+    
+    local chatContainer = Instance.new("Frame")
+    chatContainer.Name = "ChatContainer"
+    chatContainer.Size = UDim2.new(1, 0, 1, 0)
+    chatContainer.BackgroundTransparency = 1
+    chatContainer.Parent = Scroll
+
+    -- HEADER PRIVATE MODE
+    local privateHeader = Instance.new("Frame")
+    privateHeader.Name = "PrivateHeader"
+    privateHeader.Size = UDim2.new(1, 0, 0, 38)
+    privateHeader.Position = UDim2.new(0, 0, 0, 0)
+    privateHeader.BackgroundColor3 = Color3.fromRGB(28, 28, 34) 
+    privateHeader.BorderSizePixel = 0
+    privateHeader.Visible = false
+    privateHeader.ZIndex = 5
+    privateHeader.Parent = chatContainer
+
+    local phCorner = Instance.new("UICorner")
+    phCorner.CornerRadius = UDim.new(0, 6)
+    phCorner.Parent = privateHeader
+
+    local phStroke = Instance.new("UIStroke")
+    phStroke.Color = DefaultBorder
+    phStroke.Thickness = 1
+    phStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+    phStroke.Parent = privateHeader
+    registerBorder(phStroke)
+
+    local phAvatar = Instance.new("ImageLabel")
+    phAvatar.Size = UDim2.new(0, 26, 0, 26)
+    phAvatar.Position = UDim2.new(0, 8, 0.5, -13)
+    phAvatar.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+    phAvatar.BorderSizePixel = 0
+    phAvatar.ScaleType = Enum.ScaleType.Crop
+    phAvatar.Parent = privateHeader
+
+    local phAvCorner = Instance.new("UICorner")
+    phAvCorner.CornerRadius = UDim.new(1, 0)
+    phAvCorner.Parent = phAvatar
+
+    local phName = Instance.new("TextLabel")
+    phName.Size = UDim2.new(1, -100, 0, 14)
+    phName.Position = UDim2.new(0, 42, 0, 5)
+    phName.BackgroundTransparency = 1
+    phName.Text = "Private Chat"
+    phName.TextColor3 = Colors.Text
+    phName.Font = Enum.Font.GothamBold
+    phName.TextSize = 11
+    phName.TextXAlignment = Enum.TextXAlignment.Left
+    phName.Parent = privateHeader
+
+    local phSub = Instance.new("TextLabel")
+    phSub.Size = UDim2.new(1, -100, 0, 12)
+    phSub.Position = UDim2.new(0, 42, 0, 20)
+    phSub.BackgroundTransparency = 1
+    phSub.Text = "Private mode aktif"
+    phSub.TextColor3 = Color3.fromRGB(140, 140, 150)
+    phSub.Font = Enum.Font.Gotham
+    phSub.TextSize = 9
+    phSub.TextXAlignment = Enum.TextXAlignment.Left
+    phSub.Parent = privateHeader
+
+    local closePrivateBtn = Instance.new("TextButton")
+    closePrivateBtn.Size = UDim2.new(0, 26, 0, 26)
+    closePrivateBtn.Position = UDim2.new(1, -34, 0.5, -13)
+    closePrivateBtn.BackgroundColor3 = Color3.fromRGB(180, 40, 40)
+    closePrivateBtn.BorderSizePixel = 0
+    closePrivateBtn.Text = ""
+    closePrivateBtn.AutoButtonColor = false
+    closePrivateBtn.ZIndex = 6
+    closePrivateBtn.Parent = privateHeader
+
+    local cpBtnCorner = Instance.new("UICorner")
+    cpBtnCorner.CornerRadius = UDim.new(0, 4)
+    cpBtnCorner.Parent = closePrivateBtn
+
+    local cpBtnIcon = Instance.new("ImageLabel")
+    cpBtnIcon.Size = UDim2.new(0, 10, 0, 10)
+    cpBtnIcon.Position = UDim2.new(0.5, 0, 0.5, 0)
+    cpBtnIcon.AnchorPoint = Vector2.new(0.5, 0.5)
+    cpBtnIcon.BackgroundTransparency = 1
+    cpBtnIcon.Image = "rbxassetid://85435035697164"
+    cpBtnIcon.ImageColor3 = Color3.fromRGB(255, 255, 255)
+    cpBtnIcon.ScaleType = Enum.ScaleType.Fit
+    cpBtnIcon.Parent = closePrivateBtn
+
+    -- PANEL INCOMING MESSAGE (POJOK KANAN ATAS)
+    local privatePanel = Instance.new("Frame")
+    privatePanel.Name = "PrivatePanel"
+    privatePanel.Size = UDim2.new(0, 160, 0, 105) 
+    privatePanel.Position = UDim2.new(1, -170, 0, 6)
+    privatePanel.BackgroundColor3 = Color3.fromRGB(22, 22, 27) 
+    privatePanel.Visible = false
+    privatePanel.ZIndex = 10
+    privatePanel.Parent = chatContainer
+    
+    local pCorner = Instance.new("UICorner")
+    pCorner.CornerRadius = UDim.new(0, 6)
+    pCorner.Parent = privatePanel
+
+    local pStroke = Instance.new("UIStroke")
+    pStroke.Color = Color3.fromRGB(50, 50, 55)
+    pStroke.Parent = privatePanel
+    registerBorder(pStroke)
+
+    local titleIncoming = Instance.new("TextLabel")
+    titleIncoming.Size = UDim2.new(1, -12, 0, 16)
+    titleIncoming.Position = UDim2.new(0, 6, 0, 6)
+    titleIncoming.BackgroundTransparency = 1
+    titleIncoming.Text = "Incoming messages"
+    titleIncoming.TextColor3 = Color3.fromRGB(140, 140, 150)
+    titleIncoming.Font = Enum.Font.GothamBold
+    titleIncoming.TextSize = 9
+    titleIncoming.TextXAlignment = Enum.TextXAlignment.Center
+    titleIncoming.Parent = privatePanel
+
+    local titleDivider = Instance.new("Frame")
+    titleDivider.Size = UDim2.new(1, -12, 0, 1)
+    titleDivider.Position = UDim2.new(0, 6, 0, 26)
+    titleDivider.BackgroundColor3 = Color3.fromRGB(50, 50, 55)
+    titleDivider.BorderSizePixel = 0
+    titleDivider.Parent = privatePanel
+
+    local innerBox = Instance.new("Frame")
+    innerBox.Size = UDim2.new(1, -12, 0, 52)
+    innerBox.Position = UDim2.new(0, 6, 0, 34)
+    innerBox.BackgroundColor3 = Color3.fromRGB(28, 28, 34) 
+    innerBox.BorderSizePixel = 0
+    innerBox.Parent = privatePanel
+
+    local ibCorner = Instance.new("UICorner")
+    ibCorner.CornerRadius = UDim.new(0, 4)
+    ibCorner.Parent = innerBox
+
+    local ibStroke = Instance.new("UIStroke")
+    ibStroke.Color = Color3.fromRGB(50, 50, 55)
+    ibStroke.Thickness = 1
+    ibStroke.Parent = innerBox
+
+    local iconEnvelope = Instance.new("ImageLabel")
+    iconEnvelope.Size = UDim2.new(0, 18, 0, 18)
+    iconEnvelope.Position = UDim2.new(0, 8, 0.5, -9)
+    iconEnvelope.BackgroundTransparency = 1
+    iconEnvelope.Image = "rbxassetid://139991340829976"
+    iconEnvelope.ScaleType = Enum.ScaleType.Fit
+    local iconCorner = Instance.new("UICorner")
+    iconCorner.CornerRadius = UDim.new(0, 4)
+    iconCorner.Parent = iconEnvelope
+    iconEnvelope.Parent = innerBox
+
+    -- State DEFAULT
+    local defaultNoPrivate = Instance.new("Frame")
+    defaultNoPrivate.Size = UDim2.new(1, 0, 1, 0)
+    defaultNoPrivate.BackgroundTransparency = 1
+    defaultNoPrivate.Visible = true
+    defaultNoPrivate.Parent = innerBox
+
+    local txtNoPrivate = Instance.new("TextLabel")
+    txtNoPrivate.Size = UDim2.new(1, -32, 0, 12)
+    txtNoPrivate.Position = UDim2.new(0, 30, 0, 10)
+    txtNoPrivate.BackgroundTransparency = 1
+    txtNoPrivate.Text = "No privat massage yet."
+    txtNoPrivate.TextColor3 = Color3.fromRGB(180, 180, 190)
+    txtNoPrivate.Font = Enum.Font.GothamBold
+    txtNoPrivate.TextSize = 8
+    txtNoPrivate.TextXAlignment = Enum.TextXAlignment.Left
+    txtNoPrivate.Parent = defaultNoPrivate
+
+    local txtTapPrivate = Instance.new("TextLabel")
+    txtTapPrivate.Size = UDim2.new(1, -32, 0, 10)
+    txtTapPrivate.Position = UDim2.new(0, 30, 0, 24)
+    txtTapPrivate.BackgroundTransparency = 1
+    txtTapPrivate.Text = "Tap a massage, then Privat.."
+    txtTapPrivate.TextColor3 = Color3.fromRGB(120, 120, 130)
+    txtTapPrivate.Font = Enum.Font.Gotham
+    txtTapPrivate.TextSize = 7
+    txtTapPrivate.TextXAlignment = Enum.TextXAlignment.Left
+    txtTapPrivate.Parent = defaultNoPrivate
+
+    -- State TARGET
+    local targetProfileBox = Instance.new("TextButton")
+    targetProfileBox.Size = UDim2.new(1, 0, 1, 0)
+    targetProfileBox.BackgroundTransparency = 1
+    targetProfileBox.Text = ""
+    targetProfileBox.Visible = false
+    targetProfileBox.AutoButtonColor = false
+    targetProfileBox.Parent = innerBox
+
+    local targetAvatar = Instance.new("ImageLabel")
+    targetAvatar.Size = UDim2.new(0, 22, 0, 22)
+    targetAvatar.Position = UDim2.new(0, 4, 0.5, -11)
+    targetAvatar.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+    targetAvatar.BorderSizePixel = 0
+    targetAvatar.ScaleType = Enum.ScaleType.Crop
+    targetAvatar.Parent = targetProfileBox
+
+    local taCorner = Instance.new("UICorner")
+    taCorner.CornerRadius = UDim.new(1, 0)
+    taCorner.Parent = targetAvatar
+
+    local targetName = Instance.new("TextLabel")
+    targetName.Size = UDim2.new(1, -32, 0, 12)
+    targetName.Position = UDim2.new(0, 30, 0, 10)
+    targetName.BackgroundTransparency = 1
+    targetName.Text = "Target"
+    targetName.TextColor3 = Color3.fromRGB(100, 255, 100)
+    targetName.Font = Enum.Font.GothamBold
+    targetName.TextSize = 9
+    targetName.TextXAlignment = Enum.TextXAlignment.Left
+    targetName.TextTruncate = Enum.TextTruncate.AtEnd
+    targetName.Parent = targetProfileBox
+
+    local targetSub = Instance.new("TextLabel")
+    targetSub.Size = UDim2.new(1, -32, 0, 10)
+    targetSub.Position = UDim2.new(0, 30, 0, 24)
+    targetSub.BackgroundTransparency = 1
+    targetSub.Text = "Click to open chat"
+    targetSub.TextColor3 = Color3.fromRGB(140, 140, 150)
+    targetSub.Font = Enum.Font.Gotham
+    targetSub.TextSize = 7
+    targetSub.TextXAlignment = Enum.TextXAlignment.Left
+    targetSub.Parent = targetProfileBox
+
+    local privateRedDot = Instance.new("Frame")
+    privateRedDot.Size = UDim2.new(0, 8, 0, 8)
+    privateRedDot.Position = UDim2.new(1, -10, 0, 4)
+    privateRedDot.BackgroundColor3 = Colors.Red
+    privateRedDot.BorderSizePixel = 0
+    privateRedDot.Visible = false
+    privateRedDot.Parent = privatePanel
+    
+    local prdCorner = Instance.new("UICorner")
+    prdCorner.CornerRadius = UDim.new(1, 0)
+    prdCorner.Parent = privateRedDot
+
+    -- AREA PESAN
+    local msgScroll = Instance.new("ScrollingFrame")
+    msgScroll.Name = "MsgScroll"
+    msgScroll.Size = UDim2.new(1, 0, 1, -90) 
+    msgScroll.BackgroundTransparency = 1
+    msgScroll.BorderSizePixel = 0
+    msgScroll.ScrollBarThickness = 4
+    msgScroll.ScrollBarImageColor3 = Colors.Stroke
+    msgScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
+    msgScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+    msgScroll.ZIndex = 2
+    msgScroll.Parent = chatContainer
+
+    local msgList = Instance.new("UIListLayout")
+    msgList.SortOrder = Enum.SortOrder.LayoutOrder
+    msgList.Padding = UDim.new(0, 6)
+    msgList.Parent = msgScroll
+
+    local msgPad = Instance.new("UIPadding")
+    msgPad.PaddingTop = UDim.new(0, 4)
+    msgPad.PaddingRight = UDim.new(0, 4)
+    msgPad.Parent = msgScroll
+
+    -- INPUT
+    local inputFrame = Instance.new("Frame")
+    inputFrame.Name = "InputFrame"
+    inputFrame.Size = UDim2.new(1, 0, 0, 34) 
+    inputFrame.Position = UDim2.new(0, 0, 1, -34) 
+    inputFrame.AnchorPoint = Vector2.new(0, 1) 
+    inputFrame.BackgroundColor3 = Colors.Slot
+    inputFrame.BorderSizePixel = 0
+    inputFrame.ZIndex = 5
+    inputFrame.Parent = chatContainer
+
+    local inCorner = Instance.new("UICorner")
+    inCorner.CornerRadius = UDim.new(0, 6)
+    inCorner.Parent = inputFrame
+
+    local inStroke = Instance.new("UIStroke")
+    inStroke.Color = ThemeColors[ActiveTheme].border
+    inStroke.Thickness = 1
+    inStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+    inStroke.Parent = inputFrame
+    registerBorder(inStroke)
+
+    local chatBox = Instance.new("TextBox")
+    chatBox.Size = UDim2.new(1, -50, 1, 0)
+    chatBox.Position = UDim2.new(0, 8, 0, 0)
+    chatBox.BackgroundTransparency = 1
+    chatBox.Text = ""
+    chatBox.PlaceholderText = "Message #general /help"
+    chatBox.PlaceholderColor3 = Colors.SubText
+    chatBox.TextColor3 = Colors.Text
+    chatBox.Font = Enum.Font.Gotham
+    chatBox.TextSize = 11
+    chatBox.TextXAlignment = Enum.TextXAlignment.Left
+    chatBox.ClearTextOnFocus = false
+    chatBox.Parent = inputFrame
+
+    local sendBtn = Instance.new("ImageButton")
+    sendBtn.Size = UDim2.new(0, 24, 0, 24)
+    sendBtn.Position = UDim2.new(1, -32, 0.5, -12)
+    sendBtn.BackgroundColor3 = ThemeColors[ActiveTheme].border
+    sendBtn.BorderSizePixel = 0
+    sendBtn.Image = "rbxassetid://103326784032850"
+    sendBtn.ScaleType = Enum.ScaleType.Fit
+    sendBtn.AutoButtonColor = false
+    sendBtn.ZIndex = 6
+    sendBtn.Parent = inputFrame
+
+    local sbCorner = Instance.new("UICorner")
+    sbCorner.CornerRadius = UDim.new(0, 4)
+    sbCorner.Parent = sendBtn
+
+    chatUI = {
+        chatContainer = chatContainer,
+        msgScroll = msgScroll,
+        privateHeader = privateHeader,
+        privatePanel = privatePanel,
+        privateRedDot = privateRedDot,
+        targetProfileBox = targetProfileBox,
+        targetAvatar = targetAvatar,
+        targetName = targetName,
+        defaultNoPrivate = defaultNoPrivate,
+        phAvatar = phAvatar,
+        phName = phName,
+        phSub = phSub,
+        titleIncoming = titleIncoming,
+        chatBox = chatBox,
+    }
+
+    local renderMessages
+
+    local function enterPrivateMode(targetNameStr, targetId)
+        if not targetNameStr or targetNameStr == "" then return end
+        currentPrivateTarget = targetNameStr
+        currentPrivateTargetId = targetId
+        isInPrivateMode = true
+
+        pendingIncoming[targetNameStr] = nil
+        for i, t in ipairs(activeIncomingList) do
+            if t == targetNameStr then table.remove(activeIncomingList, i) break end
+        end
+
+        privateHeader.Visible = true
+        msgScroll.Position = UDim2.new(0, 0, 0, 42)
+        msgScroll.Size = UDim2.new(1, 0, 1, -84)
+
+        phName.Text = "Chatting with " .. targetNameStr
+        phSub.Text = "Private mode • Tap X untuk keluar"
+        phAvatar.Image = "https://www.roblox.com/headshot-thumbnail/image?userId=" .. tostring(targetId or 1) .. "&width=150&height=150&format=png"
+
+        _G.ShowIncomingCard(targetNameStr, targetId, false)
+
+        chatBox.PlaceholderText = "Message @" .. targetNameStr .. "..."
+        
+        if _G.SetChatPillDot then _G.SetChatPillDot(false) end
+
+        renderMessages()
+    end
+
+    local function exitPrivateMode()
+        isInPrivateMode = false
+
+        privateHeader.Visible = false
+        msgScroll.Position = UDim2.new(0, 0, 0, 0)
+        msgScroll.Size = UDim2.new(1, 0, 1, -90)
+
+        chatBox.PlaceholderText = "Message #general /help"
+
+        if currentPrivateTarget then
+            _G.ShowIncomingCard(currentPrivateTarget, currentPrivateTargetId, false)
+        elseif #activeIncomingList > 0 then
+            local lastTarget = activeIncomingList[#activeIncomingList]
+            local info = pendingIncoming[lastTarget]
+            if info then
+                _G.ShowIncomingCard(lastTarget, info.SenderId, true)
+                if _G.SetChatPillDot then _G.SetChatPillDot(true) end
+            end
+        else
+            _G.ShowIncomingCard(nil)
+        end
+
+        renderMessages()
+    end
+
+    _G.EnterPrivateMode = enterPrivateMode
+    _G.ExitPrivateMode = exitPrivateMode
+
+    closePrivateBtn.MouseButton1Click:Connect(function()
+        exitPrivateMode()
+    end)
+
+    targetProfileBox.MouseButton1Click:Connect(function()
+        if currentPrivateTarget then
+            enterPrivateMode(currentPrivateTarget, currentPrivateTargetId)
+        end
+    end)
+
+    renderMessages = function()
+        for _, child in pairs(msgScroll:GetChildren()) do
+            if child:IsA("Frame") or child:IsA("TextLabel") then 
+                child:Destroy() 
+            end
+        end
+
+        local messagesToRender = chatMessages
+        if isInPrivateMode then
+            messagesToRender = privateChatHistory[currentPrivateTarget or ""] or {}
+        end
+
+        table.sort(messagesToRender, function(a, b) return (a.Time or 0) < (b.Time or 0) end)
+
+        for i, msgData in ipairs(messagesToRender) do
+            local isMe = (msgData.Sender == player.Name)
+            local msgFrame = Instance.new("Frame")
+            msgFrame.Size = UDim2.new(1, 0, 0, 0)
+            msgFrame.AutomaticSize = Enum.AutomaticSize.Y
+            msgFrame.BackgroundTransparency = 1
+            msgFrame.LayoutOrder = i
+            msgFrame.Parent = msgScroll
+
+            local senderId = msgData.SenderId or 1
+            local avatarImg = Instance.new("ImageLabel")
+            avatarImg.Size = UDim2.new(0, 24, 0, 24)
+            avatarImg.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+            avatarImg.BorderSizePixel = 0
+            avatarImg.Image = "https://www.roblox.com/headshot-thumbnail/image?userId=" .. tostring(senderId) .. "&width=150&height=150&format=png"
+            avatarImg.ScaleType = Enum.ScaleType.Crop
+            avatarImg.Parent = msgFrame
+            Instance.new("UICorner", avatarImg).CornerRadius = UDim.new(1, 0)
+
+            local hash = 0
+            for j = 1, #msgData.Sender do hash = hash + string.byte(msgData.Sender, j) end
+            local hue = (hash % 100) / 100
+
+            local nameBtn = Instance.new("TextButton")
+            nameBtn.Size = UDim2.new(1, -32, 0, 14)
+            nameBtn.Position = UDim2.new(0, 32, 0, 0)
+            nameBtn.BackgroundTransparency = 1
+            nameBtn.Text = msgData.Sender
+            nameBtn.TextColor3 = isMe and Color3.fromRGB(100, 255, 100) or Color3.fromHSV(hue, 0.7, 1)
+            nameBtn.Font = Enum.Font.GothamBold
+            nameBtn.TextSize = 10
+            nameBtn.TextXAlignment = Enum.TextXAlignment.Left
+            nameBtn.AutoButtonColor = false
+            nameBtn.Parent = msgFrame
+
+            if not isMe then
+                nameBtn.MouseButton1Click:Connect(function()
+                    enterPrivateMode(msgData.Sender, senderId)
+                end)
+            end
+
+            local textLbl = Instance.new("TextLabel")
+            textLbl.Size = UDim2.new(1, -32, 0, 0)
+            textLbl.Position = UDim2.new(0, 32, 0, 14)
+            textLbl.AutomaticSize = Enum.AutomaticSize.Y
+            textLbl.BackgroundTransparency = 1
+            textLbl.Text = msgData.Message
+            textLbl.TextColor3 = Colors.Text
+            textLbl.Font = Enum.Font.Gotham
+            textLbl.TextSize = 11
+            textLbl.TextWrapped = true
+            textLbl.TextXAlignment = Enum.TextXAlignment.Left
+            textLbl.Parent = msgFrame
+        end
+
+        task.defer(function()
+            msgScroll.CanvasPosition = Vector2.new(0, msgScroll.AbsoluteCanvasSize.Y)
+        end)
+    end
+
+    sendBtn.MouseButton1Click:Connect(function()
+        local text = chatBox.Text:gsub("^%s*(.-)%s*$", "%1")
+        if text == "" or #text > 100 then return end
+        chatBox.Text = ""
+
+        if isInPrivateMode and currentPrivateTarget then
+            if reqFunc then
+                pcall(function()
+                    local privKey = tostring(os.time()) .. player.UserId
+                    local url = "https://zorx-broadcast-default-rtdb.firebaseio.com/private/" .. tostring(currentPrivateTarget) .. "/" .. privKey .. ".json"
+                    reqFunc({
+                        Url = url,
+                        Method = "PUT",
+                        Headers = { ["Content-Type"] = "application/json" },
+                        Body = HttpService:JSONEncode({
+                            Sender = player.Name,
+                            SenderId = player.UserId,
+                            Target = currentPrivateTarget,
+                            Message = text,
+                            Time = os.time()
+                        })
+                    })
+                end)
+            end
+            privateChatHistory[currentPrivateTarget] = privateChatHistory[currentPrivateTarget] or {}
+            table.insert(privateChatHistory[currentPrivateTarget], {
+                Sender = player.Name,
+                SenderId = player.UserId,
+                Message = text,
+                Time = os.time()
+            })
+            renderMessages()
+        else
+            if reqFunc then
+                pcall(function()
+                    local url = "https://zorx-broadcast-default-rtdb.firebaseio.com/chat/public/General/" .. tostring(os.time()) .. player.UserId .. ".json"
+                    reqFunc({
+                        Url = url,
+                        Method = "PUT",
+                        Headers = { ["Content-Type"] = "application/json" },
+                        Body = HttpService:JSONEncode({
+                            Sender = player.Name,
+                            SenderId = player.UserId,
+                            Message = text,
+                            Time = os.time()
+                        })
+                    })
+                end)
+            end
+        end
+    end)
+
+    local function fetchChat()
+        if not reqFunc then return end
+
+        if not isInPrivateMode then
+            pcall(function()
+                local url = "https://zorx-broadcast-default-rtdb.firebaseio.com/chat/public/General.json"
+                local res = reqFunc({ Url = url, Method = "GET" })
+                if res and (res.StatusCode == 200 or res.Status == 200) then
+                    local data = HttpService:JSONDecode(res.Body)
+                    local newMessages = {}
+                    if data then
+                        for _, v in pairs(data) do
+                            if type(v) == "table" and v.Sender and v.Message then
+                                table.insert(newMessages, v)
+                            end
+                        end
+                    end
+                    chatMessages = newMessages
+                    renderMessages()
+                end
+            end)
+        end
+
+        pcall(function()
+            local url = "https://zorx-broadcast-default-rtdb.firebaseio.com/private.json"
+            local res = reqFunc({ Url = url, Method = "GET" })
+            if res and (res.StatusCode == 200 or res.Status == 200) then
+                local data = HttpService:JSONDecode(res.Body)
+                if type(data) == "table" then
+                    for targetName, msgs in pairs(data) do
+                        if type(msgs) == "table" then
+                            for _, v in pairs(msgs) do
+                                if type(v) == "table" and v.Sender and v.Message then
+                                    if v.Target == player.Name then
+                                        local key = targetName .. "|" .. tostring(v.Time or 0) .. "|" .. tostring(v.Sender) .. "|" .. tostring(v.Message)
+                                        if not lastPrivateSeen[key] then
+                                            lastPrivateSeen[key] = true
+                                            local other = v.Sender
+                                            privateChatHistory[other] = privateChatHistory[other] or {}
+                                            table.insert(privateChatHistory[other], {
+                                                Sender = v.Sender,
+                                                SenderId = v.SenderId,
+                                                Message = v.Message,
+                                                Time = v.Time
+                                            })
+                                            
+                                            if not (isInPrivateMode and currentPrivateTarget == other) then
+                                                pendingIncoming[other] = {
+                                                    Sender = v.Sender,
+                                                    SenderId = v.SenderId,
+                                                    Message = v.Message,
+                                                    Time = v.Time
+                                                }
+                                                local already = false
+                                                for _, t in ipairs(activeIncomingList) do
+                                                    if t == other then already = true break end
+                                                end
+                                                if not already then
+                                                    table.insert(activeIncomingList, other)
+                                                end
+                                                _G.ShowIncomingCard(other, v.SenderId, true)
+                                                if _G.SetChatPillDot then _G.SetChatPillDot(true) end
+                                                renderMessages()
+                                            else
+                                                renderMessages()
+                                            end
+                                        end
+                                    end
+                                end
+                            end
+                        end
+                    end
+                end
+            end
+        end)
+    end
+
+    -- Posisi Awal: UI Incoming Message hidden
+    privatePanel.Visible = false
+
+    if isInPrivateMode and currentPrivateTarget then
+        enterPrivateMode(currentPrivateTarget, currentPrivateTargetId)
+    else
+        if #activeIncomingList > 0 then
+            local lastTarget = activeIncomingList[#activeIncomingList]
+            local info = pendingIncoming[lastTarget]
+            if info then
+                _G.ShowIncomingCard(lastTarget, info.SenderId, true)
+                if _G.SetChatPillDot then _G.SetChatPillDot(true) end
+                privatePanel.Visible = true -- hanya muncul kalau ada notif
+            end
+        end
+        fetchChat()
+        task.spawn(function()
+            while chatContainer and chatContainer.Parent do
+                fetchChat()
+                task.wait(3)
+            end
+        end)
+    end
+end
+
+-- ============================================================
+-- SIDEBAR BUTTON
+-- ============================================================
 local function createSidebarButton(text, order, iconId, onClick)
 	local btn = Instance.new("TextButton")
 	btn.Name = text
@@ -1413,7 +2103,15 @@ local function createSidebarButton(text, order, iconId, onClick)
 		end
 		activeTab = btn
 		TweenService:Create(btn, TweenInfo.new(0.15), { BackgroundTransparency = 0.5, BackgroundColor3 = Colors.SlotHover }):Play()
-		TweenService:Create(textLabel, TweenInfo.new(0.15), { TextColor3 = Colors.Text }):Play()
+		TweenService:Create(textLabel, TweenInfo.new(0.15), { TextColor3 = Colors.Text }):Play() 
+
+if text == "Live Chat" then
+    if execPill then execPill.Visible = false end
+    if chatPill then chatPill.Visible = true end
+else
+    if execPill then execPill.Visible = true end
+    if chatPill then chatPill.Visible = false end
+end
 		if onClick then onClick() end
 	end)
 
@@ -1421,16 +2119,26 @@ local function createSidebarButton(text, order, iconId, onClick)
 	return btn
 end
 
-local function clearContent()
-	for _, child in pairs(Scroll:GetChildren()) do
-		if not child:IsA("UIListLayout") and not child:IsA("UIPadding") then
-			child:Destroy()
-		end
-	end
-	for _, child in pairs(PopupLayer:GetChildren()) do
-		child.Visible = false
-	end
-end
+-- ============================================================
+-- PILL CHAT CLICK HANDLER (FIX UNTUK HP & PC)
+-- ============================================================
+chatPill.MouseButton1Click:Connect(function()
+    if chatUI and chatUI.privatePanel then
+        chatUI.privatePanel.Visible = not chatUI.privatePanel.Visible
+        
+        if chatUI.privatePanel.Visible then
+            local hasPending = _G.OpenIncomingFromPill and _G.OpenIncomingFromPill()
+        end
+    end
+    
+    for _, btn in pairs(sidebarButtons) do
+        local lbl = btn:FindFirstChild("Label")
+        if lbl and lbl.Text == "Live Chat" then
+            btn.MouseButton1Click:Fire()
+            break
+        end
+    end
+end)
 
 SearchBox:GetPropertyChangedSignal("Text"):Connect(function()
 	local query = SearchBox.Text:lower()
@@ -1585,7 +2293,7 @@ local function loadAboutPanel()
 end
 
 -- ============================================================
--- TAB INFO
+-- PANEL INFO
 -- ============================================================
 local function loadInfoPanel()
 	clearContent()
@@ -2021,8 +2729,24 @@ local miscLockedText = "M\226\128\139i\226\128\139s\226\128\139c"
 createSidebarButton("About", 1, "135090089738327", loadAboutPanel)
 createSidebarButton("Farm", 2, "98852406765639", function() end)
 createSidebarButton(miscLockedText, 3, "112245774650566", function() end)
-createSidebarButton("Setings", 4, "117852848591099", loadSetingsPanel)
-createSidebarButton("Info", 5, "117372440865704", loadInfoPanel)
+
+local sideDivider = Instance.new("Frame")
+sideDivider.Size = UDim2.new(1, 0, 0, 1)
+sideDivider.BackgroundColor3 = DefaultBorder
+sideDivider.BorderSizePixel = 0
+sideDivider.LayoutOrder = 4
+sideDivider.Parent = SidebarButtonContainer
+
+createSidebarButton("Live Chat", 5, "105588735802729", loadLiveChat)
+
+local spacer = Instance.new("Frame")
+spacer.Size = UDim2.new(1, 0, 0, 4)
+spacer.BackgroundTransparency = 1
+spacer.LayoutOrder = 6
+spacer.Parent = SidebarButtonContainer
+
+createSidebarButton("Setings", 7, "117852848591099", loadSetingsPanel)
+createSidebarButton("Info", 8, "117372440865704", loadInfoPanel)
 
 task.wait(0.1)
 
@@ -2041,7 +2765,7 @@ end
 loadAboutPanel()
 
 -- ============================================================
--- UI ANNOUNCEMENT (AUTO-EXPAND KE BAWAH + EMPTY STATE)
+-- UI ANNOUNCEMENT
 -- ============================================================
 local AnnouncPanel = Instance.new("Frame")
 AnnouncPanel.Name = "AnnouncPanel"
@@ -2159,9 +2883,6 @@ local function refreshAnnouncPanelSize()
 	end)
 end
 
--- ============================================================
--- MESSAGE CREATION LOGIC
--- ============================================================
 _G.AddAnnouncement = function(text)
 	if not text or text == "" then return end
 
@@ -2329,4 +3050,4 @@ apCloseBtn.MouseButton1Click:Connect(function()
 	AnnouncPanel.Size = UDim2.new(0, 260, 0, 42)
 end)
 
-print("ZORX Hub - Full UI (Murni UI) Loaded Successfully!")
+print("ZORX Hub - FULL FINAL FIX UI Loaded Successfully!")
