@@ -857,11 +857,13 @@ local fpsPill, fpsText = createPill("0", 48, "87621836182790", 5, true)
 local execPill, execText = createPill(detectedExecutor, 68, "76551269066313", 6, true)
 
 -- PILL PRIVAT (139991340829976)
-local chatPill = Instance.new("Frame")
+local chatPill = Instance.new("TextButton")
 chatPill.Name = "ChatPill"
 chatPill.Size = UDim2.new(0, 32, 0, 22)
 chatPill.BackgroundColor3 = DefaultPillBg
 chatPill.BorderSizePixel = 0
+chatPill.Text = ""
+chatPill.AutoButtonColor = false
 chatPill.LayoutOrder = 7
 chatPill.Visible = false
 chatPill.Parent = PillContainer
@@ -1362,7 +1364,7 @@ local function clearContent()
 end
 
 -- ============================================================
--- LIVE CHAT SYSTEM - UI FIX
+-- LIVE CHAT SYSTEM - FINAL FIX
 -- ============================================================
 local chatMessages = {}
 local currentPrivateTarget = nil 
@@ -1403,13 +1405,9 @@ _G.ShowIncomingCard = function(senderName, senderId, hasUnread)
     targetAvatar.Image = "https://www.roblox.com/headshot-thumbnail/image?userId=" .. tostring(senderId or 1) .. "&width=150&height=150&format=png"
     privateRedDot.Visible = hasUnread and true or false
 
-    if hasUnread then
-        titleIncoming.Text = "Incoming message"
-        titleIncoming.TextColor3 = Color3.fromRGB(255, 100, 100)
-    else
-        titleIncoming.Text = "Private Chat Mode"
-        titleIncoming.TextColor3 = Color3.fromRGB(100, 255, 130)
-    end
+    -- Jangan jadikan berwarna-warni
+    titleIncoming.Text = "Incoming messages"
+    titleIncoming.TextColor3 = Color3.fromRGB(140, 140, 150)
 end
 
 _G.OpenIncomingFromPill = function()
@@ -1437,7 +1435,7 @@ local function loadLiveChat()
     privateHeader.Name = "PrivateHeader"
     privateHeader.Size = UDim2.new(1, 0, 0, 38)
     privateHeader.Position = UDim2.new(0, 0, 0, 0)
-    privateHeader.BackgroundColor3 = Color3.fromRGB(22, 40, 25)
+    privateHeader.BackgroundColor3 = Color3.fromRGB(28, 28, 34) -- disamakan dengan UI
     privateHeader.BorderSizePixel = 0
     privateHeader.Visible = false
     privateHeader.ZIndex = 5
@@ -1448,8 +1446,8 @@ local function loadLiveChat()
     phCorner.Parent = privateHeader
 
     local phStroke = Instance.new("UIStroke")
-    phStroke.Color = Color3.fromRGB(60, 180, 90)
-    phStroke.Thickness = 1.5
+    phStroke.Color = DefaultBorder
+    phStroke.Thickness = 1
     phStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
     phStroke.Parent = privateHeader
     registerBorder(phStroke)
@@ -1471,7 +1469,7 @@ local function loadLiveChat()
     phName.Position = UDim2.new(0, 42, 0, 5)
     phName.BackgroundTransparency = 1
     phName.Text = "Private Chat"
-    phName.TextColor3 = Color3.fromRGB(100, 255, 130)
+    phName.TextColor3 = Colors.Text
     phName.Font = Enum.Font.GothamBold
     phName.TextSize = 11
     phName.TextXAlignment = Enum.TextXAlignment.Left
@@ -1482,7 +1480,7 @@ local function loadLiveChat()
     phSub.Position = UDim2.new(0, 42, 0, 20)
     phSub.BackgroundTransparency = 1
     phSub.Text = "Private mode aktif"
-    phSub.TextColor3 = Color3.fromRGB(150, 180, 155)
+    phSub.TextColor3 = Color3.fromRGB(140, 140, 150)
     phSub.Font = Enum.Font.Gotham
     phSub.TextSize = 9
     phSub.TextXAlignment = Enum.TextXAlignment.Left
@@ -1758,6 +1756,7 @@ local function loadLiveChat()
         currentPrivateTargetId = targetId
         isInPrivateMode = true
 
+        -- Hapus dari pending
         pendingIncoming[targetNameStr] = nil
         for i, t in ipairs(activeIncomingList) do
             if t == targetNameStr then table.remove(activeIncomingList, i) break end
@@ -1771,10 +1770,12 @@ local function loadLiveChat()
         phSub.Text = "Private mode • Tap X untuk keluar"
         phAvatar.Image = "https://www.roblox.com/headshot-thumbnail/image?userId=" .. tostring(targetId or 1) .. "&width=150&height=150&format=png"
 
+        -- **PANEL INCOMING TETAP DISIMPAN** (Ga dihapus)
         _G.ShowIncomingCard(targetNameStr, targetId, false)
 
         chatBox.PlaceholderText = "Message @" .. targetNameStr .. "..."
         
+        -- Sembunyikan notif merah di pill chat
         if _G.SetChatPillDot then _G.SetChatPillDot(false) end
 
         renderMessages()
@@ -1789,7 +1790,10 @@ local function loadLiveChat()
 
         chatBox.PlaceholderText = "Message #general /help"
 
-        if #activeIncomingList > 0 then
+        -- **TETAP TAMPILKAN ID CARD DI INCOMING MASSAGE**
+        if currentPrivateTarget then
+            _G.ShowIncomingCard(currentPrivateTarget, currentPrivateTargetId, false)
+        elseif #activeIncomingList > 0 then
             local lastTarget = activeIncomingList[#activeIncomingList]
             local info = pendingIncoming[lastTarget]
             if info then
@@ -1798,7 +1802,6 @@ local function loadLiveChat()
             end
         else
             _G.ShowIncomingCard(nil)
-            if _G.SetChatPillDot then _G.SetChatPillDot(false) end
         end
 
         renderMessages()
@@ -1824,42 +1827,14 @@ local function loadLiveChat()
             end
         end
 
+        local messagesToRender = chatMessages
         if isInPrivateMode then
-            local notice = Instance.new("TextLabel")
-            notice.Size = UDim2.new(1, 0, 0, 24)
-            notice.BackgroundTransparency = 1
-            notice.Text = "💬 Private chat dengan " .. (currentPrivateTarget or "?")
-            notice.TextColor3 = Color3.fromRGB(255, 255, 100)
-            notice.Font = Enum.Font.GothamMedium
-            notice.TextSize = 10
-            notice.TextWrapped = true
-            notice.Parent = msgScroll
-
-            local history = privateChatHistory[currentPrivateTarget or ""] or {}
-            for i, m in ipairs(history) do
-                local isMe = (m.Sender == player.Name)
-                local f = Instance.new("Frame")
-                f.Size = UDim2.new(1, 0, 0, 18)
-                f.BackgroundTransparency = 1
-                f.LayoutOrder = i + 10
-                f.Parent = msgScroll
-                local l = Instance.new("TextLabel")
-                l.Size = UDim2.new(1, 0, 1, 0)
-                l.BackgroundTransparency = 1
-                l.Text = (isMe and "[You] " or "[" .. m.Sender .. "] ") .. tostring(m.Message)
-                l.TextColor3 = isMe and Color3.fromRGB(100, 255, 100) or Color3.fromRGB(220, 220, 255)
-                l.Font = Enum.Font.Gotham
-                l.TextSize = 10
-                l.TextXAlignment = Enum.TextXAlignment.Left
-                l.TextWrapped = true
-                l.Parent = f
-            end
-            return
+            messagesToRender = privateChatHistory[currentPrivateTarget or ""] or {}
         end
 
-        table.sort(chatMessages, function(a, b) return (a.Time or 0) < (b.Time or 0) end)
+        table.sort(messagesToRender, function(a, b) return (a.Time or 0) < (b.Time or 0) end)
 
-        for i, msgData in ipairs(chatMessages) do
+        for i, msgData in ipairs(messagesToRender) do
             local isMe = (msgData.Sender == player.Name)
             local msgFrame = Instance.new("Frame")
             msgFrame.Size = UDim2.new(1, 0, 0, 0)
@@ -1894,11 +1869,11 @@ local function loadLiveChat()
             nameBtn.AutoButtonColor = false
             nameBtn.Parent = msgFrame
 
-            nameBtn.MouseButton1Click:Connect(function()
-                if not isMe then
+            if not isMe then
+                nameBtn.MouseButton1Click:Connect(function()
                     enterPrivateMode(msgData.Sender, senderId)
-                end
-            end)
+                end)
+            end
 
             local textLbl = Instance.new("TextLabel")
             textLbl.Size = UDim2.new(1, -32, 0, 0)
@@ -2016,6 +1991,7 @@ local function loadLiveChat()
                                                 Message = v.Message,
                                                 Time = v.Time
                                             })
+                                            
                                             if not (isInPrivateMode and currentPrivateTarget == other) then
                                                 pendingIncoming[other] = {
                                                     Sender = v.Sender,
@@ -2148,20 +2124,18 @@ end
 end
 
 -- ============================================================
--- PILL CHAT CLICK HANDLER (PENTING! FIX UNTUK HP & PC)
+-- PILL CHAT CLICK HANDLER (FIX PAKAI MOUSEBUTTON1CLICK)
 -- ============================================================
-chatPill.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-        -- Cek dulu apakah ada incoming pending
-        local hasPending = _G.OpenIncomingFromPill and _G.OpenIncomingFromPill()
-        
-        -- Pindah ke tab Live Chat
-        for _, btn in pairs(sidebarButtons) do
-            local lbl = btn:FindFirstChild("Label")
-            if lbl and lbl.Text == "Live Chat" then
-                btn.MouseButton1Click:Fire()
-                break
-            end
+chatPill.MouseButton1Click:Connect(function()
+    -- Cek dulu apakah ada incoming pending
+    local hasPending = _G.OpenIncomingFromPill and _G.OpenIncomingFromPill()
+    
+    -- Pindah ke tab Live Chat
+    for _, btn in pairs(sidebarButtons) do
+        local lbl = btn:FindFirstChild("Label")
+        if lbl and lbl.Text == "Live Chat" then
+            btn.MouseButton1Click:Fire()
+            break
         end
     end
 end)
