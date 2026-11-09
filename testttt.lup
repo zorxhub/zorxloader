@@ -1665,9 +1665,9 @@ local function loadLiveChat()
     prdCorner.Parent = privateRedDot
 
     -- AREA PESAN
-    local msgScroll = Instance.new("ScrollingFrame")
+        local msgScroll = Instance.new("ScrollingFrame")
     msgScroll.Name = "MsgScroll"
-    msgScroll.Size = isInPrivateMode and UDim2.new(1, 0, 1, -84) or UDim2.new(1, 0, 1, -90)
+    msgScroll.Size = isInPrivateMode and UDim2.new(1, 0, 1, -50) or UDim2.new(1, 0, 1, -44)
     msgScroll.Position = isInPrivateMode and UDim2.new(0, 0, 0, 42) or UDim2.new(0, 0, 0, 0)
     msgScroll.BackgroundTransparency = 1
     msgScroll.BorderSizePixel = 0
@@ -1692,7 +1692,7 @@ local function loadLiveChat()
     local inputFrame = Instance.new("Frame")
     inputFrame.Name = "InputFrame"
     inputFrame.Size = UDim2.new(1, 0, 0, 34) 
-    inputFrame.Position = UDim2.new(0, 0, 1, -34) 
+    inputFrame.Position = UDim2.new(0, 0, 1, -6)
     inputFrame.AnchorPoint = Vector2.new(0, 1) 
     inputFrame.BackgroundColor3 = Colors.Slot
     inputFrame.BorderSizePixel = 0
