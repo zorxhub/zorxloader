@@ -1,5 +1,5 @@
 --============================================================
--- ZORX HUB - FULL UI + LICENSE SYSTEM (CARD UNDER TOPBAR)
+-- ZORX HUB - FULL UI + LICENSE SYSTEM (PRIVATE CHAT UPDATE)
 --============================================================
 
 local Players = game:GetService("Players")
@@ -1050,8 +1050,46 @@ task.spawn(function()
 end)
 
 -- ============================================================
--- TOMBOL LONCENG & ANNOUNCEMENT
+-- TOP BAR RIGHT SIDE (LONCENG, DLL)
 -- ============================================================
+
+-- Notif Dot Pill (Bulatan Merah di samping kiri Lonceng)
+local notifDotPill = Instance.new("Frame")
+notifDotPill.Name = "NotifDotPill"
+notifDotPill.Size = UDim2.new(0, 18, 0, 18) -- Kotak kecil
+notifDotPill.Position = UDim2.new(1, -105, 0.5, -9)
+notifDotPill.BackgroundColor3 = DefaultPillBg
+notifDotPill.BorderSizePixel = 0
+notifDotPill.Visible = false -- Sembunyi dulu
+notifDotPill.Parent = TopBar
+
+local ndpCorner = Instance.new("UICorner")
+ndpCorner.CornerRadius = UDim.new(0, 5)
+ndpCorner.Parent = notifDotPill
+
+local ndpStroke = Instance.new("UIStroke")
+ndpStroke.Color = DefaultPillStroke
+ndpStroke.Thickness = 1
+ndpStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+ndpStroke.Parent = notifDotPill
+registerBorder(ndpStroke)
+
+local redDot = Instance.new("Frame")
+redDot.Size = UDim2.new(0, 8, 0, 8)
+redDot.Position = UDim2.new(0.5, 0, 0.5, 0)
+redDot.AnchorPoint = Vector2.new(0.5, 0.5)
+redDot.BackgroundColor3 = Colors.Red
+redDot.BorderSizePixel = 0
+redDot.Parent = notifDotPill
+
+local rdCorner = Instance.new("UICorner")
+rdCorner.CornerRadius = UDim.new(1, 0)
+rdCorner.Parent = redDot
+
+table.insert(allPills, notifDotPill)
+table.insert(allPillStrokes, ndpStroke)
+
+-- Tombol Lonceng
 local AnnouncBtn = Instance.new("TextButton")
 AnnouncBtn.Name = "AnnouncBtn"
 AnnouncBtn.Size = UDim2.new(0, 24, 0, 24)
@@ -1070,16 +1108,8 @@ AnnouncIcon.Image = "rbxassetid://86611648211571"
 AnnouncIcon.ScaleType = Enum.ScaleType.Fit
 AnnouncIcon.Parent = AnnouncBtn
 
-UnreadDot = Instance.new("Frame")
-UnreadDot.Name = "UnreadDot"
-UnreadDot.Size = UDim2.new(0, 8, 0, 8)
-UnreadDot.Position = UDim2.new(1, -6, 0, 0)
-UnreadDot.BackgroundColor3 = Colors.Red
-UnreadDot.BorderSizePixel = 0
-UnreadDot.Visible = false
-UnreadDot.ZIndex = 10
-UnreadDot.Parent = AnnouncBtn
-Instance.new("UICorner").Parent = UnreadDot
+-- Hubungkan Dot lama dengan Pill baru
+UnreadDot = redDot 
 
 local MaximizeBtn = Instance.new("TextButton")
 MaximizeBtn.Size = UDim2.new(0, 26, 0, 26)
@@ -1424,12 +1454,14 @@ local function clearContent()
 end
 
 -- ============================================================
--- LIVE CHAT SYSTEM (FIREBASE) - FIX CARD POSITION (UNDER TOPBAR)
+-- LIVE CHAT SYSTEM (FIREBASE) - PRIVATE CHAT SYSTEM
 -- ============================================================
 local chatMessages = {}
+local currentPrivateTarget = nil -- Nyimpen nama target yang lagi di-chat privat
 
 local function loadLiveChat()
     clearContent()
+    currentPrivateTarget = nil
 
     -- 1. Container Utama Chat
     local chatContainer = Instance.new("Frame")
@@ -1464,8 +1496,8 @@ local function loadLiveChat()
     local privatePanel = Instance.new("Frame")
     privatePanel.Name = "PrivatePanel"
     privatePanel.Size = UDim2.new(0, 160, 0, 110) 
-    -- POSISI BARU: Di bawah Pill Top Bar (Rata Kanan)
-    privatePanel.Position = UDim2.new(1, -180, 0, 10) 
+    -- POSISI BARU: Di bawah Top Bar
+    privatePanel.Position = UDim2.new(1, -170, 0, 10) 
     privatePanel.BackgroundColor3 = Color3.fromRGB(22, 22, 27) 
     privatePanel.Visible = false
     privatePanel.Parent = chatContainer
@@ -1499,7 +1531,7 @@ local function loadLiveChat()
     titleDivider.BorderSizePixel = 0
     titleDivider.Parent = privatePanel
 
-    -- Kotak kecil di dalam "Incoming messages"
+    -- Kotak kecil di dalam "Incoming messages" (Tempat Teks No Private / Nama Target)
     local innerBox = Instance.new("Frame")
     innerBox.Size = UDim2.new(1, -16, 0, 52)
     innerBox.Position = UDim2.new(0, 8, 0, 34)
@@ -1516,19 +1548,19 @@ local function loadLiveChat()
     ibStroke.Thickness = 1
     ibStroke.Parent = innerBox
 
-    -- FOTO DI KIRI (Menggantikan ikon amplop, pakai ID 139991340829976)
+    -- FOTO DI KIRI (Ikon kotak kecil)
     local iconEnvelope = Instance.new("ImageLabel")
     iconEnvelope.Size = UDim2.new(0, 20, 0, 20)
     iconEnvelope.Position = UDim2.new(0, 10, 0.5, -10)
     iconEnvelope.BackgroundTransparency = 1
-    iconEnvelope.Image = "rbxassetid://139991340829976" -- FOTO BARU
+    iconEnvelope.Image = "rbxassetid://139991340829976"
     iconEnvelope.ScaleType = Enum.ScaleType.Fit
     local iconCorner = Instance.new("UICorner")
     iconCorner.CornerRadius = UDim.new(0, 4)
     iconCorner.Parent = iconEnvelope
     iconEnvelope.Parent = innerBox
 
-    -- Teks di dalam kotak kecil
+    -- Teks Utama (Bakal ganti jadi Nama Target kalau di-klik)
     local txtNoPrivate = Instance.new("TextLabel")
     txtNoPrivate.Size = UDim2.new(1, -40, 0, 14)
     txtNoPrivate.Position = UDim2.new(0, 36, 0, 10)
@@ -1540,6 +1572,7 @@ local function loadLiveChat()
     txtNoPrivate.TextXAlignment = Enum.TextXAlignment.Left
     txtNoPrivate.Parent = innerBox
 
+    -- Teks Kecil (Subtitle)
     local txtTapPrivate = Instance.new("TextLabel")
     txtTapPrivate.Size = UDim2.new(1, -40, 0, 12)
     txtTapPrivate.Position = UDim2.new(0, 36, 0, 26)
@@ -1551,18 +1584,46 @@ local function loadLiveChat()
     txtTapPrivate.TextXAlignment = Enum.TextXAlignment.Left
     txtTapPrivate.Parent = innerBox
 
-    -- FOTO DI BAGIAN KANAN CARD (Sesuai request pakai ID 139991340829976)
-    local rightPhoto = Instance.new("ImageLabel")
-    rightPhoto.Size = UDim2.new(0, 40, 0, 40) 
-    rightPhoto.Position = UDim2.new(1, -45, 0.5, -20) 
-    rightPhoto.BackgroundTransparency = 1
-    rightPhoto.Image = "rbxassetid://139991340829976"
-    rightPhoto.ScaleType = Enum.ScaleType.Fit
-    rightPhoto.Parent = privatePanel
+    -- Tombol buat masuk ke Private Chat
+    local privateChatBtn = Instance.new("TextButton")
+    privateChatBtn.Size = UDim2.new(0, 24, 0, 24)
+    privateChatBtn.Position = UDim2.new(1, -30, 0.5, -12)
+    privateChatBtn.BackgroundTransparency = 1
+    privateChatBtn.Text = "▶" -- Ikon Panah
+    privateChatBtn.TextColor3 = Color3.fromRGB(100, 255, 100) -- Warna Hijau tanda bisa diklik
+    privateChatBtn.Font = Enum.Font.GothamBold
+    privateChatBtn.TextSize = 14
+    privateChatBtn.Visible = false -- Sembunyi dulu, muncul kalau ada target
+    privateChatBtn.Parent = innerBox
+
+    privateChatBtn.MouseButton1Click:Connect(function()
+        if currentPrivateTarget then
+            -- Masuk ke mode Private Chat
+            txtNoPrivate.Text = "Chatting with: " .. currentPrivateTarget
+            txtTapPrivate.Text = "Click X to end private session."
+            privateChatBtn.Visible = false
+            -- Bisa tambahin logika UI chat privat di sini nanti
+        end
+    end)
 
     -- Simpan referensi ke panel global
     _G.TogglePrivatePanel = function()
         privatePanel.Visible = not privatePanel.Visible
+    end
+
+    -- Fungsi buat ngeset target private dari luar
+    _G.SetPrivateTarget = function(targetName)
+        if not targetName then
+            txtNoPrivate.Text = "No privat massage yet."
+            txtTapPrivate.Text = "Tap a massage, then Privat.."
+            privateChatBtn.Visible = false
+            currentPrivateTarget = nil
+        else
+            txtNoPrivate.Text = "Target: " .. targetName
+            txtTapPrivate.Text = "Click to start Private Chat."
+            privateChatBtn.Visible = true
+            currentPrivateTarget = targetName
+        end
     end
 
     -- 4. Input Chat (Bawah) - Full width
@@ -1653,16 +1714,34 @@ local function loadLiveChat()
             for j = 1, #msgData.Sender do hash = hash + string.byte(msgData.Sender, j) end
             local hue = (hash % 100) / 100
 
-            local nameLbl = Instance.new("TextLabel")
-            nameLbl.Size = UDim2.new(1, -32, 0, 14)
-            nameLbl.Position = UDim2.new(0, 32, 0, 0)
-            nameLbl.BackgroundTransparency = 1
-            nameLbl.Text = msgData.Sender
-            nameLbl.TextColor3 = isMe and Color3.fromRGB(100, 255, 100) or Color3.fromHSV(hue, 0.7, 1)
-            nameLbl.Font = Enum.Font.GothamBold
-            nameLbl.TextSize = 10
-            nameLbl.TextXAlignment = Enum.TextXAlignment.Left
-            nameLbl.Parent = msgFrame
+            -- USERNAME YANG BISA DI-KLIK UNTUK PRIVATE CHAT
+            local nameBtn = Instance.new("TextButton")
+            nameBtn.Size = UDim2.new(1, -32, 0, 14)
+            nameBtn.Position = UDim2.new(0, 32, 0, 0)
+            nameBtn.BackgroundTransparency = 1
+            nameBtn.Text = msgData.Sender
+            nameBtn.TextColor3 = isMe and Color3.fromRGB(100, 255, 100) or Color3.fromHSV(hue, 0.7, 1)
+            nameBtn.Font = Enum.Font.GothamBold
+            nameBtn.TextSize = 10
+            nameBtn.TextXAlignment = Enum.TextXAlignment.Left
+            nameBtn.AutoButtonColor = false
+            nameBtn.Parent = msgFrame
+
+            -- Efek hover di nama
+            nameBtn.MouseEnter:Connect(function()
+                nameBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+            end)
+            nameBtn.MouseLeave:Connect(function()
+                nameBtn.TextColor3 = isMe and Color3.fromRGB(100, 255, 100) or Color3.fromHSV(hue, 0.7, 1)
+            end)
+
+            -- Logika Klik Nama -> Set Target Private
+            nameBtn.MouseButton1Click:Connect(function()
+                if not isMe then -- Jangan private diri sendiri
+                    _G.SetPrivateTarget(msgData.Sender)
+                    privatePanel.Visible = true -- Buka panel otomatis
+                end
+            end)
 
             local textLbl = Instance.new("TextLabel")
             textLbl.Size = UDim2.new(1, -32, 0, 0)
@@ -2704,7 +2783,7 @@ _G.AddAnnouncement = function(text)
 	refreshAnnouncPanelSize()
 
 	if not AnnouncPanel.Visible and UnreadDot then
-		UnreadDot.Visible = true
+		notifDotPill.Visible = true
 		unreadAnnouncements += 1
 	end
 end
@@ -2716,7 +2795,7 @@ end)
 AnnouncBtn.MouseButton1Click:Connect(function()
 	AnnouncPanel.Visible = not AnnouncPanel.Visible
 	if AnnouncPanel.Visible then
-		if UnreadDot then UnreadDot.Visible = false end
+		if UnreadDot then notifDotPill.Visible = false end
 		unreadAnnouncements = 0
 		refreshAnnouncPanelSize()
 	else
@@ -2726,9 +2805,9 @@ end)
 
 apCloseBtn.MouseButton1Click:Connect(function()
 	AnnouncPanel.Visible = false
-	if UnreadDot then UnreadDot.Visible = false end
+	if UnreadDot then notifDotPill.Visible = false end
 	unreadAnnouncements = 0
 	AnnouncPanel.Size = UDim2.new(0, 260, 0, 42)
 end)
 
-print("ZORX Hub - Full UI (CARD UNDER TOPBAR) Loaded Successfully!")
+print("ZORX Hub - Full UI (PRIVATE CHAT UPDATE) Loaded Successfully!")
