@@ -1,5 +1,5 @@
 --============================================================
--- ZORX HUB - FULL UI + LICENSE + PRIVATE CHAT (FINAL FIX RESET)
+-- ZORX HUB - FULL UI + LICENSE + PRIVATE CHAT (FINAL REVISI 3 - FIX RESET UI)
 --============================================================
 
 local Players = game:GetService("Players")
@@ -17,6 +17,7 @@ local reqFunc = (type(request) == "function" and request)
 	or (type(http_request) == "function" and http_request) 
 	or nil
 
+-- BERSIHKAN CACHE CHAT DI FIREBASE SAAT SCRIPT DI EXECUTE ULANG
 if reqFunc then
     pcall(function()
         reqFunc({
@@ -26,14 +27,18 @@ if reqFunc then
     end)
 end
 
+-- FUNGSI DESTROY TOTAL SEMUA UI BIAR GA NYANTOL
 local function DestroyEverything()
 	for _, gui in pairs(playerGui:GetChildren()) do
-		if gui.Name == "ZorXHub" or gui.Name == "ZorxTopNotifContainer" then
+		if gui.Name == "ZorXHub" or gui.Name == "ZorxTopNotifContainer" or gui.Name == "ZorxNotif" then
 			gui:Destroy()
 		end
 	end
 	if script then script:Destroy() end
 end
+
+-- PANGGIL FUNGSI DESTROY DI AWAL
+DestroyEverything()
 
 local function CheckLicense()
 	local success = false
@@ -73,12 +78,6 @@ local function CheckLicense()
 end
 
 local isLicensed, expireTime, userRole = CheckLicense()
-
-for _, gui in pairs(playerGui:GetChildren()) do
-	if gui.Name == "ZorXHub" or gui.Name == "ZorxTopNotifContainer" then
-		gui:Destroy()
-	end
-end
 
 local Colors = {
 	Background   = Color3.fromRGB(15, 15, 18),
@@ -1364,7 +1363,7 @@ local function clearContent()
 end
 
 -- ============================================================
--- LIVE CHAT SYSTEM - FINAL FULL RESET
+-- LIVE CHAT SYSTEM - REVISI FINAL CLOSE & UKURAN ICON
 -- ============================================================
 local chatMessages = {}
 local currentPrivateTarget = nil 
@@ -1395,11 +1394,7 @@ _G.ShowIncomingCard = function(senderName, senderId, hasUnread)
         targetProfileBox.Visible = false
         privateRedDot.Visible = false
         if iconEnvelope then iconEnvelope.Visible = true end
-        
-        -- RESET FOTO PROFIL SAAT KOSONG
-        if targetAvatar then 
-            targetAvatar.Image = "" 
-        end
+        if targetAvatar then targetAvatar.Image = "" end -- Reset foto
         return
     end
 
@@ -1407,14 +1402,11 @@ _G.ShowIncomingCard = function(senderName, senderId, hasUnread)
     defaultNoPrivate.Visible = false
     targetProfileBox.Visible = true
     targetName.Text = senderName
-    
-    -- CEGAH FOTO DEFAULT (ID 1) MUNCUL
     if senderId then
         targetAvatar.Image = "https://www.roblox.com/headshot-thumbnail/image?userId=" .. tostring(senderId) .. "&width=150&height=150&format=png"
     else
         targetAvatar.Image = "" 
     end
-    
     privateRedDot.Visible = hasUnread and true or false
 end
 
@@ -1791,7 +1783,6 @@ local function loadLiveChat()
         privateHeader.Visible = true
         phName.Text = "Chatting with " .. targetNameStr
         
-        -- CEGAH FOTO DEFAULT SAAT MASUK PRIVATE MODE
         if targetId then
             phAvatar.Image = "https://www.roblox.com/headshot-thumbnail/image?userId=" .. tostring(targetId) .. "&width=150&height=150&format=png"
         else
@@ -1814,8 +1805,8 @@ local function loadLiveChat()
         msgScroll.Position = UDim2.new(0, 0, 0, 0)
         msgScroll.Size = UDim2.new(1, 0, 1, -90)
         chatBox.PlaceholderText = "Message #general /help"
-        
-        -- BERSIHKAN DATA LOKAL SAAT KELUAR PRIVATE MODE
+
+        -- Reset target saat keluar private mode agar tidak nyantol
         currentPrivateTarget = nil
         currentPrivateTargetId = nil
 
@@ -2007,20 +1998,7 @@ local function loadLiveChat()
             local res = reqFunc({ Url = url, Method = "GET" })
             if res and (res.StatusCode == 200 or res.Status == 200) then
                 local data = HttpService:JSONDecode(res.Body)
-                
-                -- AUTO CLEANUP JIKA DATA FIREBASE KOSONG (DIHAPUS)
-                if data == nil or next(data) == nil then
-                    pendingIncoming = {}
-                    activeIncomingList = {}
-                    privateChatHistory = {}
-                    lastPrivateSeen = {}
-                    
-                    if not isInPrivateMode then
-                        _G.ShowIncomingCard(nil)
-                        if _G.SetChatPillDot then _G.SetChatPillDot(false) end
-                    end
-                    renderMessages()
-                else
+                if type(data) == "table" then
                     for targetName, msgs in pairs(data) do
                         if type(msgs) == "table" then
                             for _, v in pairs(msgs) do
