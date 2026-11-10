@@ -1,5 +1,5 @@
 --============================================================
--- ZORX HUB - FULL UI + LICENSE + PRIVATE CHAT (FINAL REVISI 3)
+-- ZORX HUB - FULL UI + LICENSE + PRIVATE CHAT (FINAL REVISI 4)
 --============================================================
 
 local Players = game:GetService("Players")
@@ -1364,7 +1364,7 @@ local function clearContent()
 end
 
 -- ============================================================
--- LIVE CHAT SYSTEM - REVISI FINAL CLOSE & UKURAN ICON
+-- LIVE CHAT SYSTEM
 -- ============================================================
 local chatMessages = {}
 local currentPrivateTarget = nil 
@@ -1395,6 +1395,7 @@ _G.ShowIncomingCard = function(senderName, senderId, hasUnread)
         targetProfileBox.Visible = false
         privateRedDot.Visible = false
         if iconEnvelope then iconEnvelope.Visible = true end
+        chatUI.privatePanel.Visible = false -- Sembunyikan jika tidak ada pesan masuk saat rejoin/execute
         return
     end
 
@@ -1517,7 +1518,7 @@ local function loadLiveChat()
     cpBtnIcon.ScaleType = Enum.ScaleType.Fit
     cpBtnIcon.Parent = closePrivateBtn
 
-    -- PANEL INCOMING MESSAGE
+    -- PANEL INCOMING MESSAGE (DISET VISIBLE = FALSE SAAT AWAL/REJOIN)
     local privatePanel = Instance.new("Frame")
     privatePanel.Name = "PrivatePanel"
     privatePanel.Size = UDim2.new(0, 180, 0, 105) 
@@ -1665,7 +1666,7 @@ local function loadLiveChat()
     prdCorner.Parent = privateRedDot
 
     -- AREA PESAN
-        local msgScroll = Instance.new("ScrollingFrame")
+    local msgScroll = Instance.new("ScrollingFrame")
     msgScroll.Name = "MsgScroll"
     msgScroll.Size = isInPrivateMode and UDim2.new(1, 0, 1, -50) or UDim2.new(1, 0, 1, -44)
     msgScroll.Position = isInPrivateMode and UDim2.new(0, 0, 0, 42) or UDim2.new(0, 0, 0, 0)
@@ -1761,6 +1762,8 @@ local function loadLiveChat()
         if info then
             _G.ShowIncomingCard(lastTarget, info.SenderId, true)
         end
+    else
+        _G.ShowIncomingCard(nil)
     end
 
     local renderMessages
@@ -3038,6 +3041,11 @@ end)
 AnnouncBtn.MouseButton1Click:Connect(function()
 	AnnouncPanel.Visible = not AnnouncPanel.Visible
 	if AnnouncPanel.Visible then
+		-- TUTUP PANEL PRIVATE CHAT OTOMATIS AGAR TIDAK TABRAKAN DENGAN ANNOUNCEMENT
+		if chatUI and chatUI.privatePanel then
+			chatUI.privatePanel.Visible = false
+		end
+
 		if UnreadDot then UnreadDot.Visible = false end
 		unreadAnnouncements = 0
 		refreshAnnouncPanelSize()
