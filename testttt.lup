@@ -1,5 +1,5 @@
 --============================================================
--- ZORX HUB - FULL UI + LICENSE + PRIVATE CHAT (FINAL TOTAL FIX v2)
+-- ZORX HUB - FULL UI + LICENSE + PRIVATE CHAT (FIXED TOTAL FINAL)
 --============================================================
 
 local Players = game:GetService("Players")
@@ -20,12 +20,10 @@ local reqFunc = (type(request) == "function" and request)
 -- AUTO CLEAN DATABASE SAAT RE-EXECUTE / REJOIN
 if reqFunc then
     pcall(function()
-        -- Bersihkan public chat
         reqFunc({
             Url = "https://zorx-broadcast-default-rtdb.firebaseio.com/chat.json",
             Method = "DELETE"
         })
-        -- Bersihkan private chat & incoming messages dari server
         reqFunc({
             Url = "https://zorx-broadcast-default-rtdb.firebaseio.com/private.json",
             Method = "DELETE"
@@ -1369,7 +1367,7 @@ local function clearContent()
 end
 
 -- ============================================================
--- LIVE CHAT SYSTEM (FIXED AUTO CLEAN ON REEXECUTE/REJOIN)
+-- LIVE CHAT & INCOMING MESSAGES SYSTEM
 -- ============================================================
 local chatMessages = {}
 local currentPrivateTarget = nil 
@@ -1529,6 +1527,7 @@ local function loadLiveChat()
     cpBtnIcon.ScaleType = Enum.ScaleType.Fit
     cpBtnIcon.Parent = closePrivateBtn
 
+    -- PANEL INCOMING MESSAGES
     local privatePanel = Instance.new("Frame")
     privatePanel.Name = "PrivatePanel"
     privatePanel.Size = UDim2.new(0, 180, 0, 105) 
@@ -3048,4 +3047,4 @@ end
 
 loadAboutPanel()
 
-print("ZORX Hub - FULL SCRIPT TOTAL FIXED v2 Loaded Successfully!")
+print("ZORX Hub - FULL SCRIPT FIXED Loaded Successfully!")
