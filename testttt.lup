@@ -1,5 +1,5 @@
 --============================================================
--- ZORX HUB - FULL UI + LICENSE + PRIVATE CHAT (FINAL REVISI 3 - FIX RESET UI)
+-- ZORX HUB - FINAL ANTI NYANGKUT VERSION
 --============================================================
 
 local Players = game:GetService("Players")
@@ -17,28 +17,41 @@ local reqFunc = (type(request) == "function" and request)
 	or (type(http_request) == "function" and http_request) 
 	or nil
 
--- BERSIHKAN CACHE CHAT DI FIREBASE SAAT SCRIPT DI EXECUTE ULANG
+-- ============================================================
+-- FIX 1: HANCURKAN TOTAL SEMUA UI LAMA (PAKSA BERSIH)
+-- ============================================================
+local function ForceDestroyAll()
+    for _, gui in pairs(playerGui:GetChildren()) do
+        if gui.Name == "ZorXHub" or gui.Name == "ZorxTopNotifContainer" or gui.Name == "ZorxNotif" then
+            gui:Destroy()
+        end
+    end
+end
+
+-- Panggil pake pcall biar ga error kalo ga ada
+pcall(ForceDestroyAll)
+
+-- Tunggu bentar biar Roblox sempet ngehapus
+task.wait(0.5)
+pcall(ForceDestroyAll)
+
+-- ============================================================
+-- FIX 2: HAPUS TOTAL DATA LAMA DI FIREBASE SAAT INJECT
+-- ============================================================
 if reqFunc then
     pcall(function()
+        -- Hapus chat public
         reqFunc({
             Url = "https://zorx-broadcast-default-rtdb.firebaseio.com/chat.json",
             Method = "DELETE"
         })
+        -- Hapus SEMUA private chat biar ga nyangkut
+        reqFunc({
+            Url = "https://zorx-broadcast-default-rtdb.firebaseio.com/private.json",
+            Method = "DELETE"
+        })
     end)
 end
-
--- FUNGSI DESTROY TOTAL SEMUA UI BIAR GA NYANTOL
-local function DestroyEverything()
-	for _, gui in pairs(playerGui:GetChildren()) do
-		if gui.Name == "ZorXHub" or gui.Name == "ZorxTopNotifContainer" or gui.Name == "ZorxNotif" then
-			gui:Destroy()
-		end
-	end
-	if script then script:Destroy() end
-end
-
--- PANGGIL FUNGSI DESTROY DI AWAL
-DestroyEverything()
 
 local function CheckLicense()
 	local success = false
@@ -1806,22 +1819,11 @@ local function loadLiveChat()
         msgScroll.Size = UDim2.new(1, 0, 1, -90)
         chatBox.PlaceholderText = "Message #general /help"
 
-        -- Reset target saat keluar private mode agar tidak nyantol
+        -- Reset total saat keluar
         currentPrivateTarget = nil
         currentPrivateTargetId = nil
-
-        if #activeIncomingList > 0 then
-            local lastTarget = activeIncomingList[#activeIncomingList]
-            local info = pendingIncoming[lastTarget]
-            if info then
-                _G.ShowIncomingCard(lastTarget, info.SenderId, true)
-                if _G.SetChatPillDot then _G.SetChatPillDot(true) end
-            else
-                _G.ShowIncomingCard(nil)
-            end
-        else
-            _G.ShowIncomingCard(nil)
-        end
+        _G.ShowIncomingCard(nil)
+        if _G.SetChatPillDot then _G.SetChatPillDot(false) end
         renderMessages()
     end
 
@@ -3065,4 +3067,4 @@ apCloseBtn.MouseButton1Click:Connect(function()
 	AnnouncPanel.Size = UDim2.new(0, 260, 0, 42)
 end)
 
-print("ZORX Hub - FULL FINAL FIX UI Loaded Successfully!")
+print("ZORX Hub - FINAL ANTI NYANGKUT UI Loaded Successfully!")
