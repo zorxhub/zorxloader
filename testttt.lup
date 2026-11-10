@@ -1,5 +1,5 @@
 --============================================================
--- ZORX HUB - FULL UI + LICENSE + PRIVATE CHAT (FINAL REVISI 4 - FIX AVATAR RESET)
+-- ZORX HUB - FULL UI + LICENSE + PRIVATE CHAT (FINAL FIX RESET)
 --============================================================
 
 local Players = game:GetService("Players")
@@ -1364,7 +1364,7 @@ local function clearContent()
 end
 
 -- ============================================================
--- LIVE CHAT SYSTEM - REVISI FINAL CLOSE & UKURAN ICON
+-- LIVE CHAT SYSTEM - FINAL FULL RESET
 -- ============================================================
 local chatMessages = {}
 local currentPrivateTarget = nil 
@@ -1814,16 +1814,19 @@ local function loadLiveChat()
         msgScroll.Position = UDim2.new(0, 0, 0, 0)
         msgScroll.Size = UDim2.new(1, 0, 1, -90)
         chatBox.PlaceholderText = "Message #general /help"
+        
+        -- BERSIHKAN DATA LOKAL SAAT KELUAR PRIVATE MODE
+        currentPrivateTarget = nil
+        currentPrivateTargetId = nil
 
-        if currentPrivateTarget then
-            local info = pendingIncoming[currentPrivateTarget] or { SenderId = currentPrivateTargetId }
-            _G.ShowIncomingCard(currentPrivateTarget, info.SenderId, false)
-        elseif #activeIncomingList > 0 then
+        if #activeIncomingList > 0 then
             local lastTarget = activeIncomingList[#activeIncomingList]
             local info = pendingIncoming[lastTarget]
             if info then
                 _G.ShowIncomingCard(lastTarget, info.SenderId, true)
                 if _G.SetChatPillDot then _G.SetChatPillDot(true) end
+            else
+                _G.ShowIncomingCard(nil)
             end
         else
             _G.ShowIncomingCard(nil)
@@ -2004,7 +2007,20 @@ local function loadLiveChat()
             local res = reqFunc({ Url = url, Method = "GET" })
             if res and (res.StatusCode == 200 or res.Status == 200) then
                 local data = HttpService:JSONDecode(res.Body)
-                if type(data) == "table" then
+                
+                -- AUTO CLEANUP JIKA DATA FIREBASE KOSONG (DIHAPUS)
+                if data == nil or next(data) == nil then
+                    pendingIncoming = {}
+                    activeIncomingList = {}
+                    privateChatHistory = {}
+                    lastPrivateSeen = {}
+                    
+                    if not isInPrivateMode then
+                        _G.ShowIncomingCard(nil)
+                        if _G.SetChatPillDot then _G.SetChatPillDot(false) end
+                    end
+                    renderMessages()
+                else
                     for targetName, msgs in pairs(data) do
                         if type(msgs) == "table" then
                             for _, v in pairs(msgs) do
