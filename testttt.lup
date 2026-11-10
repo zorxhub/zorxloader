@@ -1,5 +1,5 @@
 --============================================================
--- ZORX HUB - FIXED PRIVATE CHAT PERSISTENCE
+-- ZORX HUB - FULL SCRIPT FIXED TOTAL (FINAL)
 --============================================================
 
 local Players = game:GetService("Players")
@@ -11,20 +11,23 @@ local HttpService = game:GetService("HttpService")
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
 
-local reqFunc = (type(request) == "function" and request) 
-	or (syn and type(syn.request) == "function" and syn.request) 
-	or (http and type(http.request) == "function" and http.request) 
-	or (type(http_request) == "function" and http_request) 
-	or nil
+-- Pengaman agar tidak error 'attempt to call a nil value'
+local reqFunc = nil
+pcall(function()
+    reqFunc = (type(request) == "function" and request) 
+        or (syn and type(syn.request) == "function" and syn.request) 
+        or (http and type(http.request) == "function" and http.request) 
+        or (type(http_request) == "function" and http_request) 
+        or nil
+end)
 
--- HANYA PUBLIC CHAT YANG DI-RESET, PRIVATE CHAT AMAN (TIDAK KERESET)
+-- AUTO CLEAN DATABASE (Hanya Public Chat, Private Chat Aman)
 if reqFunc then
     pcall(function()
         reqFunc({
             Url = "https://zorx-broadcast-default-rtdb.firebaseio.com/chat.json",
             Method = "DELETE"
         })
-        -- Baris DELETE untuk /private.json sengaja dihapus agar data pesan masuk tidak hilang!
     end)
 end
 
@@ -1364,7 +1367,7 @@ local function clearContent()
 end
 
 -- ============================================================
--- LIVE CHAT & INCOMING MESSAGES SYSTEM (FIXED AUTO-RENDER)
+-- LIVE CHAT & INCOMING MESSAGES SYSTEM
 -- ============================================================
 local chatMessages = {}
 local currentPrivateTarget = nil 
@@ -2015,19 +2018,6 @@ task.spawn(function()
         end
     end
 end)
-
-    if isInPrivateMode and currentPrivateTarget then
-        enterPrivateMode(currentPrivateTarget, currentPrivateTargetId)
-    else
-        fetchChat()
-        task.spawn(function()
-            while chatContainer and chatContainer.Parent do
-                fetchChat()
-                task.wait(3)
-            end
-        end)
-    end
-end
 
 local function createSidebarButton(text, order, iconId, onClick)
 	local btn = Instance.new("TextButton")
