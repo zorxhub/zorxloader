@@ -1,5 +1,5 @@
 --============================================================
--- ZORX HUB - FULL UI + LICENSE + PRIVATE CHAT (FINAL REVISI FULL FIX)
+-- ZORX HUB - FULL UI + LICENSE + PRIVATE CHAT (FINAL TOTAL FIX)
 --============================================================
 
 local Players = game:GetService("Players")
@@ -786,7 +786,7 @@ local function createPill(textText, width, iconId, layoutOrder, visible)
 	return pill, txt
 end
 
--- FIX: avatarCard dan nickCard diset false agar tidak muncul saat execute/rejoin awal
+-- FIX: avatarCard dan nickCard diset false agar aman saat execute/rejoin awal
 local avatarCard = createAvatarPill(0, false)
 local myAvatarImg = avatarCard:FindFirstChild("Avatar")
 if myAvatarImg then
@@ -1365,7 +1365,7 @@ local function clearContent()
 end
 
 -- ============================================================
--- LIVE CHAT SYSTEM
+-- LIVE CHAT SYSTEM (FIXED AUTO CLEAN ON REEXECUTE/REJOIN)
 -- ============================================================
 local chatMessages = {}
 local currentPrivateTarget = nil 
@@ -1376,6 +1376,12 @@ local pendingIncoming = {}
 local activeIncomingList = {}
 local lastPrivateSeen = {}
 local chatUI = nil
+
+-- Reset data antrean pesan masuk agar bersih saat re-execute / rejoin
+pendingIncoming = {}
+activeIncomingList = {}
+currentPrivateTarget = nil
+isInPrivateMode = false
 
 _G.IsInPrivateMode = function() return isInPrivateMode end
 _G.GetPrivateTarget = function() return currentPrivateTarget end
@@ -1392,20 +1398,22 @@ _G.ShowIncomingCard = function(senderName, senderId, hasUnread)
     local iconEnvelope = chatUI.iconEnvelope
 
     if not senderName then
-        defaultNoPrivate.Visible = true
-        targetProfileBox.Visible = false
-        privateRedDot.Visible = false
+        if defaultNoPrivate then defaultNoPrivate.Visible = true end
+        if targetProfileBox then targetProfileBox.Visible = false end
+        if privateRedDot then privateRedDot.Visible = false end
         if iconEnvelope then iconEnvelope.Visible = true end
-        chatUI.privatePanel.Visible = false 
+        if chatUI.privatePanel then chatUI.privatePanel.Visible = false end
         return
     end
 
     if iconEnvelope then iconEnvelope.Visible = false end
-    defaultNoPrivate.Visible = false
-    targetProfileBox.Visible = true
-    targetName.Text = senderName
-    targetAvatar.Image = "https://www.roblox.com/headshot-thumbnail/image?userId=" .. tostring(senderId or 1) .. "&width=150&height=150&format=png"
-    privateRedDot.Visible = hasUnread and true or false
+    if defaultNoPrivate then defaultNoPrivate.Visible = false end
+    if targetProfileBox then targetProfileBox.Visible = true end
+    if targetName then targetName.Text = senderName end
+    if targetAvatar then 
+        targetAvatar.Image = "https://www.roblox.com/headshot-thumbnail/image?userId=" .. tostring(senderId or 1) .. "&width=150&height=150&format=png" 
+    end
+    if privateRedDot then privateRedDot.Visible = hasUnread and true or false end
 end
 
 _G.OpenIncomingFromPill = function()
@@ -1755,15 +1763,9 @@ local function loadLiveChat()
         chatBox = chatBox,
     }
 
-    if isInPrivateMode and currentPrivateTarget then
-        _G.ShowIncomingCard(currentPrivateTarget, currentPrivateTargetId, false)
-    elseif #activeIncomingList > 0 then
-        local lastTarget = activeIncomingList[#activeIncomingList]
-        local info = pendingIncoming[lastTarget]
-        if info then
-            _G.ShowIncomingCard(lastTarget, info.SenderId, true)
-        end
-    else
+    -- Pastikan panel private tertutup secara default saat dibuka
+    if chatUI.privatePanel then
+        chatUI.privatePanel.Visible = false
         _G.ShowIncomingCard(nil)
     end
 
@@ -3068,4 +3070,4 @@ end
 
 loadAboutPanel()
 
-print("ZORX Hub - FULL SCRIPT FINAL FIXED Loaded Successfully!")
+print("ZORX Hub - FULL SCRIPT TOTAL FIXED Loaded Successfully!")
