@@ -1,5 +1,5 @@
 --============================================================
--- ZORX HUB - FULL UI + LICENSE + PRIVATE CHAT (FINAL REVISI 4)
+-- ZORX HUB - FULL UI + LICENSE + PRIVATE CHAT (FINAL REVISI FIX TOTAL)
 --============================================================
 
 local Players = game:GetService("Players")
@@ -786,6 +786,7 @@ local function createPill(textText, width, iconId, layoutOrder, visible)
 	return pill, txt
 end
 
+-- FIX FOTO 1: Pastikan avatarCard dan nickCard diset Visible = false saat awal/rejoin/execute
 local avatarCard = createAvatarPill(0, false)
 local myAvatarImg = avatarCard:FindFirstChild("Avatar")
 if myAvatarImg then
@@ -1395,7 +1396,7 @@ _G.ShowIncomingCard = function(senderName, senderId, hasUnread)
         targetProfileBox.Visible = false
         privateRedDot.Visible = false
         if iconEnvelope then iconEnvelope.Visible = true end
-        chatUI.privatePanel.Visible = false -- Sembunyikan jika tidak ada pesan masuk saat rejoin/execute
+        chatUI.privatePanel.Visible = false
         return
     end
 
@@ -2130,9 +2131,15 @@ local function createSidebarButton(text, order, iconId, onClick)
 end
 
 -- ============================================================
--- PILL CHAT CLICK HANDLER (BUKA TUTUP PANEL INCOMING)
+-- PILL CHAT CLICK HANDLER (FIX TABRAKAN DENGAN ANNOUNCEMENT)
 -- ============================================================
 chatPill.MouseButton1Click:Connect(function()
+    -- Tutup Panel Announcement otomatis jika sedang terbuka
+    if AnnouncPanel then
+        AnnouncPanel.Visible = false
+        AnnouncPanel.Size = UDim2.new(0, 260, 0, 42)
+    end
+
     if _G.OpenIncomingFromPill then
         _G.OpenIncomingFromPill()
     end
@@ -3038,10 +3045,11 @@ apListLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
 	refreshAnnouncPanelSize()
 end)
 
+-- FIX TABRAKAN: Saat tombol lonceng (AnnouncBtn) ditekan, tutup panel private chat secara otomatis
 AnnouncBtn.MouseButton1Click:Connect(function()
 	AnnouncPanel.Visible = not AnnouncPanel.Visible
 	if AnnouncPanel.Visible then
-		-- TUTUP PANEL PRIVATE CHAT OTOMATIS AGAR TIDAK TABRAKAN DENGAN ANNOUNCEMENT
+		-- Tutup private chat panel jika sedang terbuka
 		if chatUI and chatUI.privatePanel then
 			chatUI.privatePanel.Visible = false
 		end
@@ -3061,4 +3069,4 @@ apCloseBtn.MouseButton1Click:Connect(function()
 	AnnouncPanel.Size = UDim2.new(0, 260, 0, 42)
 end)
 
-print("ZORX Hub - FULL FINAL FIX UI Loaded Successfully!")
+print("ZORX Hub - FULL FINAL FIX TOTAL Loaded Successfully!")
