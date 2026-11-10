@@ -1,5 +1,5 @@
 --============================================================
--- ZORX HUB - FULL UI + LICENSE + PRIVATE CHAT (FIXED TOTAL FINAL)
+-- ZORX HUB - FIXED PRIVATE CHAT PERSISTENCE
 --============================================================
 
 local Players = game:GetService("Players")
@@ -17,17 +17,14 @@ local reqFunc = (type(request) == "function" and request)
 	or (type(http_request) == "function" and http_request) 
 	or nil
 
--- AUTO CLEAN DATABASE SAAT RE-EXECUTE / REJOIN
+-- HANYA PUBLIC CHAT YANG DI-RESET, PRIVATE CHAT AMAN (TIDAK KERESET)
 if reqFunc then
     pcall(function()
         reqFunc({
             Url = "https://zorx-broadcast-default-rtdb.firebaseio.com/chat.json",
             Method = "DELETE"
         })
-        reqFunc({
-            Url = "https://zorx-broadcast-default-rtdb.firebaseio.com/private.json",
-            Method = "DELETE"
-        })
+        -- Baris DELETE untuk /private.json sengaja dihapus agar data pesan masuk tidak hilang!
     end)
 end
 
