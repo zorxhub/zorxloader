@@ -1364,7 +1364,7 @@ local function clearContent()
 end
 
 -- ============================================================
--- LIVE CHAT & INCOMING MESSAGES SYSTEM
+-- LIVE CHAT & INCOMING MESSAGES SYSTEM (FIXED AUTO-RENDER)
 -- ============================================================
 local chatMessages = {}
 local currentPrivateTarget = nil 
@@ -1375,11 +1375,6 @@ local pendingIncoming = {}
 local activeIncomingList = {}
 local lastPrivateSeen = {}
 local chatUI = nil
-
-pendingIncoming = {}
-activeIncomingList = {}
-currentPrivateTarget = nil
-isInPrivateMode = false
 
 _G.IsInPrivateMode = function() return isInPrivateMode end
 _G.GetPrivateTarget = function() return currentPrivateTarget end
@@ -1957,72 +1952,58 @@ local function loadLiveChat()
             end
         end
     end)
+end
 
-    local function fetchChat()
-        if not reqFunc then return end
-
-        if not isInPrivateMode then
+-- BACKGROUND WORKER UNTUK FETCH PRIVATE CHAT SEJAK SCRIPT DI-EXECUTE
+task.spawn(function()
+    while task.wait(3) do
+        if reqFunc then
             pcall(function()
-                local url = "https://zorx-broadcast-default-rtdb.firebaseio.com/chat/public/General.json"
+                local url = "https://zorx-broadcast-default-rtdb.firebaseio.com/private.json"
                 local res = reqFunc({ Url = url, Method = "GET" })
                 if res and (res.StatusCode == 200 or res.Status == 200) then
                     local data = HttpService:JSONDecode(res.Body)
-                    local newMessages = {}
-                    if data then
-                        for _, v in pairs(data) do
-                            if type(v) == "table" and v.Sender and v.Message then
-                                table.insert(newMessages, v)
-                            end
-                        end
-                    end
-                    chatMessages = newMessages
-                    renderMessages()
-                end
-            end)
-        end
+                    if type(data) == "table" then
+                        for targetName, msgs in pairs(data) do
+                            if type(msgs) == "table" then
+                                local sortedMsgs = {}
+                                for _, v in pairs(msgs) do
+                                    if type(v) == "table" and v.Sender and v.Message and v.Target == player.Name then
+                                        table.insert(sortedMsgs, v)
+                                    end
+                                end
+                                table.sort(sortedMsgs, function(a, b) return (a.Time or 0) < (b.Time or 0) end)
+                                
+                                for _, v in ipairs(sortedMsgs) do
+                                    local key = targetName .. "|" .. tostring(v.Time or 0) .. "|" .. tostring(v.Sender) .. "|" .. tostring(v.Message)
+                                    if not lastPrivateSeen[key] then
+                                        lastPrivateSeen[key] = true
+                                        local other = v.Sender
+                                        privateChatHistory[other] = privateChatHistory[other] or {}
+                                        table.insert(privateChatHistory[other], {
+                                            Sender = v.Sender,
+                                            SenderId = v.SenderId,
+                                            Message = v.Message,
+                                            Time = v.Time
+                                        })
+                                        
+                                        pendingIncoming[other] = {
+                                            Sender = v.Sender,
+                                            SenderId = v.SenderId,
+                                            Message = v.Message,
+                                            Time = v.Time
+                                        }
+                                        local already = false
+                                        for _, t in ipairs(activeIncomingList) do
+                                            if t == other then already = true break end
+                                        end
+                                        if not already then
+                                            table.insert(activeIncomingList, other)
+                                        end
 
-        pcall(function()
-            local url = "https://zorx-broadcast-default-rtdb.firebaseio.com/private.json"
-            local res = reqFunc({ Url = url, Method = "GET" })
-            if res and (res.StatusCode == 200 or res.Status == 200) then
-                local data = HttpService:JSONDecode(res.Body)
-                if type(data) == "table" then
-                    for targetName, msgs in pairs(data) do
-                        if type(msgs) == "table" then
-                            for _, v in pairs(msgs) do
-                                if type(v) == "table" and v.Sender and v.Message then
-                                    if v.Target == player.Name then
-                                        local key = targetName .. "|" .. tostring(v.Time or 0) .. "|" .. tostring(v.Sender) .. "|" .. tostring(v.Message)
-                                        if not lastPrivateSeen[key] then
-                                            lastPrivateSeen[key] = true
-                                            local other = v.Sender
-                                            privateChatHistory[other] = privateChatHistory[other] or {}
-                                            table.insert(privateChatHistory[other], {
-                                                Sender = v.Sender,
-                                                SenderId = v.SenderId,
-                                                Message = v.Message,
-                                                Time = v.Time
-                                            })
-                                            
-                                            pendingIncoming[other] = {
-                                                Sender = v.Sender,
-                                                SenderId = v.SenderId,
-                                                Message = v.Message,
-                                                Time = v.Time
-                                            }
-                                            local already = false
-                                            for _, t in ipairs(activeIncomingList) do
-                                                if t == other then already = true break end
-                                            end
-                                            if not already then
-                                                table.insert(activeIncomingList, other)
-                                            end
-
-                                            if not isInPrivateMode then
-                                                _G.ShowIncomingCard(other, v.SenderId, true)
-                                                if _G.SetChatPillDot then _G.SetChatPillDot(true) end
-                                            end
-                                            renderMessages()
+                                        if not isInPrivateMode then
+                                            _G.ShowIncomingCard(other, v.SenderId, true)
+                                            if _G.SetChatPillDot then _G.SetChatPillDot(true) end
                                         end
                                     end
                                 end
@@ -2030,9 +2011,10 @@ local function loadLiveChat()
                         end
                     end
                 end
-            end
-        end)
+            end)
+        end
     end
+end)
 
     if isInPrivateMode and currentPrivateTarget then
         enterPrivateMode(currentPrivateTarget, currentPrivateTargetId)
