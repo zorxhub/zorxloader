@@ -1,5 +1,5 @@
 --============================================================
--- ZORX HUB - FULL UI + LICENSE + PRIVATE CHAT (FINAL TOTAL FIX)
+-- ZORX HUB - FULL UI + LICENSE + PRIVATE CHAT (FINAL TOTAL FIX v2)
 --============================================================
 
 local Players = game:GetService("Players")
@@ -17,10 +17,17 @@ local reqFunc = (type(request) == "function" and request)
 	or (type(http_request) == "function" and http_request) 
 	or nil
 
+-- AUTO CLEAN DATABASE SAAT RE-EXECUTE / REJOIN
 if reqFunc then
     pcall(function()
+        -- Bersihkan public chat
         reqFunc({
             Url = "https://zorx-broadcast-default-rtdb.firebaseio.com/chat.json",
+            Method = "DELETE"
+        })
+        -- Bersihkan private chat & incoming messages dari server
+        reqFunc({
+            Url = "https://zorx-broadcast-default-rtdb.firebaseio.com/private.json",
             Method = "DELETE"
         })
     end)
@@ -786,7 +793,6 @@ local function createPill(textText, width, iconId, layoutOrder, visible)
 	return pill, txt
 end
 
--- FIX: avatarCard dan nickCard diset false agar aman saat execute/rejoin awal
 local avatarCard = createAvatarPill(0, false)
 local myAvatarImg = avatarCard:FindFirstChild("Avatar")
 if myAvatarImg then
@@ -857,7 +863,6 @@ local gamePill, gameText = createPill(getGameName(), 145, "83907651602856", 4, t
 local fpsPill, fpsText = createPill("0", 48, "87621836182790", 5, true)
 local execPill, execText = createPill(detectedExecutor, 68, "76551269066313", 6, true)
 
--- PILL PRIVAT (139991340829976)
 local chatPill = Instance.new("TextButton")
 chatPill.Name = "ChatPill"
 chatPill.Size = UDim2.new(0, 32, 0, 22)
@@ -894,7 +899,6 @@ local cpIconCorner = Instance.new("UICorner")
 cpIconCorner.CornerRadius = UDim.new(0, 4)
 cpIconCorner.Parent = cpIcon
 
--- Red dot pill chat
 local chatPillDot = Instance.new("Frame")
 chatPillDot.Name = "ChatRedDot"
 chatPillDot.Size = UDim2.new(0, 8, 0, 8)
@@ -1377,7 +1381,6 @@ local activeIncomingList = {}
 local lastPrivateSeen = {}
 local chatUI = nil
 
--- Reset data antrean pesan masuk agar bersih saat re-execute / rejoin
 pendingIncoming = {}
 activeIncomingList = {}
 currentPrivateTarget = nil
@@ -1447,7 +1450,6 @@ local function loadLiveChat()
     chatContainer.BackgroundTransparency = 1
     chatContainer.Parent = Scroll
 
-    -- HEADER PRIVATE MODE
     local privateHeader = Instance.new("Frame")
     privateHeader.Name = "PrivateHeader"
     privateHeader.Size = UDim2.new(1, 0, 0, 38)
@@ -1527,7 +1529,6 @@ local function loadLiveChat()
     cpBtnIcon.ScaleType = Enum.ScaleType.Fit
     cpBtnIcon.Parent = closePrivateBtn
 
-    -- PANEL INCOMING MESSAGE
     local privatePanel = Instance.new("Frame")
     privatePanel.Name = "PrivatePanel"
     privatePanel.Size = UDim2.new(0, 180, 0, 105) 
@@ -1674,7 +1675,6 @@ local function loadLiveChat()
     prdCorner.CornerRadius = UDim.new(1, 0)
     prdCorner.Parent = privateRedDot
 
-    -- AREA PESAN
     local msgScroll = Instance.new("ScrollingFrame")
     msgScroll.Name = "MsgScroll"
     msgScroll.Size = isInPrivateMode and UDim2.new(1, 0, 1, -50) or UDim2.new(1, 0, 1, -44)
@@ -1698,7 +1698,6 @@ local function loadLiveChat()
     msgPad.PaddingRight = UDim.new(0, 4)
     msgPad.Parent = msgScroll
 
-    -- INPUT
     local inputFrame = Instance.new("Frame")
     inputFrame.Name = "InputFrame"
     inputFrame.Size = UDim2.new(1, 0, 0, 34) 
@@ -1763,7 +1762,6 @@ local function loadLiveChat()
         chatBox = chatBox,
     }
 
-    -- Pastikan panel private tertutup secara default saat dibuka
     if chatUI.privatePanel then
         chatUI.privatePanel.Visible = false
         _G.ShowIncomingCard(nil)
@@ -2053,9 +2051,6 @@ local function loadLiveChat()
     end
 end
 
--- ============================================================
--- SIDEBAR BUTTON
--- ============================================================
 local function createSidebarButton(text, order, iconId, onClick)
 	local btn = Instance.new("TextButton")
 	btn.Name = text
@@ -2132,9 +2127,6 @@ local function createSidebarButton(text, order, iconId, onClick)
 	return btn
 end
 
--- ============================================================
--- UI ANNOUNCEMENT
--- ============================================================
 local AnnouncPanel = Instance.new("Frame")
 AnnouncPanel.Name = "AnnouncPanel"
 AnnouncPanel.Size = UDim2.new(0, 260, 0, 42)
@@ -2400,11 +2392,7 @@ apListLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
 	refreshAnnouncPanelSize()
 end)
 
--- ============================================================
--- FIX UTAMA: MENCEGAH TABRAKAN ANTARA PILL CHAT DAN ANNOUNCEMENT
--- ============================================================
 chatPill.MouseButton1Click:Connect(function()
-    -- Otomatis tutup Panel Announcement jika sedang terbuka
     if AnnouncPanel then
         AnnouncPanel.Visible = false
         AnnouncPanel.Size = UDim2.new(0, 260, 0, 42)
@@ -2426,7 +2414,6 @@ end)
 AnnouncBtn.MouseButton1Click:Connect(function()
 	AnnouncPanel.Visible = not AnnouncPanel.Visible
 	if AnnouncPanel.Visible then
-		-- Otomatis tutup panel incoming message jika sedang terbuka
 		if chatUI and chatUI.privatePanel then
 			chatUI.privatePanel.Visible = false
 		end
@@ -2511,9 +2498,6 @@ RunService.Heartbeat:Connect(function()
 	SidebarDivider.BackgroundColor3 = rainbowColor
 end)
 
--- ============================================================
--- PANEL ABOUT
--- ============================================================
 local function loadAboutPanel()
 	clearContent()
 
@@ -2598,9 +2582,6 @@ local function loadAboutPanel()
 	registerBorder(iStroke)
 end
 
--- ============================================================
--- PANEL INFO
--- ============================================================
 local function loadInfoPanel()
 	clearContent()
 
@@ -2800,9 +2781,6 @@ local function loadInfoPanel()
 	end)
 end
 
--- ============================================================
--- PANEL SETTINGS
--- ============================================================
 local function loadSetingsPanel()
 	clearContent()
 
@@ -3070,4 +3048,4 @@ end
 
 loadAboutPanel()
 
-print("ZORX Hub - FULL SCRIPT TOTAL FIXED Loaded Successfully!")
+print("ZORX Hub - FULL SCRIPT TOTAL FIXED v2 Loaded Successfully!")
