@@ -1,5 +1,5 @@
 --============================================================
--- ZORX HUB - FULL UI + LICENSE + PRIVATE CHAT (FINAL REVISI 3)
+-- ZORX HUB - FULL UI + LICENSE + PRIVATE CHAT (FINAL REVISI 4 - FIX AVATAR RESET)
 --============================================================
 
 local Players = game:GetService("Players")
@@ -1395,6 +1395,11 @@ _G.ShowIncomingCard = function(senderName, senderId, hasUnread)
         targetProfileBox.Visible = false
         privateRedDot.Visible = false
         if iconEnvelope then iconEnvelope.Visible = true end
+        
+        -- RESET FOTO PROFIL SAAT KOSONG
+        if targetAvatar then 
+            targetAvatar.Image = "" 
+        end
         return
     end
 
@@ -1402,7 +1407,14 @@ _G.ShowIncomingCard = function(senderName, senderId, hasUnread)
     defaultNoPrivate.Visible = false
     targetProfileBox.Visible = true
     targetName.Text = senderName
-    targetAvatar.Image = "https://www.roblox.com/headshot-thumbnail/image?userId=" .. tostring(senderId or 1) .. "&width=150&height=150&format=png"
+    
+    -- CEGAH FOTO DEFAULT (ID 1) MUNCUL
+    if senderId then
+        targetAvatar.Image = "https://www.roblox.com/headshot-thumbnail/image?userId=" .. tostring(senderId) .. "&width=150&height=150&format=png"
+    else
+        targetAvatar.Image = "" 
+    end
+    
     privateRedDot.Visible = hasUnread and true or false
 end
 
@@ -1665,7 +1677,7 @@ local function loadLiveChat()
     prdCorner.Parent = privateRedDot
 
     -- AREA PESAN
-        local msgScroll = Instance.new("ScrollingFrame")
+    local msgScroll = Instance.new("ScrollingFrame")
     msgScroll.Name = "MsgScroll"
     msgScroll.Size = isInPrivateMode and UDim2.new(1, 0, 1, -50) or UDim2.new(1, 0, 1, -44)
     msgScroll.Position = isInPrivateMode and UDim2.new(0, 0, 0, 42) or UDim2.new(0, 0, 0, 0)
@@ -1778,7 +1790,13 @@ local function loadLiveChat()
 
         privateHeader.Visible = true
         phName.Text = "Chatting with " .. targetNameStr
-        phAvatar.Image = "https://www.roblox.com/headshot-thumbnail/image?userId=" .. tostring(targetId or 1) .. "&width=150&height=150&format=png"
+        
+        -- CEGAH FOTO DEFAULT SAAT MASUK PRIVATE MODE
+        if targetId then
+            phAvatar.Image = "https://www.roblox.com/headshot-thumbnail/image?userId=" .. tostring(targetId) .. "&width=150&height=150&format=png"
+        else
+            phAvatar.Image = ""
+        end
 
         msgScroll.Position = UDim2.new(0, 0, 0, 42)
         msgScroll.Size = UDim2.new(1, 0, 1, -84)
