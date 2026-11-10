@@ -1,5 +1,5 @@
 --============================================================
--- ZORX HUB - FULL SCRIPT FIXED TOTAL (FINAL)
+-- ZORX HUB - FULL UI + LICENSE + PRIVATE CHAT (FINAL REVISI FULL FIX)
 --============================================================
 
 local Players = game:GetService("Players")
@@ -11,17 +11,12 @@ local HttpService = game:GetService("HttpService")
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
 
--- Pengaman agar tidak error 'attempt to call a nil value'
-local reqFunc = nil
-pcall(function()
-    reqFunc = (type(request) == "function" and request) 
-        or (syn and type(syn.request) == "function" and syn.request) 
-        or (http and type(http.request) == "function" and http.request) 
-        or (type(http_request) == "function" and http_request) 
-        or nil
-end)
+local reqFunc = (type(request) == "function" and request) 
+	or (syn and type(syn.request) == "function" and syn.request) 
+	or (http and type(http.request) == "function" and http.request) 
+	or (type(http_request) == "function" and http_request) 
+	or nil
 
--- AUTO CLEAN DATABASE (Hanya Public Chat, Private Chat Aman)
 if reqFunc then
     pcall(function()
         reqFunc({
@@ -791,6 +786,7 @@ local function createPill(textText, width, iconId, layoutOrder, visible)
 	return pill, txt
 end
 
+-- FIX: avatarCard dan nickCard diset false agar tidak muncul saat execute/rejoin awal
 local avatarCard = createAvatarPill(0, false)
 local myAvatarImg = avatarCard:FindFirstChild("Avatar")
 if myAvatarImg then
@@ -861,6 +857,7 @@ local gamePill, gameText = createPill(getGameName(), 145, "83907651602856", 4, t
 local fpsPill, fpsText = createPill("0", 48, "87621836182790", 5, true)
 local execPill, execText = createPill(detectedExecutor, 68, "76551269066313", 6, true)
 
+-- PILL PRIVAT (139991340829976)
 local chatPill = Instance.new("TextButton")
 chatPill.Name = "ChatPill"
 chatPill.Size = UDim2.new(0, 32, 0, 22)
@@ -897,6 +894,7 @@ local cpIconCorner = Instance.new("UICorner")
 cpIconCorner.CornerRadius = UDim.new(0, 4)
 cpIconCorner.Parent = cpIcon
 
+-- Red dot pill chat
 local chatPillDot = Instance.new("Frame")
 chatPillDot.Name = "ChatRedDot"
 chatPillDot.Size = UDim2.new(0, 8, 0, 8)
@@ -1367,7 +1365,7 @@ local function clearContent()
 end
 
 -- ============================================================
--- LIVE CHAT & INCOMING MESSAGES SYSTEM
+-- LIVE CHAT SYSTEM
 -- ============================================================
 local chatMessages = {}
 local currentPrivateTarget = nil 
@@ -1394,22 +1392,20 @@ _G.ShowIncomingCard = function(senderName, senderId, hasUnread)
     local iconEnvelope = chatUI.iconEnvelope
 
     if not senderName then
-        if defaultNoPrivate then defaultNoPrivate.Visible = true end
-        if targetProfileBox then targetProfileBox.Visible = false end
-        if privateRedDot then privateRedDot.Visible = false end
+        defaultNoPrivate.Visible = true
+        targetProfileBox.Visible = false
+        privateRedDot.Visible = false
         if iconEnvelope then iconEnvelope.Visible = true end
-        if chatUI.privatePanel then chatUI.privatePanel.Visible = false end
+        chatUI.privatePanel.Visible = false 
         return
     end
 
     if iconEnvelope then iconEnvelope.Visible = false end
-    if defaultNoPrivate then defaultNoPrivate.Visible = false end
-    if targetProfileBox then targetProfileBox.Visible = true end
-    if targetName then targetName.Text = senderName end
-    if targetAvatar then 
-        targetAvatar.Image = "https://www.roblox.com/headshot-thumbnail/image?userId=" .. tostring(senderId or 1) .. "&width=150&height=150&format=png" 
-    end
-    if privateRedDot then privateRedDot.Visible = hasUnread and true or false end
+    defaultNoPrivate.Visible = false
+    targetProfileBox.Visible = true
+    targetName.Text = senderName
+    targetAvatar.Image = "https://www.roblox.com/headshot-thumbnail/image?userId=" .. tostring(senderId or 1) .. "&width=150&height=150&format=png"
+    privateRedDot.Visible = hasUnread and true or false
 end
 
 _G.OpenIncomingFromPill = function()
@@ -1443,6 +1439,7 @@ local function loadLiveChat()
     chatContainer.BackgroundTransparency = 1
     chatContainer.Parent = Scroll
 
+    -- HEADER PRIVATE MODE
     local privateHeader = Instance.new("Frame")
     privateHeader.Name = "PrivateHeader"
     privateHeader.Size = UDim2.new(1, 0, 0, 38)
@@ -1522,7 +1519,7 @@ local function loadLiveChat()
     cpBtnIcon.ScaleType = Enum.ScaleType.Fit
     cpBtnIcon.Parent = closePrivateBtn
 
-    -- PANEL INCOMING MESSAGES
+    -- PANEL INCOMING MESSAGE
     local privatePanel = Instance.new("Frame")
     privatePanel.Name = "PrivatePanel"
     privatePanel.Size = UDim2.new(0, 180, 0, 105) 
@@ -1669,6 +1666,7 @@ local function loadLiveChat()
     prdCorner.CornerRadius = UDim.new(1, 0)
     prdCorner.Parent = privateRedDot
 
+    -- AREA PESAN
     local msgScroll = Instance.new("ScrollingFrame")
     msgScroll.Name = "MsgScroll"
     msgScroll.Size = isInPrivateMode and UDim2.new(1, 0, 1, -50) or UDim2.new(1, 0, 1, -44)
@@ -1692,6 +1690,7 @@ local function loadLiveChat()
     msgPad.PaddingRight = UDim.new(0, 4)
     msgPad.Parent = msgScroll
 
+    -- INPUT
     local inputFrame = Instance.new("Frame")
     inputFrame.Name = "InputFrame"
     inputFrame.Size = UDim2.new(1, 0, 0, 34) 
@@ -1756,8 +1755,15 @@ local function loadLiveChat()
         chatBox = chatBox,
     }
 
-    if chatUI.privatePanel then
-        chatUI.privatePanel.Visible = false
+    if isInPrivateMode and currentPrivateTarget then
+        _G.ShowIncomingCard(currentPrivateTarget, currentPrivateTargetId, false)
+    elseif #activeIncomingList > 0 then
+        local lastTarget = activeIncomingList[#activeIncomingList]
+        local info = pendingIncoming[lastTarget]
+        if info then
+            _G.ShowIncomingCard(lastTarget, info.SenderId, true)
+        end
+    else
         _G.ShowIncomingCard(nil)
     end
 
@@ -1955,58 +1961,72 @@ local function loadLiveChat()
             end
         end
     end)
-end
 
--- BACKGROUND WORKER UNTUK FETCH PRIVATE CHAT SEJAK SCRIPT DI-EXECUTE
-task.spawn(function()
-    while task.wait(3) do
-        if reqFunc then
+    local function fetchChat()
+        if not reqFunc then return end
+
+        if not isInPrivateMode then
             pcall(function()
-                local url = "https://zorx-broadcast-default-rtdb.firebaseio.com/private.json"
+                local url = "https://zorx-broadcast-default-rtdb.firebaseio.com/chat/public/General.json"
                 local res = reqFunc({ Url = url, Method = "GET" })
                 if res and (res.StatusCode == 200 or res.Status == 200) then
                     local data = HttpService:JSONDecode(res.Body)
-                    if type(data) == "table" then
-                        for targetName, msgs in pairs(data) do
-                            if type(msgs) == "table" then
-                                local sortedMsgs = {}
-                                for _, v in pairs(msgs) do
-                                    if type(v) == "table" and v.Sender and v.Message and v.Target == player.Name then
-                                        table.insert(sortedMsgs, v)
-                                    end
-                                end
-                                table.sort(sortedMsgs, function(a, b) return (a.Time or 0) < (b.Time or 0) end)
-                                
-                                for _, v in ipairs(sortedMsgs) do
-                                    local key = targetName .. "|" .. tostring(v.Time or 0) .. "|" .. tostring(v.Sender) .. "|" .. tostring(v.Message)
-                                    if not lastPrivateSeen[key] then
-                                        lastPrivateSeen[key] = true
-                                        local other = v.Sender
-                                        privateChatHistory[other] = privateChatHistory[other] or {}
-                                        table.insert(privateChatHistory[other], {
-                                            Sender = v.Sender,
-                                            SenderId = v.SenderId,
-                                            Message = v.Message,
-                                            Time = v.Time
-                                        })
-                                        
-                                        pendingIncoming[other] = {
-                                            Sender = v.Sender,
-                                            SenderId = v.SenderId,
-                                            Message = v.Message,
-                                            Time = v.Time
-                                        }
-                                        local already = false
-                                        for _, t in ipairs(activeIncomingList) do
-                                            if t == other then already = true break end
-                                        end
-                                        if not already then
-                                            table.insert(activeIncomingList, other)
-                                        end
+                    local newMessages = {}
+                    if data then
+                        for _, v in pairs(data) do
+                            if type(v) == "table" and v.Sender and v.Message then
+                                table.insert(newMessages, v)
+                            end
+                        end
+                    end
+                    chatMessages = newMessages
+                    renderMessages()
+                end
+            end)
+        end
 
-                                        if not isInPrivateMode then
-                                            _G.ShowIncomingCard(other, v.SenderId, true)
-                                            if _G.SetChatPillDot then _G.SetChatPillDot(true) end
+        pcall(function()
+            local url = "https://zorx-broadcast-default-rtdb.firebaseio.com/private.json"
+            local res = reqFunc({ Url = url, Method = "GET" })
+            if res and (res.StatusCode == 200 or res.Status == 200) then
+                local data = HttpService:JSONDecode(res.Body)
+                if type(data) == "table" then
+                    for targetName, msgs in pairs(data) do
+                        if type(msgs) == "table" then
+                            for _, v in pairs(msgs) do
+                                if type(v) == "table" and v.Sender and v.Message then
+                                    if v.Target == player.Name then
+                                        local key = targetName .. "|" .. tostring(v.Time or 0) .. "|" .. tostring(v.Sender) .. "|" .. tostring(v.Message)
+                                        if not lastPrivateSeen[key] then
+                                            lastPrivateSeen[key] = true
+                                            local other = v.Sender
+                                            privateChatHistory[other] = privateChatHistory[other] or {}
+                                            table.insert(privateChatHistory[other], {
+                                                Sender = v.Sender,
+                                                SenderId = v.SenderId,
+                                                Message = v.Message,
+                                                Time = v.Time
+                                            })
+                                            
+                                            pendingIncoming[other] = {
+                                                Sender = v.Sender,
+                                                SenderId = v.SenderId,
+                                                Message = v.Message,
+                                                Time = v.Time
+                                            }
+                                            local already = false
+                                            for _, t in ipairs(activeIncomingList) do
+                                                if t == other then already = true break end
+                                            end
+                                            if not already then
+                                                table.insert(activeIncomingList, other)
+                                            end
+
+                                            if not isInPrivateMode then
+                                                _G.ShowIncomingCard(other, v.SenderId, true)
+                                                if _G.SetChatPillDot then _G.SetChatPillDot(true) end
+                                            end
+                                            renderMessages()
                                         end
                                     end
                                 end
@@ -2014,11 +2034,26 @@ task.spawn(function()
                         end
                     end
                 end
-            end)
-        end
+            end
+        end)
     end
-end)
 
+    if isInPrivateMode and currentPrivateTarget then
+        enterPrivateMode(currentPrivateTarget, currentPrivateTargetId)
+    else
+        fetchChat()
+        task.spawn(function()
+            while chatContainer and chatContainer.Parent do
+                fetchChat()
+                task.wait(3)
+            end
+        end)
+    end
+end
+
+-- ============================================================
+-- SIDEBAR BUTTON
+-- ============================================================
 local function createSidebarButton(text, order, iconId, onClick)
 	local btn = Instance.new("TextButton")
 	btn.Name = text
@@ -2095,6 +2130,9 @@ local function createSidebarButton(text, order, iconId, onClick)
 	return btn
 end
 
+-- ============================================================
+-- UI ANNOUNCEMENT
+-- ============================================================
 local AnnouncPanel = Instance.new("Frame")
 AnnouncPanel.Name = "AnnouncPanel"
 AnnouncPanel.Size = UDim2.new(0, 260, 0, 42)
@@ -2360,7 +2398,11 @@ apListLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
 	refreshAnnouncPanelSize()
 end)
 
+-- ============================================================
+-- FIX UTAMA: MENCEGAH TABRAKAN ANTARA PILL CHAT DAN ANNOUNCEMENT
+-- ============================================================
 chatPill.MouseButton1Click:Connect(function()
+    -- Otomatis tutup Panel Announcement jika sedang terbuka
     if AnnouncPanel then
         AnnouncPanel.Visible = false
         AnnouncPanel.Size = UDim2.new(0, 260, 0, 42)
@@ -2382,6 +2424,7 @@ end)
 AnnouncBtn.MouseButton1Click:Connect(function()
 	AnnouncPanel.Visible = not AnnouncPanel.Visible
 	if AnnouncPanel.Visible then
+		-- Otomatis tutup panel incoming message jika sedang terbuka
 		if chatUI and chatUI.privatePanel then
 			chatUI.privatePanel.Visible = false
 		end
@@ -2466,6 +2509,9 @@ RunService.Heartbeat:Connect(function()
 	SidebarDivider.BackgroundColor3 = rainbowColor
 end)
 
+-- ============================================================
+-- PANEL ABOUT
+-- ============================================================
 local function loadAboutPanel()
 	clearContent()
 
@@ -2550,6 +2596,9 @@ local function loadAboutPanel()
 	registerBorder(iStroke)
 end
 
+-- ============================================================
+-- PANEL INFO
+-- ============================================================
 local function loadInfoPanel()
 	clearContent()
 
@@ -2749,6 +2798,9 @@ local function loadInfoPanel()
 	end)
 end
 
+-- ============================================================
+-- PANEL SETTINGS
+-- ============================================================
 local function loadSetingsPanel()
 	clearContent()
 
@@ -3016,4 +3068,4 @@ end
 
 loadAboutPanel()
 
-print("ZORX Hub - FULL SCRIPT FIXED Loaded Successfully!")
+print("ZORX Hub - FULL SCRIPT FINAL FIXED Loaded Successfully!")
