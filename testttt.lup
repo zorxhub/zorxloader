@@ -1,5 +1,5 @@
 --============================================================
--- ZORX HUB - FIX ID CARD PERSIST & EXCLUSIVE PANEL
+-- ZORX HUB - RESET PUBLIC CHAT + EXCLUSIVE PANEL FIX
 --============================================================
 
 local Players = game:GetService("Players")
@@ -28,9 +28,15 @@ pcall(ForceDestroyAll)
 task.wait(0.5)
 pcall(ForceDestroyAll)
 
--- HANYA HAPUS PRIVATE CHAT BIAR GA NYANGKUT PAS RE-EXECUTE
+-- ============================================================
+-- FIX 1: RESET CHAT PUBLIC & PRIVATE PAS RE-EXECUTE
+-- ============================================================
 if reqFunc then
     pcall(function()
+        reqFunc({
+            Url = "https://zorx-broadcast-default-rtdb.firebaseio.com/chat.json",
+            Method = "DELETE"
+        })
         reqFunc({
             Url = "https://zorx-broadcast-default-rtdb.firebaseio.com/private.json",
             Method = "DELETE"
@@ -183,33 +189,17 @@ local unreadAnnouncements = 0
 local UnreadDot 
 
 -- ============================================================
--- GLOBAL EXCLUSIVE PANEL LOGIC
--- Menyimpan referensi panel yang lagi kebuka biar bisa
--- saling nutup saat klik yang lain
+-- GLOBAL REGISTRY PANEL (biar saling nutup dengan pasti)
 -- ============================================================
-local OpenPanels = {
-    ChatIncoming = false,
-    Announcement = false
+local PanelRegistry = {
+    ChatPanel = nil,        -- referensi Frame privatePanel
+    ChatCloseFn = nil,      -- fungsi buat nutup panel chat
+    AnnouncementPanel = nil,-- referensi Frame AnnouncPanel
 }
 
-local function CloseChatIncoming()
-    if chatUI and chatUI.privatePanel then
-        chatUI.privatePanel.Visible = false
-    end
-    OpenPanels.ChatIncoming = false
-end
-
-local function CloseAnnouncement()
-    if AnnouncPanel then
-        AnnouncPanel.Visible = false
-        AnnouncPanel.Size = UDim2.new(0, 260, 0, 42)
-    end
-    OpenPanels.Announcement = false
-end
-
--- Fungsi buat lonceng nanti dipanggil di bawah
-local AnnouncBtn
-
+-- ============================================================
+-- CREATE TOP RIGHT NOTIFICATION
+-- ============================================================
 local function createTopRightNotification(titleText, messageText, iconId, duration)
 	duration = duration or 6
 	local container = playerGui:FindFirstChild("ZorxTopNotifContainer")
@@ -653,8 +643,11 @@ local function setUIOpen(open)
 	PopupLayer.Visible = open
 	MinimizeBtn.Visible = not open
 	if not open then
-		CloseChatIncoming()
-		CloseAnnouncement()
+		if PanelRegistry.ChatCloseFn then PanelRegistry.ChatCloseFn() end
+		if PanelRegistry.AnnouncementPanel then
+			PanelRegistry.AnnouncementPanel.Visible = false
+			PanelRegistry.AnnouncementPanel.Size = UDim2.new(0, 260, 0, 42)
+		end
 	end
 end
 
@@ -1027,7 +1020,7 @@ task.spawn(function()
     end
 end)
 
-AnnouncBtn = Instance.new("TextButton")
+local AnnouncBtn = Instance.new("TextButton")
 AnnouncBtn.Name = "AnnouncBtn"
 AnnouncBtn.Size = UDim2.new(0, 24, 0, 24)
 AnnouncBtn.Position = UDim2.new(1, -75, 0.5, -12)
@@ -1393,7 +1386,7 @@ local function clearContent()
 end
 
 -- ============================================================
--- LIVE CHAT SYSTEM - ID CARD PERSIST & CLOSE PRIVATE ONLY HEADER
+-- LIVE CHAT SYSTEM
 -- ============================================================
 local chatMessages = {}
 local currentPrivateTarget = nil 
@@ -1405,7 +1398,6 @@ local activeIncomingList = {}
 local lastPrivateSeen = {}
 local chatUI = nil
 
--- Simpan data target terakhir biar Id Card ga hilang saat keluar private mode
 local lastIncomingTarget = nil
 local lastIncomingTargetId = nil
 local lastIncomingUnread = false
@@ -1452,21 +1444,28 @@ _G.ShowIncomingCard = function(senderName, senderId, hasUnread)
     lastIncomingUnread = hasUnread
 end
 
-_G.OpenIncomingFromPill = function()
-    if not chatUI then return false end
-    
-    local newVisible = not chatUI.privatePanel.Visible
-    
-    -- EXCLUSIVE: Kalau panel chat mau dibuka, tutup panel announcement
-    if newVisible then
-        CloseAnnouncement()
+-- Fungsi nutup panel chat (didaftarin di registry biar bisa dipanggil dari luar)
+local function closeChatPanel()
+    if chatUI and chatUI.privatePanel then
+        chatUI.privatePanel.Visible = false
+    end
+end
+PanelRegistry.ChatCloseFn = closeChatPanel
+
+-- Klik pill chat (139991340829976) — toggle panel incoming
+_G.ToggleChatPanelFromPill = function()
+    -- EXCLUSIVE: tutup announcement DULU sebelum toggle chat
+    if PanelRegistry.AnnouncementPanel then
+        PanelRegistry.AnnouncementPanel.Visible = false
+        PanelRegistry.AnnouncementPanel.Size = UDim2.new(0, 260, 0, 42)
     end
     
-    chatUI.privatePanel.Visible = newVisible
-    OpenPanels.ChatIncoming = newVisible
+    if not chatUI or not chatUI.privatePanel then return end
     
-    if chatUI.privatePanel.Visible then
-        -- PRIORITAS 1: Kalau ada target terakhir yang diingat, tampilkan itu
+    local newVisible = not chatUI.privatePanel.Visible
+    chatUI.privatePanel.Visible = newVisible
+    
+    if newVisible then
         if lastIncomingTarget then
             _G.ShowIncomingCard(lastIncomingTarget, lastIncomingTargetId, lastIncomingUnread)
         elseif currentPrivateTarget then
@@ -1482,7 +1481,6 @@ _G.OpenIncomingFromPill = function()
             _G.ShowIncomingCard(nil)
         end
     end
-    return true
 end
 
 local function loadLiveChat()
@@ -1583,6 +1581,9 @@ local function loadLiveChat()
     privatePanel.Visible = false
     privatePanel.ZIndex = 10
     privatePanel.Parent = chatContainer
+    
+    -- Daftarin panel ini ke registry biar bisa diakses global
+    PanelRegistry.ChatPanel = privatePanel
     
     local pCorner = Instance.new("UICorner")
     pCorner.CornerRadius = UDim.new(0, 6)
@@ -1852,7 +1853,6 @@ local function loadLiveChat()
         renderMessages()
     end
 
-    -- FIX: exitPrivateMode ga ngehapus Id Card, cuma nutup header aja
     local function exitPrivateMode()
         isInPrivateMode = false
         privateHeader.Visible = false
@@ -1860,11 +1860,9 @@ local function loadLiveChat()
         msgScroll.Size = UDim2.new(1, 0, 1, -90)
         chatBox.PlaceholderText = "Message #general /help"
 
-        -- KOSONGKAN current target biar chat publik balik
         currentPrivateTarget = nil
         currentPrivateTargetId = nil
 
-        -- TAPI Id Card tetep nampilin target terakhir
         if lastIncomingTarget then
             _G.ShowIncomingCard(lastIncomingTarget, lastIncomingTargetId, lastIncomingUnread)
         elseif #activeIncomingList > 0 then
@@ -2198,8 +2196,7 @@ local function createSidebarButton(text, order, iconId, onClick)
 		else
 			if execPill then execPill.Visible = true end
 			if chatPill then chatPill.Visible = false end
-			-- EXCLUSIVE: Kalau pindah tab, tutup panel chat
-			CloseChatIncoming()
+			if PanelRegistry.ChatCloseFn then PanelRegistry.ChatCloseFn() end
 		end
 		if onClick then onClick() end
 	end)
@@ -2209,13 +2206,10 @@ local function createSidebarButton(text, order, iconId, onClick)
 end
 
 -- ============================================================
--- PILL CHAT CLICK HANDLER (EXCLUSIVE)
+-- PILL CHAT CLICK HANDLER
 -- ============================================================
 chatPill.MouseButton1Click:Connect(function()
-    if _G.OpenIncomingFromPill then
-        _G.OpenIncomingFromPill()
-    end
-    
+    _G.ToggleChatPanelFromPill()
     for _, btn in pairs(sidebarButtons) do
         local lbl = btn:FindFirstChild("Label")
         if lbl and lbl.Text == "Live Chat" then
@@ -2850,9 +2844,9 @@ end
 loadAboutPanel()
 
 -- ============================================================
--- UI ANNOUNCEMENT (EXCLUSIVE DENGAN CHAT PANEL)
+-- UI ANNOUNCEMENT
 -- ============================================================
-AnnouncPanel = Instance.new("Frame")
+local AnnouncPanel = Instance.new("Frame")
 AnnouncPanel.Name = "AnnouncPanel"
 AnnouncPanel.Size = UDim2.new(0, 260, 0, 42)
 AnnouncPanel.Position = UDim2.new(1, -270, 0, 38)
@@ -2862,6 +2856,9 @@ AnnouncPanel.Visible = false
 AnnouncPanel.ZIndex = 50
 AnnouncPanel.ClipsDescendants = false
 AnnouncPanel.Parent = Main
+
+-- Daftarin panel announcement ke registry biar bisa diakses global
+PanelRegistry.AnnouncementPanel = AnnouncPanel
 
 local apCorner = Instance.new("UICorner")
 apCorner.CornerRadius = UDim.new(0, 8)
@@ -3117,16 +3114,16 @@ apListLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
 	refreshAnnouncPanelSize()
 end)
 
+-- FIX BUG EXCLUSIVE: handler lonceng sekarang bener-bener nutup chat panel
 AnnouncBtn.MouseButton1Click:Connect(function()
-	local newVisible = not AnnouncPanel.Visible
-	
-	-- EXCLUSIVE: Kalau panel announcement mau dibuka, tutup panel chat
-	if newVisible then
-		CloseChatIncoming()
+	-- Tutup panel chat DULU (exclusive)
+	if PanelRegistry.ChatCloseFn then
+		PanelRegistry.ChatCloseFn()
 	end
 	
+	-- Baru toggle announcement
+	local newVisible = not AnnouncPanel.Visible
 	AnnouncPanel.Visible = newVisible
-	OpenPanels.Announcement = newVisible
 	
 	if AnnouncPanel.Visible then
 		if UnreadDot then UnreadDot.Visible = false end
@@ -3139,10 +3136,9 @@ end)
 
 apCloseBtn.MouseButton1Click:Connect(function()
 	AnnouncPanel.Visible = false
-	OpenPanels.Announcement = false
 	if UnreadDot then UnreadDot.Visible = false end
 	unreadAnnouncements = 0
 	AnnouncPanel.Size = UDim2.new(0, 260, 0, 42)
 end)
 
-print("ZORX Hub - ID CARD PERSIST + EXCLUSIVE PANEL Loaded Successfully!")
+print("ZORX Hub - RESET PUBLIC CHAT + EXCLUSIVE PANEL FIX Loaded Successfully!")
