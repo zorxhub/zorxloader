@@ -1,5 +1,5 @@
 --============================================================
--- ZORX HUB - FINAL ANTI NYANGKUT VERSION
+-- ZORX HUB - PUBLIC CHAT FIX (TIDAK HAPUS CHAT SAAT INJECT)
 --============================================================
 
 local Players = game:GetService("Players")
@@ -28,24 +28,16 @@ local function ForceDestroyAll()
     end
 end
 
--- Panggil pake pcall biar ga error kalo ga ada
 pcall(ForceDestroyAll)
-
--- Tunggu bentar biar Roblox sempet ngehapus
 task.wait(0.5)
 pcall(ForceDestroyAll)
 
 -- ============================================================
--- FIX 2: HAPUS TOTAL DATA LAMA DI FIREBASE SAAT INJECT
+-- FIX 2: HAPUS HANYA PRIVATE CHAT, PUBLIC CHAT DIBIARKAN
 -- ============================================================
 if reqFunc then
     pcall(function()
-        -- Hapus chat public
-        reqFunc({
-            Url = "https://zorx-broadcast-default-rtdb.firebaseio.com/chat.json",
-            Method = "DELETE"
-        })
-        -- Hapus SEMUA private chat biar ga nyangkut
+        -- HANYA HAPUS PRIVATE CHAT (Biarkan public chat tetap ada)
         reqFunc({
             Url = "https://zorx-broadcast-default-rtdb.firebaseio.com/private.json",
             Method = "DELETE"
@@ -1376,7 +1368,7 @@ local function clearContent()
 end
 
 -- ============================================================
--- LIVE CHAT SYSTEM - REVISI FINAL CLOSE & UKURAN ICON
+-- LIVE CHAT SYSTEM - PUBLIC CHAT FIX
 -- ============================================================
 local chatMessages = {}
 local currentPrivateTarget = nil 
@@ -1407,7 +1399,7 @@ _G.ShowIncomingCard = function(senderName, senderId, hasUnread)
         targetProfileBox.Visible = false
         privateRedDot.Visible = false
         if iconEnvelope then iconEnvelope.Visible = true end
-        if targetAvatar then targetAvatar.Image = "" end -- Reset foto
+        if targetAvatar then targetAvatar.Image = "" end
         return
     end
 
@@ -1819,7 +1811,6 @@ local function loadLiveChat()
         msgScroll.Size = UDim2.new(1, 0, 1, -90)
         chatBox.PlaceholderText = "Message #general /help"
 
-        -- Reset total saat keluar
         currentPrivateTarget = nil
         currentPrivateTargetId = nil
         _G.ShowIncomingCard(nil)
@@ -1985,10 +1976,25 @@ local function loadLiveChat()
                     if data then
                         for _, v in pairs(data) do
                             if type(v) == "table" and v.Sender and v.Message then
-                                table.insert(newMessages, v)
+                                -- FILTER: Hanya tampilkan chat yang umurnya kurang dari 1 jam (3600 detik)
+                                if v.Time and (os.time() - v.Time) < 3600 then
+                                    table.insert(newMessages, v)
+                                end
                             end
                         end
                     end
+                    -- URUTKAN DARI YANG TERLAMA KE TERBARU
+                    table.sort(newMessages, function(a, b) return (a.Time or 0) < (b.Time or 0) end)
+                    
+                    -- AMBIL 50 PESAN TERAKHIR SAJA BIAR RINGAN
+                    if #newMessages > 50 then
+                        local temp = {}
+                        for i = #newMessages - 49, #newMessages do
+                            table.insert(temp, newMessages[i])
+                        end
+                        newMessages = temp
+                    end
+                    
                     chatMessages = newMessages
                     renderMessages()
                 end
@@ -3067,4 +3073,4 @@ apCloseBtn.MouseButton1Click:Connect(function()
 	AnnouncPanel.Size = UDim2.new(0, 260, 0, 42)
 end)
 
-print("ZORX Hub - FINAL ANTI NYANGKUT UI Loaded Successfully!")
+print("ZORX Hub - PUBLIC CHAT FIX Loaded Successfully!")
