@@ -1,5 +1,5 @@
 --============================================================
--- ZORX HUB - FINAL FIX: ID CARD NYANTOL + AUTO-EXPAND
+-- ZORX HUB - FINAL FIX: CARD NYANTOL SETELAH CLOSE PRIVATE
 --============================================================
 
 local Players = game:GetService("Players")
@@ -1416,7 +1416,19 @@ local function renderIncomingCards()
     local hasAny = false
     local count = 0
     for i, targetName in ipairs(activeIncomingList) do
+        -- FIX: Tetep tampilin card walaupun pendingIncoming udah dihapus (udah pernah di-chat)
+        -- Ambil data dari privateChatHistory atau pendingIncoming
         local info = pendingIncoming[targetName]
+        if not info and privateChatHistory[targetName] and #privateChatHistory[targetName] > 0 then
+            local lastMsg = privateChatHistory[targetName][#privateChatHistory[targetName]]
+            info = {
+                Sender = lastMsg.Sender,
+                SenderId = lastMsg.SenderId,
+                Message = lastMsg.Message,
+                Time = lastMsg.Time
+            }
+        end
+        
         if info then
             hasAny = true
             count += 1
@@ -1501,12 +1513,9 @@ local function renderIncomingCards()
     local targetH = baseH
     
     if count >= 2 then
-        -- Kalau ada 2 atau lebih, panel nambah tinggi
-        -- Misal 2 card: 105 + 42 = 147, 3 card: 105 + 84 = 189
         targetH = baseH + (cardHeight * (count - 1))
-        -- Maks tinggi biar ga keluar layar (maks 3 card visible)
         if count > 3 then
-            targetH = baseH + (cardHeight * 2) -- 3 card aja
+            targetH = baseH + (cardHeight * 2)
         end
     end
     
@@ -1514,11 +1523,6 @@ local function renderIncomingCards()
         TweenService:Create(panel, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
             Size = UDim2.new(0, 190, 0, targetH)
         }):Play()
-    end
-    
-    -- Reset dot kalau ga ada incoming
-    if not hasAny then
-        if _G.SetChatPillDot then _G.SetChatPillDot(false) end
     end
 end
 
@@ -1869,10 +1873,15 @@ local function loadLiveChat()
         currentPrivateTargetId = targetId
         isInPrivateMode = true
 
-        pendingIncoming[targetNameStr] = nil
-        -- FIX: JANGAN hapus dari activeIncomingList!
-        -- Biar ID card tetap nyantol pas close private
-        -- Tapi kalau sudah di-enter, kita tetap tampilin card-nya di list
+        -- FIX: masukin ke activeIncomingList kalau belum ada
+        -- Biar pas close private, card TETAP ADA di list
+        local already = false
+        for _, t in ipairs(activeIncomingList) do
+            if t == targetNameStr then already = true break end
+        end
+        if not already then
+            table.insert(activeIncomingList, targetNameStr)
+        end
 
         privateHeader.Visible = true
         phName.Text = "Chatting with " .. targetNameStr
@@ -1900,12 +1909,11 @@ local function loadLiveChat()
         msgScroll.Size = UDim2.new(1, 0, 1, -90)
         chatBox.PlaceholderText = "Message #general /help"
 
-        -- FIX: JANGAN reset currentPrivateTarget ke nil kalau mau ID card nyantol
-        -- Tapi kita bikin flag aja biar chat public balik
+        -- FIX: JANGAN hapus target dari activeIncomingList!
+        -- Cuma lepas status private mode aja
         currentPrivateTarget = nil
         currentPrivateTargetId = nil
         
-        -- FIX: JANGAN hapus activeIncomingList, biar card tetap tampil
         renderIncomingCards()
         renderMessages()
     end
@@ -3152,4 +3160,4 @@ apCloseBtn.MouseButton1Click:Connect(function()
 	AnnouncPanel.Size = UDim2.new(0, 260, 0, 42)
 end)
 
-print("ZORX Hub - ID CARD NYANTOL + AUTO-EXPAND Loaded!")
+print("ZORX Hub - CARD NYANTOL SETELAH CLOSE Loaded!")
