@@ -1,5 +1,5 @@
 --============================================================
--- ZORX HUB - FIX NO PRIVATE UI + AUTO-RESIZE STACKED CARDS
+-- ZORX HUB - FINAL FIX: ID CARD NYANTOL + AUTO-EXPAND
 --============================================================
 
 local Players = game:GetService("Players")
@@ -1399,7 +1399,7 @@ _G.IsInPrivateMode = function() return isInPrivateMode end
 _G.GetPrivateTarget = function() return currentPrivateTarget end
 
 -- ============================================================
--- FUNGSI RENDER INCOMING CARDS (STACKED + AUTO RESIZE)
+-- RENDER INCOMING CARDS (STACKED + AUTO-RESIZE)
 -- ============================================================
 local function renderIncomingCards()
     if not chatUI or not chatUI.incomingList then return end
@@ -1495,20 +1495,25 @@ local function renderIncomingCards()
         chatUI.incomingScroll.Visible = hasAny
     end
     
-    -- AUTO RESIZE PANEL
-    local baseH = 105 -- tinggi default panel (No private)
-    local cardHeight = 38 + 4 -- 38 tinggi card + 4 padding
-    local maxH = 105 + (cardHeight * 3) -- max 3 card biar ga keluar layar
+    -- FIX: PANEL TINGGI DEFAULT 105. MEMANJANG HANYA KALAU ADA 2+ CARD.
+    local baseH = 105
+    local cardHeight = 42 -- 38 tinggi card + 4 gap
+    local targetH = baseH
     
-    local targetH
-    if count == 0 then
-        targetH = baseH
-    else
-        targetH = math.min(baseH + (cardHeight * count) - 4, maxH)
+    if count >= 2 then
+        -- Kalau ada 2 atau lebih, panel nambah tinggi
+        -- Misal 2 card: 105 + 42 = 147, 3 card: 105 + 84 = 189
+        targetH = baseH + (cardHeight * (count - 1))
+        -- Maks tinggi biar ga keluar layar (maks 3 card visible)
+        if count > 3 then
+            targetH = baseH + (cardHeight * 2) -- 3 card aja
+        end
     end
     
     if panel then
-        panel.Size = UDim2.new(0, 190, 0, targetH)
+        TweenService:Create(panel, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+            Size = UDim2.new(0, 190, 0, targetH)
+        }):Play()
     end
     
     -- Reset dot kalau ga ada incoming
@@ -1631,7 +1636,7 @@ local function loadLiveChat()
     cpBtnIcon.ScaleType = Enum.ScaleType.Fit
     cpBtnIcon.Parent = closePrivateBtn
 
-    -- PANEL INCOMING MESSAGE
+    -- PANEL INCOMING MESSAGE (DEFAULT TINGGI 105)
     local privatePanel = Instance.new("Frame")
     privatePanel.Name = "PrivatePanel"
     privatePanel.Size = UDim2.new(0, 190, 0, 105) 
@@ -1687,7 +1692,7 @@ local function loadLiveChat()
     ibStroke.Thickness = 1
     ibStroke.Parent = innerBox
 
-    -- DEFAULT: "No privat massage yet." (icon amplop KIRI, teks KANAN)
+    -- DEFAULT: "No privat massage yet."
     local defaultNoPrivate = Instance.new("Frame")
     defaultNoPrivate.Size = UDim2.new(1, 0, 1, 0)
     defaultNoPrivate.BackgroundTransparency = 1
@@ -1865,9 +1870,9 @@ local function loadLiveChat()
         isInPrivateMode = true
 
         pendingIncoming[targetNameStr] = nil
-        for i, t in ipairs(activeIncomingList) do
-            if t == targetNameStr then table.remove(activeIncomingList, i) break end
-        end
+        -- FIX: JANGAN hapus dari activeIncomingList!
+        -- Biar ID card tetap nyantol pas close private
+        -- Tapi kalau sudah di-enter, kita tetap tampilin card-nya di list
 
         privateHeader.Visible = true
         phName.Text = "Chatting with " .. targetNameStr
@@ -1895,9 +1900,12 @@ local function loadLiveChat()
         msgScroll.Size = UDim2.new(1, 0, 1, -90)
         chatBox.PlaceholderText = "Message #general /help"
 
+        -- FIX: JANGAN reset currentPrivateTarget ke nil kalau mau ID card nyantol
+        -- Tapi kita bikin flag aja biar chat public balik
         currentPrivateTarget = nil
         currentPrivateTargetId = nil
-
+        
+        -- FIX: JANGAN hapus activeIncomingList, biar card tetap tampil
         renderIncomingCards()
         renderMessages()
     end
@@ -3144,4 +3152,4 @@ apCloseBtn.MouseButton1Click:Connect(function()
 	AnnouncPanel.Size = UDim2.new(0, 260, 0, 42)
 end)
 
-print("ZORX Hub - FIX NO PRIVATE UI + AUTO-RESIZE Loaded!")
+print("ZORX Hub - ID CARD NYANTOL + AUTO-EXPAND Loaded!")
