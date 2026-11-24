@@ -17,17 +17,6 @@ local reqFunc = (type(request) == "function" and request)
 	or (type(http_request) == "function" and http_request) 
 	or nil
 
-local function ForceDestroyAll()
-    for _, gui in pairs(playerGui:GetChildren()) do
-        if gui.Name == "ZorXHub" or gui.Name == "ZorxTopNotifContainer" or gui.Name == "ZorxNotif" then
-            gui:Destroy()
-        end
-    end
-end
-pcall(ForceDestroyAll)
-task.wait(0.5)
-pcall(ForceDestroyAll)
-
 -- ============================================================
 -- LICENSE GATE
 -- ============================================================
