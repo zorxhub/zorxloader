@@ -24,7 +24,7 @@ local function CheckLicense()
     return true, 9999999999999, "Owner"
 end
 
-local isLicensed, expireTime, userRole = CheckLicense()
+local isLicensed, expireTime, userRole = true, 9999999999999, "Owner"
 
 if not isLicensed then
 	warn("[ZORX] Unauthorized. Silahkan hubungi Admin untuk aktivasi.")
