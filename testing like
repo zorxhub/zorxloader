@@ -3066,4 +3066,93 @@ _G.AddAnnouncement = function(text)
 	actionFrame.Parent = msgFrame
 
 	local actionList = Instance.new("UIListLayout")
-	actionList.FillDirectio
+	actionList.FillDirection = Enum.FillDirection.Horizontal
+	actionList.VerticalAlignment = Enum.VerticalAlignment.Top
+	actionList.HorizontalAlignment = Enum.HorizontalAlignment.Right
+	actionList.Padding = UDim.new(0, 6)
+	actionList.Parent = actionFrame
+
+	local likeBtn = Instance.new("ImageButton")
+	likeBtn.Name = "LikeBtn"
+	likeBtn.Size = UDim2.new(0, 14, 0, 14)
+	likeBtn.BackgroundTransparency = 1
+	likeBtn.Image = "rbxassetid://78703642436909"
+	likeBtn.ImageColor3 = Color3.fromRGB(255, 255, 255)
+	likeBtn.LayoutOrder = 1
+	likeBtn.ZIndex = 55
+	likeBtn.Parent = actionFrame
+
+	local dislikeBtn = Instance.new("ImageButton")
+	dislikeBtn.Name = "DislikeBtn"
+	dislikeBtn.Size = UDim2.new(0, 14, 0, 14)
+	dislikeBtn.BackgroundTransparency = 1
+	dislikeBtn.Image = "rbxassetid://115295848024534"
+	dislikeBtn.ImageColor3 = Color3.fromRGB(255, 255, 255)
+	dislikeBtn.LayoutOrder = 2
+	dislikeBtn.ZIndex = 55
+	dislikeBtn.Parent = actionFrame
+
+	local liked = false
+	likeBtn.MouseButton1Click:Connect(function()
+		liked = not liked
+		if liked then
+			likeBtn.Image = "rbxassetid://118652612472796"
+			dislikeBtn.Image = "rbxassetid://115295848024534"
+		else
+			likeBtn.Image = "rbxassetid://78703642436909"
+		end
+	end)
+
+	local disliked = false
+	dislikeBtn.MouseButton1Click:Connect(function()
+		disliked = not disliked
+		if disliked then
+			dislikeBtn.Image = "rbxassetid://127169986638010"
+			likeBtn.Image = "rbxassetid://78703642436909"
+		else
+			dislikeBtn.Image = "rbxassetid://115295848024534"
+		end
+	end)
+
+	msgFrame.BackgroundTransparency = 1
+	TweenService:Create(msgFrame, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+		BackgroundTransparency = 0
+	}):Play()
+
+	refreshAnnouncPanelSize()
+
+	if not AnnouncPanel.Visible and UnreadDot then
+		UnreadDot.Visible = true
+		unreadAnnouncements += 1
+	end
+end
+
+apListLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+	refreshAnnouncPanelSize()
+end)
+
+AnnouncBtn.MouseButton1Click:Connect(function()
+	if PanelRegistry.ChatCloseFn then
+		PanelRegistry.ChatCloseFn()
+	end
+
+	local newVisible = not AnnouncPanel.Visible
+	AnnouncPanel.Visible = newVisible
+
+	if AnnouncPanel.Visible then
+		if UnreadDot then UnreadDot.Visible = false end
+		unreadAnnouncements = 0
+		refreshAnnouncPanelSize()
+	else
+		AnnouncPanel.Size = UDim2.new(0, 260, 0, 42)
+	end
+end)
+
+apCloseBtn.MouseButton1Click:Connect(function()
+	AnnouncPanel.Visible = false
+	if UnreadDot then UnreadDot.Visible = false end
+	unreadAnnouncements = 0
+	AnnouncPanel.Size = UDim2.new(0, 260, 0, 42)
+end)
+
+print("ZORX Hub - FULL FIX Loaded!")
